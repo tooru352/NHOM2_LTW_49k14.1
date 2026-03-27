@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Quản lý công việc - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="work-management">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>📋 Quản Lý Công Việc</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn-export">📥 JA</button>
+            <button class="btn-history" onclick="window.location.href='/meeting-schedule'">🕐 Lịch họp</button>
+            <button class="btn-notification" onclick="toggleResponseNotification()">
+                📢 Phản hồi
+                <span class="notification-badge">3</span>
+            </button>
+            <button class="btn-primary" onclick="openAddTaskModal()">➕ Tạo công việc mới</button>
+        </div>
+    </div>
+
+    <!-- Response Notification Dropdown -->
+    <div class="response-dropdown" id="responseDropdown">
+        <div class="response-dropdown-header">
+            <h4>📢 Phản hồi từ nhân viên</h4>
+            <button class="btn-close-dropdown" onclick="toggleResponseNotification()">×</button>
+        </div>
+        <div class="response-dropdown-body">
+            <!-- Response 1 - Pending -->
+            <div class="response-dropdown-item pending-item">
+                <div class="response-item-left">
+                    <div class="avatar-mini">AT</div>
+                    <div class="response-info">
+                        <strong>Đoàn Thị Anh Thư</strong>
+                        <span class="task-mini">📋 Kiểm tra sảnh chính lúc 14:00</span>
+                        <span class="time-ago">5 phút trước</span>
+                    </div>
+                </div>
+                <span class="badge-mini pending">⏳ Chờ</span>
+            </div>
+
+            <!-- Response 2 - Accepted -->
+            <div class="response-dropdown-item accepted-item">
+                <div class="response-item-left">
+                    <div class="avatar-mini">NV</div>
+                    <div class="response-info">
+                        <strong>Nguyễn Văn An</strong>
+                        <span class="task-mini">🍽️ Chuẩn bị bàn ăn buffet</span>
+                        <span class="time-ago">15 phút trước</span>
+                    </div>
+                </div>
+                <span class="badge-mini accepted">✓ Đồng ý</span>
+            </div>
+
+            <!-- Response 3 - Rejected -->
+            <div class="response-dropdown-item rejected-item">
+                <div class="response-item-left">
+                    <div class="avatar-mini">TH</div>
+                    <div class="response-info">
+                        <strong>Trần Văn Hùng</strong>
+                        <span class="task-mini">🧹 Vệ sinh khu vực bếp</span>
+                        <span class="time-ago">30 phút trước</span>
+                    </div>
+                </div>
+                <span class="badge-mini rejected">✕ Từ chối</span>
+            </div>
+
+            <!-- Response 4 - Accepted -->
+            <div class="response-dropdown-item accepted-item">
+                <div class="response-item-left">
+                    <div class="avatar-mini">LM</div>
+                    <div class="response-info">
+                        <strong>Lê Minh Châu</strong>
+                        <span class="task-mini">🍹 Phục vụ đồ uống tại Bar</span>
+                        <span class="time-ago">1 giờ trước</span>
+                    </div>
+                </div>
+                <span class="badge-mini accepted">✓ Đồng ý</span>
+            </div>
+        </div>
+        <div class="response-dropdown-footer">
+            <button class="btn-view-all-responses" onclick="window.location.href='/all-responses/'">Xem tất cả phản hồi →</button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card" onclick="filterByStatus('all')">
+            <div class="stat-icon blue">📋</div>
+            <div class="stat-content">
+                <h2>24</h2>
+                <p>Tổng công việc</p>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('pending')">
+            <div class="stat-icon yellow">🏆</div>
+            <div class="stat-content">
+                <h2>8</h2>
+                <p>Đang thực hiện</p>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('completed')">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-content">
+                <h2>12</h2>
+                <p>Hoàn thành</p>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('overdue')">
+            <div class="stat-icon red">⏰</div>
+            <div class="stat-content">
+                <h2>4</h2>
+                <p>Chưa xử lý</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-left">
+            <span class="filter-icon">📅</span>
+            <strong>Phân Công Chi Tiết</strong>
+            <div class="date-picker">
+                <span class="calendar-icon">📅</span>
+                <input type="date" value="2025-02-04" id="filterDate">
+                <span class="date-label" id="dateLabel">Thay đổi ngày</span>
+            </div>
+        </div>
+        <div class="filter-right">
+            <button class="btn-filter" onclick="saveAssignments()">📋 Lưu phân công</button>
+        </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="tasks-table-container">
+        <table class="tasks-table">
+            <thead>
+                <tr>
+                    <th>VỊ TRÍ / CÔNG VIỆC</th>
+                    <th>NHÂN VIÊN</th>
+                    <th>SỐ LƯỢNG</th>
+                    <th>CA LÀM VIỆC</th>
+                    <th>THỜI GIAN</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>GHI CHÚ</th>
+                </tr>
+            </thead>
+            <tbody id="tasksTableBody">
+                <!-- Row 1 -->
+                <tr class="task-row highlight-yellow" onclick="showTaskDetail(this)">
+                    <td class="task-name">Tài sản Core</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-1">
+                            <span class="employee-tag">
+                                Nguyễn Văn An
+                            </span>
+                        </div>
+                    </td>
+                    <td><input type="number" value="1" class="quantity-input" disabled onclick="event.stopPropagation()"></td>
+                    <td><span class="shift-badge morning">Sáng</span></td>
+                    <td class="time-cell">06:00 - 14:00</td>
+                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                    <td class="note-cell">Quản lý tài sản khách sạn</td>
+                    <td style="display:none;" class="task-department">Quản lý & Vận hành</td>
+                    <td style="display:none;" class="task-description">Kiểm tra và bảo trì tất cả tài sản cơ bản của khách sạn bao gồm hệ thống điện, nước và các thiết bị vận hành chính tại khu vực tầng hầm và sảnh.</td>
+                </tr>
+
+                <!-- Row 2 -->
+                <tr class="task-row" onclick="showTaskDetail(this)">
+                    <td class="task-name">Quản lý F&B</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-2">
+                            <span class="employee-tag">
+                                Phạm Xuân Thương
+                                <span class="remove-tag" onclick="event.stopPropagation(); removeEmployee(this)">×</span>
+                            </span>
+                            <button class="add-employee-btn" onclick="event.stopPropagation(); addEmployee(this)">+ Thêm</button>
+                        </div>
+                    </td>
+                    <td><input type="number" value="1" class="quantity-input" onclick="event.stopPropagation()"></td>
+                    <td><span class="shift-badge fullday">Cả ngày</span></td>
+                    <td class="time-cell">08:00 - 20:00</td>
+                    <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
+                    <td class="note-cell">Giám sát nhà hàng và bar</td>
+                    <td style="display:none;" class="task-department">Quản lý & Vận hành</td>
+                    <td style="display:none;" class="task-description">Giám sát toàn bộ hoạt động của nhà hàng và bar, đảm bảo chất lượng dịch vụ và thực phẩm.</td>
+                </tr>
+
+                <!-- Row 3 -->
+                <tr class="task-row">
+                    <td class="task-name">Nhân viên lễ tân</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-3">
+                            <span class="employee-tag">
+                                Nguyễn Thị Lan
+                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
+                            </span>
+                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
+                        </div>
+                    </td>
+                    <td><input type="number" value="1" class="quantity-input"></td>
+                    <td><span class="shift-badge morning">Sáng</span></td>
+                    <td class="time-cell">06:00 - 14:00</td>
+                    <td><span class="status-badge overdue">❌ Chưa xử lý</span></td>
+                    <td class="note-cell">Check-in/out khách</td>
+                </tr>
+
+                <!-- Row 4 -->
+                <tr class="task-row">
+                    <td class="task-name">Thu ngân</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-4">
+                            <span class="employee-tag">
+                                Yến
+                            </span>
+                        </div>
+                    </td>
+                    <td><input type="number" value="1" class="quantity-input" disabled></td>
+                    <td><span class="shift-badge morning">Sáng</span></td>
+                    <td class="time-cell">08:00 - 16:00</td>
+                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                    <td class="note-cell">Thanh toán và KT/Dịch</td>
+                </tr>
+
+                <!-- Row 5 -->
+                <tr class="task-row highlight-yellow">
+                    <td class="task-name">Nhà hàng - Nhân viên phục vụ</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-5">
+                            <span class="employee-tag">
+                                Ngọc
+                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
+                            </span>
+                            <span class="employee-tag">
+                                Hiền
+                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
+                            </span>
+                            <span class="employee-tag">
+                                Mai
+                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
+                            </span>
+                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
+                        </div>
+                    </td>
+                    <td><input type="number" value="3" class="quantity-input"></td>
+                    <td><span class="shift-badge afternoon">Buổi trưa</span></td>
+                    <td class="time-cell">11:00 - 15:00</td>
+                    <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
+                    <td class="note-cell">Phục vụ bữa trưa buffet</td>
+                </tr>
+
+                <!-- Row 6 -->
+                <tr class="task-row highlight-green">
+                    <td class="task-name">ELITE ROOMS</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-6">
+                            <span class="employee-tag">
+                                Team Housekeeping
+                            </span>
+                        </div>
+                    </td>
+                    <td><input type="number" value="1" class="quantity-input" disabled></td>
+                    <td><span class="shift-badge morning">Sáng</span></td>
+                    <td class="time-cell">06:00 - 10:00</td>
+                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                    <td class="note-cell">Phòng cao cấp dịch vụ</td>
+                </tr>
+
+                <!-- Row 7 -->
+                <tr class="task-row">
+                    <td class="task-name">F&B Morning Service</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-7">
+                            <span class="employee-tag">
+                                Team F&B
+                            </span>
+                        </div>
+                    </td>
+                    <td><input type="number" value="4" class="quantity-input" disabled></td>
+                    <td><span class="shift-badge morning">Sáng</span></td>
+                    <td class="time-cell">11:00 - 15:00</td>
+                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                    <td class="note-cell">Phục vụ buffet sáng - KT%</td>
+                </tr>
+
+                <!-- Row 8 -->
+                <tr class="task-row">
+                    <td class="task-name">Quản lý ca</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-8">
+                            <span class="employee-tag">
+                                Kiên
+                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
+                            </span>
+                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
+                        </div>
+                    </td>
+                    <td><input type="number" value="1" class="quantity-input"></td>
+                    <td><span class="shift-badge fullday">Cả ngày</span></td>
+                    <td class="time-cell">08:00 - 20:00</td>
+                    <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
+                    <td class="note-cell">Giám sát toàn bộ hoạt động</td>
+                </tr>
+
+                <!-- Row 9 -->
+                <tr class="task-row">
+                    <td class="task-name">Thu ngân phụ</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" id="employees-9">
+                            <span class="employee-tag">
+                                Yến
+                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
+                            </span>
+                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
+                        </div>
+                    </td>
+                    <td><input type="number" value="1" class="quantity-input"></td>
+                    <td><span class="shift-badge evening">Chiều</span></td>
+                    <td class="time-cell">14:00 - 22:00</td>
+                    <td><span class="status-badge overdue">❌ Chưa xử lý</span></td>
+                    <td class="note-cell">Hỗ trợ thanh toán buổi tối</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal thêm công việc -->
+<div id="addTaskModal" class="modal">
+    <div class="modal-content-new">
+        <div class="modal-header-new">
+            <h2>Tạo công việc mới</h2>
+            <span class="close" onclick="closeAddTaskModal()">&times;</span>
+        </div>
+        <div class="modal-body-new">
+            <div class="form-row-new">
+                <div class="form-group-new">
+                    <label>Vị trí / Công việc</label>
+                    <input type="text" id="taskName" placeholder="Nhập tên công việc">
+                </div>
+                <div class="form-group-new">
+                    <label>Số lượng</label>
+                    <input type="number" id="taskQuantity" value="1" placeholder="Nhập số lượng">
+                </div>
+            </div>
+            
+            <div class="form-group-new full-width">
+                <label>Nhân viên</label>
+                <div class="employee-tags-modal" id="modalEmployees">
+                    <button class="add-employee-btn-modal" onclick="addEmployeeToModal()">+</button>
+                </div>
+            </div>
+            
+            <div class="form-group-new full-width">
+                <label>Ca làm việc</label>
+                <div class="shift-buttons" id="shiftButtons">
+                    <button type="button" class="shift-btn active" data-shift="Sáng">Sáng</button>
+                    <button type="button" class="shift-btn" data-shift="Chiều">Chiều</button>
+                    <button type="button" class="shift-btn" data-shift="Tối">Tối</button>
+                    <button type="button" class="shift-btn" data-shift="Cả ngày">Cả ngày</button>
+                </div>
+            </div>
+            
+            <div class="form-group-new full-width">
+                <label>Thời gian làm việc</label>
+                <div class="time-picker-row">
+                    <div class="time-input-wrapper">
+                        <input type="time" id="taskStartTime" value="08:00">
+                        <span class="time-icon">🕐</span>
+                    </div>
+                    <span class="time-separator">đến</span>
+                    <div class="time-input-wrapper">
+                        <input type="time" id="taskEndTime" value="16:00">
+                        <span class="time-icon">🕐</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group-new full-width">
+                <label>Ghi chú</label>
+                <textarea id="taskNote" rows="3" placeholder="Nhập chi tiết yêu cầu công việc..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer-new">
+            <button class="btn-cancel-new" onclick="closeAddTaskModal()">Hủy</button>
+            <button class="btn-submit-new" onclick="addNewTask()">Lưu công việc</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chi tiết công việc -->
+<div id="taskDetailModal" class="modal">
+    <div class="modal-content-detail">
+        <div class="modal-header-detail">
+            <div class="header-tabs">
+                <button class="tab-btn active">THÔNG TIN CHUNG</button>
+                <button class="tab-btn">ID: JOB-10482</button>
+            </div>
+            <span class="close" onclick="closeTaskDetailModal()">&times;</span>
+        </div>
+        <div class="modal-body-detail">
+            <h2 id="detailTaskName">Chi tiết công việc</h2>
+            <h3 id="detailTaskTitle" class="task-subtitle">Tài sản Core</h3>
+            
+            <div class="detail-section">
+                <h4>MÔ TẢ CÔNG VIỆC</h4>
+                <p id="detailDescription">Kiểm tra và bảo trì tất cả tài sản cơ bản của khách sạn...</p>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-col">
+                    <h4>NHÂN VIÊN ĐƯỢC PHÂN CÔNG</h4>
+                    <div class="employee-list-detail" id="detailEmployees">
+                        <div class="employee-item-detail">
+                            <div class="employee-avatar">NA</div>
+                            <div class="employee-info-detail">
+                                <strong>Nguyễn Văn An</strong>
+                                <span>Đang thực hiện công việc</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-col">
+                    <h4>PHÒNG BAN</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">👥</span>
+                        <span id="detailDepartment">Quản lý & Vận hành</span>
+                    </div>
+                    
+                    <h4 style="margin-top: 20px;">CA LÀM VIỆC & THỜI GIAN</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">⏰</span>
+                        <span id="detailShiftTime">Ca Sáng<br>06:00 AM — 02:00 PM</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>GHI CHÚ TỪ GIÁM SÁT</h4>
+                <div class="note-box" id="detailNote">
+                    "Cần ưu tiên kiểm tra hệ thống thang máy và các thiết bị điện trong tầng hầm"
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer-detail">
+            <button class="btn-edit" id="btnEdit" onclick="toggleEditMode()">Chỉnh sửa công việc</button>
+            <button class="btn-delete" onclick="deleteTask()">Xóa công việc</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'js/work_management.js' %}"></script>
+{% endblock %}

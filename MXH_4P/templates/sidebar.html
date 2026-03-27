@@ -1,0 +1,63 @@
+{% load static %}
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="{% static 'img/logo.webp' %}" alt="FourPoint Hotel" class="sidebar-logo-img">
+    <span>FourPoints Hotel</span>
+  </div>
+  
+  <div class="sidebar-user" onclick="window.location.href='/profile/'" style="cursor: pointer;">
+    <div class="sidebar-avatar">{{ request.user.first_name.0|upper }}{{ request.user.last_name.0|upper }}</div>
+    <div class="sidebar-user-info">
+      <h4>{{ request.user.get_full_name }}</h4>
+      <span class="sidebar-badge">{{ request.user.get_role_display|upper }}</span>
+    </div>
+  </div>
+  
+  <div class="nav-section-label">MENU CHÍNH</div>
+  <div class="nav-item {% if request.path == '/' or request.path == '/home/' %}active{% endif %}" onclick="window.location.href='/'">
+    <span class="nav-icon">🏠</span> Trang chủ
+  </div>
+  <div class="nav-item {% if 'messaging' in request.path %}active{% endif %}" onclick="window.location.href='/messaging/'">
+    <span class="nav-icon">💬</span> Tin nhắn <span class="nav-badge">8</span>
+  </div>
+  
+  <div class="nav-section-label">QUẢN LÝ CÔNG VIỆC</div>
+  {% if request.user.role == 'quanly' %}
+  <div class="nav-item {% if 'work-management' in request.path %}active{% endif %}" onclick="window.location.href='/work-management/'">
+    <span class="nav-icon">📋</span> Quản lý công việc
+  </div>
+  {% endif %}
+  <div class="nav-item {% if 'employee-dashboard' in request.path %}active{% endif %}" onclick="window.location.href='/employee-dashboard/'">
+    <span class="nav-icon">📝</span> Công việc cá nhân
+  </div>
+  {% if request.user.role == 'quanly' %}
+  <div class="nav-item {% if 'work_schedules_management' in request.path %}active{% endif %}" onclick="window.location.href='/work_schedules_management/'">
+    <span class="nav-icon">📅</span> Lịch làm
+  </div>
+  {% else %}
+  <div class="nav-item {% if 'employee_work_schedules' in request.path %}active{% endif %}" onclick="window.location.href='/employee_work_schedules/'">
+    <span class="nav-icon">📅</span> Lịch làm của tôi
+  </div>
+  {% endif %}
+  
+  <div class="nav-section-label">CỘNG ĐỒNG</div>
+  <div class="nav-item {% if 'nhom' in request.path %}active{% endif %}" onclick="window.location.href='/nhom/'">
+    <span class="nav-icon">👥</span> Quản lý nhóm
+  </div>
+  
+  {% if request.user.role == 'quanly' %}
+  <div class="nav-section-label">BÁO CÁO</div>
+  <div class="nav-item {% if 'baocao/tuongtac' in request.path %}active{% endif %}" onclick="window.location.href='/baocao/tuongtac/'">
+    <span class="nav-icon">📊</span> Báo cáo tương tác
+  </div>
+  <div class="nav-item {% if 'baocao/congviec' in request.path %}active{% endif %}" onclick="window.location.href='/baocao/congviec/'">
+    <span class="nav-icon">📈</span> Báo cáo công việc
+  </div>
+  {% endif %}
+  
+  <div class="nav-section-label">CÀI ĐẶT</div>
+  <div class="nav-item {% if 'account' in request.path %}active{% endif %}" onclick="window.location.href='/account/'">
+    <span class="nav-icon">⚙️</span> Cài đặt hệ thống
+  </div>
+</aside>

@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tất cả nhiệm vụ - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/works_management/all_tasks.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="all-tasks-page">
+    <!-- Header -->
+        <div class="tasks-header">
+            <div class="header-left">
+                <button class="btn-back" onclick="window.location.href='/employee-dashboard/'">
+                    ← Quay lại
+                </button>
+                <div class="header-title">
+                    <span class="header-icon">📋</span>
+                            <div>
+                                <h1>Tất cả nhiệm vụ</h1>
+                                <p class="header-subtitle">Thứ Năm, 05/02/2026 • Ca Sáng (06:00 - 14:00)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <div class="filter-tabs">
+                            <button class="filter-tab active" onclick="filterTasks('all')">Tất cả (8)</button>
+                            <button class="filter-tab" onclick="filterTasks('pending')">Đang thực hiện (5)</button>
+                            <button class="filter-tab" onclick="filterTasks('completed')">Đã xong (3)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <div class="stat-value">8</div>
+                            <div class="stat-label">Tổng nhiệm vụ</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏰</div>
+                        <div class="stat-info">
+                            <div class="stat-value">5</div>
+                            <div class="stat-label">Đang thực hiện</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <div class="stat-value">3</div>
+                            <div class="stat-label">Đã hoàn thành</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-info">
+                            <div class="stat-value">62%</div>
+                            <div class="stat-label">Tiến độ</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks List -->
+                <div class="tasks-container">
+                    <!-- Task 1 -->
+                    <div class="task-card" data-status="pending">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">🍹</div>
+                                <div class="task-card-info">
+                                    <h3>Phục vụ tại Bar</h3>
+                                    <p>Khu vực Lounge</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge pending">⏰ Đang thực hiện</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">08:00 - 11:00</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư, Nguyễn Văn A</span>
+                            </div>
+                            <div class="task-description">
+                                Chuẩn bị quầy bar, phục vụ đồ uống cho khách tại sảnh và khu vực Lounge. Đảm bảo vệ sinh và trưng bày đẹp mắt.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Phục vụ tại Bar')">Chi tiết</button>
+                            <button class="btn-task report" onclick="reportTask('Phục vụ tại Bar')">Báo cáo hoàn thành</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 2 -->
+                    <div class="task-card" data-status="pending">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">📦</div>
+                                <div class="task-card-info">
+                                    <h3>Kiểm tra kho</h3>
+                                    <p>Khu Nguyễn Hải An</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge pending">⏰ Đang thực hiện</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">12:00 - 11:45</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư</span>
+                            </div>
+                            <div class="task-description">
+                                Kiểm tra số lượng hàng hóa trong kho, cập nhật danh sách thiếu hụt và báo cáo cho quản lý.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Kiểm tra kho')">Chi tiết</button>
+                            <button class="btn-task report" onclick="reportTask('Kiểm tra kho')">Báo cáo hoàn thành</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 3 - Completed -->
+                    <div class="task-card completed" data-status="completed">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">🧹</div>
+                                <div class="task-card-info">
+                                    <h3>Vệ sinh công cụ</h3>
+                                    <p>Nhà hàng tầng 1</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge completed">✅ Đã hoàn thành</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">07:00 - 07:45</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư</span>
+                            </div>
+                            <div class="task-description">
+                                Vệ sinh và sắp xếp lại các dụng cụ làm việc tại khu vực nhà hàng.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Vệ sinh công cụ')">Chi tiết</button>
+                            <button class="btn-task done">Đã xong</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 4 -->
+                    <div class="task-card" data-status="pending">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">🍽️</div>
+                                <div class="task-card-info">
+                                    <h3>Chuẩn bị bàn ăn</h3>
+                                    <p>Nhà hàng chính</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge pending">⏰ Đang thực hiện</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">10:30 - 11:30</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư, Ngọc, Hiền</span>
+                            </div>
+                            <div class="task-description">
+                                Sắp xếp bàn ghế, bày biện dụng cụ ăn uống cho bữa trưa buffet.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Chuẩn bị bàn ăn')">Chi tiết</button>
+                            <button class="btn-task report" onclick="reportTask('Chuẩn bị bàn ăn')">Báo cáo hoàn thành</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 5 -->
+                    <div class="task-card" data-status="pending">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">🛎️</div>
+                                <div class="task-card-info">
+                                    <h3>Hỗ trợ lễ tân</h3>
+                                    <p>Quầy lễ tân chính</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge pending">⏰ Đang thực hiện</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">09:00 - 10:00</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư</span>
+                            </div>
+                            <div class="task-description">
+                                Hỗ trợ check-in khách và giải đáp thắc mắc tại quầy lễ tân.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Hỗ trợ lễ tân')">Chi tiết</button>
+                            <button class="btn-task report" onclick="reportTask('Hỗ trợ lễ tân')">Báo cáo hoàn thành</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 6 - Completed -->
+                    <div class="task-card completed" data-status="completed">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">☕</div>
+                                <div class="task-card-info">
+                                    <h3>Pha chế đồ uống sáng</h3>
+                                    <p>Khu vực Bar</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge completed">✅ Đã hoàn thành</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">06:30 - 08:00</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư</span>
+                            </div>
+                            <div class="task-description">
+                                Pha chế các loại đồ uống cho bữa sáng buffet.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Pha chế đồ uống sáng')">Chi tiết</button>
+                            <button class="btn-task done">Đã xong</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 7 - Completed -->
+                    <div class="task-card completed" data-status="completed">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">📋</div>
+                                <div class="task-card-info">
+                                    <h3>Kiểm tra thiết bị</h3>
+                                    <p>Khu vực làm việc</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge completed">✅ Đã hoàn thành</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">06:00 - 06:30</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư</span>
+                            </div>
+                            <div class="task-description">
+                                Kiểm tra tình trạng hoạt động của các thiết bị làm việc.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Kiểm tra thiết bị')">Chi tiết</button>
+                            <button class="btn-task done">Đã xong</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 8 -->
+                    <div class="task-card" data-status="pending">
+                        <div class="task-card-header">
+                            <div class="task-card-left">
+                                <div class="task-card-icon">📝</div>
+                                <div class="task-card-info">
+                                    <h3>Báo cáo cuối ca</h3>
+                                    <p>Văn phòng quản lý</p>
+                                </div>
+                            </div>
+                            <span class="task-status-badge pending">⏰ Đang thực hiện</span>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-detail-row">
+                                <span class="detail-icon">🕐</span>
+                                <span class="detail-text">13:30 - 14:00</span>
+                            </div>
+                            <div class="task-detail-row">
+                                <span class="detail-icon">👥</span>
+                                <span class="detail-text">Đoàn Thị Anh Thư</span>
+                            </div>
+                            <div class="task-description">
+                                Tổng hợp và báo cáo các công việc đã thực hiện trong ca làm việc.
+                            </div>
+                        </div>
+                        <div class="task-card-footer">
+                            <button class="btn-task detail" onclick="showTaskDetail('Báo cáo cuối ca')">Chi tiết</button>
+                            <button class="btn-task report" onclick="reportTask('Báo cáo cuối ca')">Báo cáo hoàn thành</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/all_tasks.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+{% block baocao_menu %}
+{% if user.role == "quanly" %}
+<h3 style="margin-top:16px;font-size:11px;color:#95a5a6;letter-spacing:.5px">BÁO CÁO</h3>
+<a href="/baocao/tuongtac/" class="menu-item {% block menu_bc_tt %}{% endblock %}">
+    <span class="icon">&#128202;</span> Báo cáo tương tác
+</a>
+<a href="/baocao/congviec/" class="menu-item {% block menu_bc_cv %}{% endblock %}">
+    <span class="icon">&#128203;</span> Báo cáo công việc
+</a>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/report_management/baocao.css' %}?v=4">
+{% endblock %}
+
+{% block main_class %}full-width{% endblock %}
+{% block content %}
+<div class="bc-page">
+  <h2 class="bc-title">Báo cáo Tương tác</h2>
+  <div class="bc-filter">
+    <div class="bc-filter-head">&#128202; Tiêu chí báo cáo</div>
+    <div class="bc-filter-row">
+      <div class="bc-fg"><label>Từ ngày</label><input type="date" value="2024-01-01"></div>
+      <div class="bc-fg"><label>Đến ngày</label><input type="date" value="2026-06-02"></div>
+      <div class="bc-fg"><label>Bộ phận / Phòng ban</label><select><option>Toàn khách sạn</option><option>Lễ tân</option><option>F&B</option><option>Marketing</option></select></div>
+    </div>
+    <div class="bc-filter-row" style="margin-top:12px">
+      <label style="font-size:13px;font-weight:600;color:#333;margin-right:12px">Loại tương tác</label>
+      <label class="bc-check"><input type="checkbox" checked style="accent-color:#667eea"> <span style="color:#667eea;font-weight:600">Bài viết</span></label>
+      <label class="bc-check"><input type="checkbox" checked style="accent-color:#2ecc71"> <span style="color:#2ecc71;font-weight:600">Bình luận</span></label>
+      <label class="bc-check"><input type="checkbox" checked style="accent-color:#3498db"> <span style="color:#3498db;font-weight:600">Lượt thích</span></label>
+      <label class="bc-check"><input type="checkbox" checked style="accent-color:#9b59b6"> <span style="color:#9b59b6;font-weight:600">Nhóm</span></label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="bc-btn-view">Xem báo cáo</button>
+      <button class="bc-btn-export">Xuất báo cáo</button>
+    </div>
+  </div>
+  <div class="bc-stats">
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#667eea">&#128221;</div><div class="bc-stat-pct" style="color:#2ecc71">+12%</div><div class="bc-stat-label">Bài viết</div><div class="bc-stat-val">1,247</div></div>
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#2ecc71">&#128172;</div><div class="bc-stat-pct" style="color:#2ecc71">+23%</div><div class="bc-stat-label">Bình luận</div><div class="bc-stat-val">3,891</div></div>
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#9b59b6">&#128077;</div><div class="bc-stat-pct" style="color:#2ecc71">+18%</div><div class="bc-stat-label">Lượt thích</div><div class="bc-stat-val">8,524</div></div>
+  </div>
+  <div class="bc-charts">
+    <div class="bc-chart-card">
+      <h3>&#128202; Xu hướng tương tác (7 ngày qua)</h3>
+      <canvas id="chartLine" height="200"></canvas>
+    </div>
+    <div class="bc-chart-card">
+      <h3>&#127825; Phân bố loại tương tác</h3>
+      <canvas id="chartDoughnut" height="200"></canvas>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var labels=["31/01","01/02","02/02","03/02","04/02","05/02","06/02"];
+new Chart(document.getElementById("chartLine"),{type:"line",data:{labels:labels,datasets:[
+  {label:"Bài viết",data:[80,90,85,100,95,88,92],borderColor:"#667eea",tension:.4,fill:false},
+  {label:"Bình luận",data:[150,160,180,200,170,165,175],borderColor:"#2ecc71",tension:.4,fill:false},
+  {label:"Lượt thích",data:[300,320,380,420,400,390,410],borderColor:"#9b59b6",tension:.4,fill:false}
+]},options:{responsive:true,plugins:{legend:{position:"bottom"}}}});
+new Chart(document.getElementById("chartDoughnut"),{type:"doughnut",data:{
+  labels:["Bài viết","Bình luận","Lượt thích","Chia sẻ"],
+  datasets:[{data:[1247,3891,8524,320],backgroundColor:["#667eea","#2ecc71","#9b59b6","#f39c12"]}]
+},options:{responsive:true,plugins:{legend:{position:"bottom"}},cutout:"65%"}});
+</script>
+{% endblock %}

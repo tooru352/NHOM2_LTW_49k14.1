@@ -1,0 +1,315 @@
+/* ===== POSTS PAGE - FourPoint Hotel ===== */
+
+/* ===== POSTS LAYOUT ===== */
+.posts-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 20px;
+  padding: 20px;
+}
+
+/* ===== CENTER FEED ===== */
+.center-feed {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Post Card */
+.post-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.post-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.post-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.post-info {
+  flex: 1;
+}
+
+.post-author {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 2px;
+}
+
+.post-author-badge {
+  display: inline-block;
+  background: #e74c3c;
+  color: white;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+.post-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.post-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+
+.post-content {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.post-image {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  object-fit: cover;
+  max-height: 400px;
+}
+
+.post-reactions {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.reaction-item {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border: 2px solid white;
+  margin-left: -4px;
+}
+
+.reaction-item:first-child {
+  margin-left: 0;
+}
+
+.reaction-count {
+  font-size: 12px;
+  color: #666;
+  margin-left: 6px;
+}
+
+.post-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.post-action-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  color: #555;
+  font-weight: 500;
+}
+
+.post-action-btn:hover {
+  background: #e8e9ef;
+}
+
+.post-action-btn.liked {
+  color: #e74c3c;
+}
+
+/* ===== RIGHT SIDEBAR ===== */
+.right-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.sidebar-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.sidebar-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sidebar-card-icon {
+  font-size: 16px;
+}
+
+.sidebar-card-header h3 {
+  font-size: 14px;
+  color: #1a1a2e;
+  font-weight: 700;
+}
+
+.sidebar-card-header .count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* Lịch hôm nay */
+.schedule-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.schedule-item:last-child {
+  border-bottom: none;
+}
+
+.schedule-time {
+  font-size: 11px;
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.schedule-title {
+  font-size: 13px;
+  color: #1a1a2e;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.schedule-desc {
+  font-size: 11px;
+  color: #888;
+}
+
+/* Nhân viên online */
+.online-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.online-user:hover {
+  background: #f8f9fa;
+}
+
+.online-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.online-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2ecc71;
+  border: 2px solid white;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.online-user-info {
+  flex: 1;
+}
+
+.online-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.online-user-role {
+  font-size: 11px;
+  color: #888;
+}
+
+/* Thông báo tuần này */
+.notification-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #f8f9fa;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  opacity: 0.8;
+}
+
+.notification-icon {
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.notification-text {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.notification-time {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}

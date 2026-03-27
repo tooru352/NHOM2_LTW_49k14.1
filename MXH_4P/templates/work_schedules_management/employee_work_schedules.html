@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lịch Làm Việc - Nhân Viên{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/work_schedules_management/employee_lich_lam.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="employee-schedule-page">
+
+  <div class="page-header">
+    <h1>Lịch Làm Việc Tuần</h1>
+  </div>
+
+  <!-- Status legend -->
+  <div class="status-legend">
+    <span style="font-size:12px;font-weight:600;color:#444">Trạng thái:</span>
+    <div class="status-item"><span class="dot dot-yellow" style="cursor:default"></span> Chờ xác nhận</div>
+    <div class="status-item"><span class="dot dot-green"  style="cursor:default"></span> Đã chấp nhận</div>
+    <div class="status-item"><span class="dot dot-red"    style="cursor:default"></span> Đã từ chối</div>
+    <span style="margin-left:auto;font-size:11px;color:#888">Bấm vào ca của bạn để xác nhận</span>
+  </div>
+
+  <div class="week-selector">
+    <label>Chọn tuần:</label>
+    <div class="week-nav">
+      <button class="week-btn" onclick="changeWeek(-1)">‹ Tuần trước</button>
+      <span class="week-range" id="weekRange"></span>
+      <span class="badge-current" id="badgeCurrent">TUẦN HIỆN TẠI</span>
+      <button class="week-btn" onclick="changeWeek(1)" id="btnNext">Tuần sau ›</button>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-emp">NHÂN VIÊN</th>
+          <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
+          <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
+        </tr>
+      </thead>
+      <tbody id="scheduleBody"></tbody>
+    </table>
+  </div>
+
+  <div class="schedule-footer">
+    <div class="footer-top">
+      <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
+      <div class="shift-totals" id="shiftTotals"></div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
+      <div class="shift-legend">
+        <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
+        <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
+        <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
+        <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
+        <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="overlay" id="fbOverlay" onclick="closeFeedback()"></div>
+<div class="feedback-modal" id="feedbackModal">
+  <div class="fb-header">
+    <button class="fb-close" onclick="closeFeedback()">✕</button>
+    <h3>Phản Hồi Lịch Làm Việc</h3>
+    <p>Vui lòng xác nhận hoặc từ chối ca làm việc</p>
+    <div class="fb-status-badge">
+      <span class="dot dot-yellow" style="cursor:default"></span> Chờ phản hồi
+    </div>
+  </div>
+  <div class="fb-body">
+    <div class="fb-field">
+      <label>Tên nhân viên</label>
+      <div class="fb-input" id="fbEmpName"></div>
+    </div>
+    <div class="fb-field">
+      <label>Ngày làm việc</label>
+      <div class="fb-input" id="fbDate"></div>
+    </div>
+    <div class="fb-field">
+      <label>Ca làm việc</label>
+      <div class="fb-shift-box">
+        <div class="fb-shift-icon" id="fbShiftIcon"></div>
+        <div>
+          <div class="fb-shift-name" id="fbShiftName"></div>
+          <div class="fb-shift-time" id="fbShiftTime"></div>
+        </div>
+      </div>
+    </div>
+    <div class="fb-reason-box">
+      <label>Lý do (nếu từ chối)</label>
+      <small>Vui lòng nhập lý do nếu bạn không thể nhận ca làm việc này.</small>
+      <textarea id="fbReason" maxlength="500"
+        placeholder="Ví dụ: Tôi có lịch khám bệnh vào buổi sáng ngày này..."
+        oninput="document.getElementById('fbCharCount').textContent = this.value.length + ' / 500 ký tự'"></textarea>
+      <div class="fb-reason-footer">
+        <span class="fb-reason-hint">💡 Lý do cần có ít nhất 10 ký tự để gửi từ chối</span>
+        <span class="fb-char-count" id="fbCharCount">0 / 500 ký tự</span>
+      </div>
+    </div>
+    <div class="fb-note">
+      <span class="fb-note-icon">ℹ️</span>
+      <span>Lưu ý: Sau khi xác nhận, bạn sẽ không thể thay đổi quyết định. Nếu có sự cố bất khả kháng, vui lòng liên hệ trực tiếp với quản lý bộ phận để được hỗ trợ.</span>
+    </div>
+  </div>
+  <div class="fb-footer">
+    <button class="btn-fb-reject" onclick="submitFeedback('rejected')">✕ Từ chối</button>
+    <button class="btn-fb-accept" onclick="submitFeedback('accepted')">✓ Đồng ý</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-icon" id="toastIcon">✓</div>
+  <div class="toast-body">
+    <div class="toast-title" id="toastTitle"></div>
+    <div class="toast-desc"  id="toastDesc"></div>
+  </div>
+  <button class="toast-close" onclick="document.getElementById('toast').classList.remove('show')">×</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/employee_work_schedules.js' %}?v=4"></script>
+{% endblock %}

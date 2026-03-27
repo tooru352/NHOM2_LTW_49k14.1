@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quản lý bài viết - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/posts_management/posts.css' %}?v=3">
+{% endblock %}
+
+{% block content %}
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-search-wrap">
+    <span class="search-icon-top">🔍</span>
+    <input type="text" placeholder="Tìm kiếm tin nhắn, nhân viên...">
+  </div>
+  <div class="top-bar-actions">
+    <button class="notif-btn">🔔<span class="notif-dot">5</span></button>
+  </div>
+</div>
+
+<!-- POSTS LAYOUT -->
+<div class="posts-layout">
+  <!-- CENTER FEED -->
+  <div class="center-feed">
+    <!-- Post 1 -->
+    <div class="post-card">
+      <div class="post-header">
+        <div class="post-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">NM</div>
+        <div class="post-info">
+          <div class="post-author">
+            Nguyễn Văn Minh
+            <span class="post-author-badge">Nhân viên</span>
+          </div>
+          <div class="post-time">Hôm nay • 2 giờ trước</div>
+        </div>
+      </div>
+      
+      <div class="post-title">🎉 Thông báo đào tạo kỹ năng check-in mới</div>
+      <div class="post-content">
+        Buổi đào tạo sẽ diễn ra vào 14h chiều nay tại hội trường chính. Vui lòng tập trung đúng giờ để không bỏ lỡ những kỹ năng quan trọng. Xong sẽ có quiz để kiểm tra hiểu biết của mọi người.
+      </div>
+      
+      <div class="post-reactions">
+        <div class="reaction-item" style="background: #e74c3c;">❤️</div>
+        <div class="reaction-item" style="background: #3498db;">👍</div>
+        <div class="reaction-item" style="background: #f39c12;">😊</div>
+        <span class="reaction-count">12 người</span>
+      </div>
+      
+      <div class="post-actions">
+        <button class="post-action-btn">
+          <span>👍</span> Thích
+        </button>
+        <button class="post-action-btn">
+          <span>💬</span> Bình luận
+        </button>
+        <button class="post-action-btn">
+          <span>🔗</span> Chia sẻ
+        </button>
+      </div>
+    </div>
+
+    <!-- Post 2 with Image -->
+    <div class="post-card">
+      <div class="post-header">
+        <div class="post-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">LH</div>
+        <div class="post-info">
+          <div class="post-author">
+            Lê Thị Hương
+            <span class="post-author-badge" style="background: #e74c3c;">QUẢN LÝ</span>
+          </div>
+          <div class="post-time">Hôm nay • 4 giờ trước</div>
+        </div>
+      </div>
+      
+      <div class="post-title">📢 Chúc mừng đã hoàn thành F&B II</div>
+      <div class="post-content">
+        Xin chúc mừng đội ngũ nhà hàng đã hoàn thành xuất sắc buổi tiệc buffet tối qua! Khách hàng rất hài lòng với chất lượng phục vụ và món ăn. Cảm ơn tất cả mọi người đã cố gắng hết mình!
+      </div>
+      
+      <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800" alt="Restaurant" class="post-image">
+      
+      <div class="post-reactions">
+        <div class="reaction-item" style="background: #e74c3c;">❤️</div>
+        <div class="reaction-item" style="background: #3498db;">👍</div>
+        <div class="reaction-item" style="background: #9b59b6;">🎉</div>
+        <span class="reaction-count">24 người</span>
+      </div>
+      
+      <div class="post-actions">
+        <button class="post-action-btn liked">
+          <span>❤️</span> Đã thích
+        </button>
+        <button class="post-action-btn">
+          <span>💬</span> Bình luận
+        </button>
+        <button class="post-action-btn">
+          <span>🔗</span> Chia sẻ
+        </button>
+      </div>
+    </div>
+
+    <!-- Post 3 -->
+    <div class="post-card">
+      <div class="post-header">
+        <div class="post-avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">PT</div>
+        <div class="post-info">
+          <div class="post-author">
+            Phạm Xuân Thương
+            <span class="post-author-badge" style="background: #667eea;">QUẢN LÝ</span>
+          </div>
+          <div class="post-time">Hôm qua • 18:30</div>
+        </div>
+      </div>
+      
+      <div class="post-title">🏨 Thông báo lịch làm tuần sau</div>
+      <div class="post-content">
+        Lịch làm việc tuần sau đã được cập nhật. Mọi người vui lòng kiểm tra lịch cá nhân và xác nhận. Nếu có vấn đề gì cần điều chỉnh, hãy liên hệ với bộ phận nhân sự trước thứ 6 tuần này.
+      </div>
+      
+      <div class="post-reactions">
+        <div class="reaction-item" style="background: #3498db;">👍</div>
+        <span class="reaction-count">8 người</span>
+      </div>
+      
+      <div class="post-actions">
+        <button class="post-action-btn">
+          <span>👍</span> Thích
+        </button>
+        <button class="post-action-btn">
+          <span>💬</span> Bình luận
+        </button>
+        <button class="post-action-btn">
+          <span>🔗</span> Chia sẻ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="right-sidebar">
+    <!-- Lịch hôm nay -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">
+        <span class="sidebar-card-icon">�</span>
+        <h3>Lịch hôm nay</h3>
+      </div>
+      
+      <div class="schedule-item">
+        <div class="schedule-time">08:00 - Họp ban quản lý</div>
+        <div class="schedule-title">Họp đầu tuần</div>
+        <div class="schedule-desc">Phòng họp A</div>
+      </div>
+      
+      <div class="schedule-item">
+        <div class="schedule-time">14:00 - Đào tạo nhân viên</div>
+        <div class="schedule-title">Kỹ năng phục vụ</div>
+        <div class="schedule-desc">Hội trường chính</div>
+      </div>
+      
+      <div class="schedule-item">
+        <div class="schedule-time">18:30 - Review đơn booking</div>
+        <div class="schedule-title">Kiểm tra đặt phòng</div>
+        <div class="schedule-desc">Văn phòng</div>
+      </div>
+    </div>
+
+    <!-- Nhân viên online -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">
+        <span class="sidebar-card-icon">👥</span>
+        <h3>Nhân viên online</h3>
+        <span class="count">(8)</span>
+      </div>
+      
+      <div class="online-user">
+        <div class="online-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          NM
+          <div class="online-dot"></div>
+        </div>
+        <div class="online-user-info">
+          <div class="online-user-name">Nguyễn Văn Minh</div>
+          <div class="online-user-role">Lễ tân</div>
+        </div>
+      </div>
+      
+      <div class="online-user">
+        <div class="online-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          LH
+          <div class="online-dot"></div>
+        </div>
+        <div class="online-user-info">
+          <div class="online-user-name">Lê Thị Hương</div>
+          <div class="online-user-role">Quản lý F&B</div>
+        </div>
+      </div>
+      
+      <div class="online-user">
+        <div class="online-avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          TA
+          <div class="online-dot"></div>
+        </div>
+        <div class="online-user-info">
+          <div class="online-user-name">Trần Anh</div>
+          <div class="online-user-role">Bảo vệ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thông báo tuần này -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">
+        <span class="sidebar-card-icon">🔔</span>
+        <h3>Thông báo tuần này</h3>
+      </div>
+      
+      <div class="notification-item">
+        <span class="notification-icon">📊</span>
+        <div class="notification-text">Báo cáo doanh thu tháng 3 đã sẵn sàng</div>
+        <div class="notification-time">2 giờ trước</div>
+      </div>
+      
+      <div class="notification-item">
+        <span class="notification-icon">🎂</span>
+        <div class="notification-text">Sinh nhật Mai Phương - 25/3</div>
+        <div class="notification-time">Hôm nay</div>
+      </div>
+      
+      <div class="notification-item">
+        <span class="notification-icon">📅</span>
+        <div class="notification-text">Họp đánh giá 85% công việc</div>
+        <div class="notification-time">Ngày mai</div>
+      </div>
+      
+      <div class="notification-item">
+        <span class="notification-icon">🏆</span>
+        <div class="notification-text">Trao giải nhân viên xuất sắc tháng</div>
+        <div class="notification-time">Thứ 6 tuần này</div>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/main.js' %}?v=2"></script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+{% block menu_nhom %}active{% endblock %}
+{% block main_class %}full-width{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/group_management/nhom.css' %}?v=6">
+{% endblock %}
+{% block content %}
+<div class="nn-page" id="nnPage">
+
+  <!-- Banner (se duoc dien bang JS tu sessionStorage) -->
+  <div class="nn-banner" id="nnBanner">
+    <a href="/nhom/" class="nd-back">&#8592; Quay lai</a>
+    <div class="nn-banner-body">
+      <div>
+        <h1 id="nnTen">Nhom moi</h1>
+        <p id="nnMota"></p>
+        <div class="nn-meta">
+          <span class="loai-badge" id="nnBadge"></span>
+          <span>&#128101; <span id="nnSoTV">1</span> thanh vien</span>
+          <span>&#128221; 0 bai viet</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Them thanh vien -->
+  <div class="nn-card" id="sectionTV">
+    <div class="nn-card-head">
+      <h3>&#128101; Them thanh vien vao nhom</h3>
+      <span class="nn-tv-count">Da them: <strong id="tvCount">0</strong> nguoi</span>
+    </div>
+    <div class="nn-add-row">
+      <input type="text" id="tvInput" placeholder="Nhap ten thanh vien..." onkeydown="if(event.key==='Enter')themTV()">
+      <button class="btn-add-tv" onclick="themTV()">+ Them</button>
+    </div>
+    <div id="tvList" class="nn-tv-list"></div>
+    <div class="nn-card-foot">
+      <button class="btn-skip" onclick="boQua()">Bo qua</button>
+      <button class="btn-done" onclick="hoanTat()">Hoan tat &#10003;</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% block extra_js %}
+<script>
+var _colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22'];
+var _tvList  = [];
+
+// Doc du lieu nhom moi tu sessionStorage
+(function() {
+  var raw = sessionStorage.getItem('nhomMoi');
+  if (!raw) { window.location = '/nhom/'; return; }
+  var n = JSON.parse(raw);
+  document.getElementById('nnBanner').style.background = n.gradient;
+  document.getElementById('nnTen').textContent   = n.ten;
+  document.getElementById('nnMota').textContent  = n.mo_ta;
+  var badge = document.getElementById('nnBadge');
+  badge.textContent  = n.loai_label;
+  badge.className    = 'loai-badge ' + n.loai;
+})();
+
+function themTV() {
+  var inp = document.getElementById('tvInput');
+  var ten = inp.value.trim();
+  if (!ten) return;
+  if (_tvList.indexOf(ten) !== -1) { showToast('Da them thanh vien nay roi!', 'error'); return; }
+  _tvList.push(ten);
+
+  var av    = ten.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+  var color = _colors[Math.floor(Math.random() * _colors.length)];
+  var row   = document.createElement('div');
+  row.className   = 'nn-tv-row';
+  row.dataset.ten = ten;
+  row.innerHTML   =
+    '<div class="nn-tv-av" style="background:' + color + '">' + av + '</div>' +
+    '<div class="nn-tv-name">' + ten + '</div>' +
+    '<button class="nn-tv-del" onclick="xoaTV(this)">&#10005;</button>';
+  document.getElementById('tvList').appendChild(row);
+  document.getElementById('tvCount').textContent = _tvList.length;
+  document.getElementById('nnSoTV').textContent  = _tvList.length + 1;
+  inp.value = '';
+  inp.focus();
+}
+
+function xoaTV(btn) {
+  var row = btn.closest('.nn-tv-row');
+  _tvList = _tvList.filter(function(t){ return t !== row.dataset.ten; });
+  row.remove();
+  document.getElementById('tvCount').textContent = _tvList.length;
+  document.getElementById('nnSoTV').textContent  = _tvList.length + 1;
+}
+
+function hoanTat() {
+  showToast('Tao nhom va them thanh vien thanh cong!');
+  sessionStorage.removeItem('nhomMoi');
+  setTimeout(function(){ window.location = '/nhom/'; }, 1500);
+}
+
+function boQua() {
+  sessionStorage.removeItem('nhomMoi');
+  window.location = '/nhom/';
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  var icon = type === 'error' ? '✕' : '✓';
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.innerHTML = '<span class="t-icon">' + icon + '</span>' + msg + '<button class="t-close" onclick="this.parentElement.classList.remove(\'show\')">✕</button>';
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+</script>
+{% endblock %}

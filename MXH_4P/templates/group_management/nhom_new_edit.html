@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load static %}
+{% block menu_nhom %}active{% endblock %}
+{% block main_class %}full-width{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/group_management/nhom.css' %}?v=6">
+{% endblock %}
+{% block content %}
+<div class="ne-page">
+  <div class="ne-breadcrumb"><a href="/nhom/">Nhóm</a> › Tạo nhóm mới</div>
+  <h2 class="ne-title">Tạo Nhóm Mới</h2>
+  <p class="ne-sub">Nhập thông tin để tạo nhóm mới</p>
+  <div class="ne-layout">
+    <div class="ne-left">
+      <div class="ne-card">
+        <h3>Thông tin cơ bản</h3>
+        <div class="ne-fg">
+          <label>Tên nhóm <span style="color:#e74c3c">*</span></label>
+          <input type="text" id="inp-ten" placeholder="Tên nhóm...">
+          <small>Tên nhóm phải rõ ràng và dễ hiểu.</small>
+        </div>
+        <div class="ne-fg">
+          <label>Mô tả của nhóm</label>
+          <textarea id="inp-mota" placeholder="Mô tả về nhóm..."></textarea>
+          <small>Mô tả giúp mọi người hiểu mục đích của nhóm.</small>
+        </div>
+      </div>
+      <div class="ne-card">
+        <h3>⚙️ Cài đặt quyền riêng tư</h3>
+        <div class="ne-priv-row">
+          <label class="ne-priv sel" id="priv-congkhai" onclick="chonLoai('congkhai',this)">
+            <input type="radio" name="loai" value="congkhai" checked>
+            <div><strong>&#127760; Công khai</strong><span>Mọi người đều xem và tham gia.</span></div>
+          </label>
+          <label class="ne-priv" id="priv-riengtu" onclick="chonLoai('riengtu',this)">
+            <input type="radio" name="loai" value="riengtu">
+            <div><strong>&#128274; Riêng tư</strong><span>Chỉ thành viên mới xem được.</span></div>
+          </label>
+        </div>
+      </div>
+      <div class="ne-card">
+        <h3>Quản lý thành viên</h3>
+        <div class="ne-tv-wrap">
+          <div class="ne-tv-top">
+            <input type="text" id="tvSearch" placeholder="Tìm kiếm thành viên..." oninput="onTVInput()" autocomplete="off">
+            <button class="ne-btn-add" onclick="themTV()">+ Thêm</button>
+          </div>
+          <div id="suggestBox" class="ne-suggest"></div>
+        </div>
+        <p class="ne-tv-count">Thành viên hiện tại (<strong id="tvCount">1</strong>)</p>
+        <div id="tvList">
+          <div class="ne-tv-row" data-ten="Phạm Xuân Thương">
+            <div class="ne-tv-av" style="background:#3498db">PT</div>
+            <div class="ne-tv-info"><strong>Phạm Xuân Thương</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ne-right">
+      <div class="ne-card ne-sidebar">
+        <h3>Thông tin nhóm</h3>
+        <div class="ne-si-row"><span>Trạng thái</span><span class="loai-badge congkhai" id="badgeLoai">Công khai</span></div>
+        <div class="ne-si-row"><span>Ngày tạo</span><span>25/03/2026</span></div>
+        <div class="ne-si-row"><span>Người tạo</span><span>Quản Trị Viên</span></div>
+        <div class="ne-si-row"><span>Thành viên</span><span id="siTV">1 người</span></div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="ne-btn-save" onclick="taoNhom()" style="flex: 1; margin-bottom: 0;">+ Tạo nhóm</button>
+        <a href="/nhom/" class="ne-btn-huy" style="flex: 1; text-align: center; padding: 10px 20px; background: #95a5a6; color: white; margin-bottom: 0; display: flex; align-items: center; justify-content: center;">Hủy bỏ</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<div class="ov" id="ovXoaTV" onclick="dongOv('ovXoaTV')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 style="color:#e74c3c;margin-bottom:12px">Xóa thành viên</h3>
+    <p style="color:#555;margin-bottom:20px;font-size:14px">Xóa <strong id="xoaTVTen"></strong> khỏi nhóm?</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn-red" onclick="doXoaTV()">Xóa</button>
+      <button class="btn-gray" onclick="dongOv('ovXoaTV')">Hủy</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var ALL_USERS = [
+  {ten:"Phạm Xuân Thương", av:"PT", color:"#3498db"},
+  {ten:"Nguyễn Hải An",      av:"NA", color:"#e74c3c"},
+  {ten:"Trần Văn Hùng",  av:"TH", color:"#2ecc71"},
+  {ten:"Lê Minh Châu",        av:"LC", color:"#f39c12"},
+  {ten:"Vũ Thị Hà",      av:"VH", color:"#9b59b6"},
+  {ten:"Hoàng Văn Nam",       av:"HN", color:"#1abc9c"},
+  {ten:"Lê Thị Hường", av:"LH", color:"#e67e22"},
+  {ten:"Nguyễn Văn Minh",     av:"NM", color:"#3498db"},
+  {ten:"Trần Thị Mai",        av:"TM", color:"#16a085"},
+  {ten:"Đỗ Quang Minh",       av:"DM", color:"#8e44ad"}
+];
+var _xoaTVEl = null;
+
+function onTVInput() {
+  var q = document.getElementById("tvSearch").value.trim().toLowerCase();
+  var box = document.getElementById("suggestBox");
+  if (!q) { box.classList.remove("show"); box.innerHTML = ""; return; }
+  var daCo = [];
+  document.querySelectorAll(".ne-tv-row").forEach(function(r) {
+    daCo.push(r.dataset.ten.toLowerCase());
+  });
+  var hits = ALL_USERS.filter(function(u) {
+    return u.ten.toLowerCase().indexOf(q) !== -1 && daCo.indexOf(u.ten.toLowerCase()) === -1;
+  });
+  if (!hits.length) { box.classList.remove("show"); box.innerHTML = ""; return; }
+  var html = "";
+  hits.forEach(function(u) {
+    html += "<div class=\"ne-sug-item\" onclick=\"chonTV(this)\" data-ten=\"" + u.ten + "\" data-av=\"" + u.av + "\" data-color=\"" + u.color + "\">";
+    html += "<div class=\"ne-sug-av\" style=\"background:" + u.color + "\">" + u.av + "</div>";
+    html += u.ten + "</div>";
+  });
+  box.innerHTML = html;
+  box.classList.add("show");
+}
+
+function chonTV(el) {
+  document.getElementById("tvSearch").value = el.dataset.ten;
+  document.getElementById("suggestBox").classList.remove("show");
+  document.getElementById("suggestBox").innerHTML = "";
+}
+
+function themTV() {
+  var inp = document.getElementById("tvSearch");
+  var ten = inp.value.trim();
+  if (!ten) return;
+  var exists = false;
+  document.querySelectorAll(".ne-tv-row").forEach(function(r) {
+    if (r.dataset.ten.toLowerCase() === ten.toLowerCase()) exists = true;
+  });
+  if (exists) return;
+  var found = null;
+  ALL_USERS.forEach(function(u) {
+    if (u.ten.toLowerCase() === ten.toLowerCase()) found = u;
+  });
+  var av    = found ? found.av    : ten.split(" ").map(function(w){return w[0]||"";}).slice(0,2).join("").toUpperCase();
+  var color = found ? found.color : "#667eea";
+  var row = document.createElement("div");
+  row.className = "ne-tv-row";
+  row.dataset.ten = ten;
+  row.innerHTML = "<div class=\"ne-tv-av\" style=\"background:" + color + "\">" + av + "</div>"
+    + "<div class=\"ne-tv-info\">" + ten + "</div>"
+    + "<button class=\"ne-tv-del\" onclick=\"xoaTV(this)\">&#10005;</button>";
+  var list = document.getElementById("tvList");
+  list.insertBefore(row, list.firstChild);
+  inp.value = "";
+  document.getElementById("suggestBox").classList.remove("show");
+  document.getElementById("suggestBox").innerHTML = "";
+  capNhat();
+}
+
+function xoaTV(btn) {
+  _xoaTVEl = btn.closest(".ne-tv-row");
+  document.getElementById("xoaTVTen").textContent = _xoaTVEl.dataset.ten;
+  document.getElementById("ovXoaTV").classList.add("show");
+}
+function dongOv(id) { document.getElementById(id).classList.remove("show"); }
+function doXoaTV() {
+  if (_xoaTVEl) _xoaTVEl.remove();
+  capNhat();
+  dongOv("ovXoaTV");
+}
+
+function capNhat() {
+  var cnt = document.getElementById("tvList").querySelectorAll(".ne-tv-row").length;
+  document.getElementById("tvCount").textContent = cnt;
+  document.getElementById("siTV").textContent = cnt + " người";
+}
+
+function chonLoai(loai, el) {
+  document.querySelectorAll(".ne-priv").forEach(function(e) { e.classList.remove("sel"); });
+  el.classList.add("sel");
+  el.querySelector("input").checked = true;
+  var badge = document.getElementById("badgeLoai");
+  badge.textContent = loai === "congkhai" ? "Công khai" : "Riêng tư";
+  badge.className = "loai-badge " + loai;
+}
+
+function taoNhom() {
+  var ten  = document.getElementById("inp-ten").value.trim();
+  var mota = document.getElementById("inp-mota").value.trim();
+  if (!ten) { showToast("Vui lòng nhập tên nhóm!", "error"); return; }
+  var loai = document.querySelector('input[name="loai"]:checked').value;
+  var grads = ["linear-gradient(135deg,#667eea,#764ba2)","linear-gradient(135deg,#f093fb,#f5576c)","linear-gradient(135deg,#43e97b,#38f9d7)","linear-gradient(135deg,#fa8231,#f7b731)","linear-gradient(135deg,#4facfe,#00f2fe)"];
+  var tvList = [];
+  document.querySelectorAll(".ne-tv-row").forEach(function(r) {
+    var av = r.querySelector(".ne-tv-av") ? r.querySelector(".ne-tv-av").textContent : "";
+    var bg = r.querySelector(".ne-tv-av") ? r.querySelector(".ne-tv-av").style.background : "#667eea";
+    tvList.push({ten: r.dataset.ten, av: av, color: bg});
+  });
+  var data = {
+    ten: ten,
+    mo_ta: mota || "Chưa có mô tả",
+    loai: loai,
+    loai_label: loai === "congkhai" ? "Công khai" : "Riêng tư",
+    gradient: grads[Math.floor(Math.random() * grads.length)],
+    so_tv: tvList.length,
+    thanh_vien: tvList
+  };
+  sessionStorage.setItem("nhomMoi", JSON.stringify(data));
+  window.location = "/nhom/";
+}
+
+document.addEventListener("click", function(e) {
+  if (!e.target.closest(".ne-tv-wrap")) {
+    var box = document.getElementById("suggestBox");
+    if (box) { box.classList.remove("show"); box.innerHTML = ""; }
+  }
+});
+function showToast(msg, type) {
+  var t = document.getElementById("toast");
+  var icon = type === "error" ? "✕" : "✓";
+  t.className = "toast" + (type ? " " + type : "");
+  t.innerHTML = '<span class="t-icon">' + icon + '</span>' + msg + '<button class="t-close" onclick="this.parentElement.classList.remove(\'show\')">✕</button>';
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 3000);
+}
+</script>
+{% endblock %}

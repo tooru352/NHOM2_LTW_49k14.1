@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cài đặt hệ thống - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/account_management/account.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<!-- PAGE CONTENT -->
+<div class="account-page">
+  <div class="account-page-inner">
+
+    <div class="page-heading">
+      <h2>Cài đặt hệ thống</h2>
+      <p>Quản lý thông tin cá nhân và cấu hình bảo mật tài khoản.</p>
+    </div>
+
+    <!-- Card: Thông tin cá nhân -->
+    <div class="acc-card">
+      <div class="acc-card-title">👤 Thông tin cá nhân</div>
+      <div class="profile-section">
+        <div class="profile-avatar-col">
+          <div class="profile-avatar" id="avatarCircle">
+            <span id="avatarText">PT</span>
+            <div class="avatar-edit-btn" id="avatarEditBtn" title="Đổi ảnh đại diện">✏️</div>
+          </div>
+          <input type="file" id="avatarInput" accept="image/jpeg,image/png" style="display:none">
+          <div class="avatar-hint">Định dạng JPG hoặc PNG. Tối đa 2MB</div>
+        </div>
+        <div class="profile-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Họ và tên</label>
+              <input type="text" id="fullName" value="Phạm Xuân Thương">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="email" value="thuong.px@fourpoint.com">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Số điện thoại</label>
+              <input type="tel" id="phone" value="+84 987 654 321">
+            </div>
+            <div class="form-group">
+              <label>Bộ phận</label>
+              <input type="text" id="department" value="Quản lý Food & Beverage">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full">
+              <label>Giới thiệu ngắn</label>
+              <textarea rows="3" id="bio">Chuyên gia quản lý vận hành F&B với hơn 5 năm kinh nghiệm trong ngành khách sạn cao cấp.</textarea>
+            </div>
+          </div>
+          <div class="form-footer">
+            <button class="btn-save" id="btnSaveProfile">Lưu thay đổi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row: Thông báo + Bảo mật -->
+    <div class="acc-row-2">
+
+      <!-- Card: Thông báo -->
+      <div class="acc-card">
+        <div class="acc-card-title">🔔 Thông báo</div>
+        <div class="notif-list">
+          <div class="notif-item">
+            <div class="notif-item-info">
+              <div class="notif-item-title">Thông báo qua Email</div>
+              <div class="notif-item-desc">Nhận báo cáo ngày & cập nhật mới</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="notifEmail"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="notif-item">
+            <div class="notif-item-info">
+              <div class="notif-item-title">Thông báo đẩy (Push)</div>
+              <div class="notif-item-desc">Thông báo trực tiếp trên trình duyệt</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="notifPush"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="notif-item">
+            <div class="notif-item-info">
+              <div class="notif-item-title">Lịch làm việc</div>
+              <div class="notif-item-desc">Nhắc nhở ca làm & sự kiện sắp tới</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="notifSchedule"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card: Bảo mật & Đăng nhập -->
+      <div class="acc-card">
+        <div class="acc-card-title">🔒 Bảo mật & Đăng nhập</div>
+        <div class="security-list">
+          <div class="security-item" id="btnChangePassword">
+            <div class="security-item-left">
+              <div class="sec-icon" style="background:#fff8f0;">🔑</div>
+              <div>
+                <div class="security-item-title">Thay đổi mật khẩu</div>
+                <div class="security-item-desc">Cập nhật mật khẩu định kỳ</div>
+              </div>
+            </div>
+            <span class="sec-arrow">›</span>
+          </div>
+          <div class="security-item" id="btnToggle2FA">
+            <div class="security-item-left">
+              <div class="sec-icon" style="background:#f0fff4;">🛡️</div>
+              <div>
+                <div class="security-item-title">Xác thực 2 yếu tố (2FA)</div>
+                <div class="security-item-desc sec-green" id="twoFAStatus">Đang bật · Bảo mật cao</div>
+              </div>
+            </div>
+            <span class="sec-arrow">›</span>
+          </div>
+          <div class="security-item danger-item" id="btnCheckDevice">
+            <div class="security-item-left">
+              <div class="sec-icon" style="background:#fff5f5;">⚠️</div>
+              <div>
+                <div class="security-item-title">Thiết bị lạ đang đăng nhập</div>
+                <div class="security-item-desc">Một phiên đăng nhập mới từ Chrome đã kết nối, nếu không được phép.</div>
+                <div class="sec-check-now">KIỂM TRA NGAY</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Card: Ngôn ngữ & Khu vực -->
+    <div class="acc-card">
+      <div class="acc-card-title">🌐 Ngôn ngữ & Khu vực</div>
+      <div class="locale-row">
+        <div class="form-group">
+          <label>Ngôn ngữ hiển thị</label>
+          <select id="langSelect">
+            <option selected>Tiếng Việt</option>
+            <option>English</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Múi giờ</label>
+          <select id="tzSelect">
+            <option selected>(GMT+07:00) Hanoi</option>
+            <option>(GMT+00:00) UTC</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Định dạng ngày</label>
+          <select id="dateFormatSelect">
+            <option selected>DD/MM/YYYY</option>
+            <option>MM/DD/YYYY</option>
+            <option>YYYY-MM-DD</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-footer" style="margin-top:16px;">
+        <button class="btn-save" id="btnSaveLocale">Lưu thay đổi</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: Đổi mật khẩu -->
+<div class="acc-modal-overlay" id="modalChangePassword">
+  <div class="acc-modal-box">
+    <div class="acc-modal-header">
+      <div class="acc-modal-icon">🔑</div>
+      <div>
+        <div class="acc-modal-title">Thay đổi mật khẩu</div>
+        <div class="acc-modal-sub">Cập nhật mật khẩu định kỳ để bảo mật tài khoản</div>
+      </div>
+      <button class="acc-modal-close" id="closeModalPw">✕</button>
+    </div>
+    <div class="acc-modal-body">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Mật khẩu hiện tại</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="oldPassword" placeholder="Nhập mật khẩu hiện tại">
+          <button class="pw-toggle" data-target="oldPassword">👁</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Mật khẩu mới</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="newPassword" placeholder="Ít nhất 8 ký tự">
+          <button class="pw-toggle" data-target="newPassword">👁</button>
+        </div>
+        <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
+        <div class="pw-strength-label" id="pwStrengthLabel"></div>
+      </div>
+      <div class="form-group">
+        <label>Xác nhận mật khẩu mới</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="confirmPassword" placeholder="Nhập lại mật khẩu mới">
+          <button class="pw-toggle" data-target="confirmPassword">👁</button>
+        </div>
+      </div>
+      <div class="acc-modal-error" id="pwError"></div>
+    </div>
+    <div class="acc-modal-footer">
+      <button class="btn-cancel" id="cancelModalPw">Hủy</button>
+      <button class="btn-save" id="btnSubmitPw">Đổi mật khẩu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: 2FA -->
+<div class="acc-modal-overlay" id="modal2FA">
+  <div class="acc-modal-box">
+    <div class="acc-modal-header">
+      <div class="acc-modal-icon">🛡️</div>
+      <div>
+        <div class="acc-modal-title">Xác thực 2 yếu tố</div>
+        <div class="acc-modal-sub">Tăng cường bảo mật cho tài khoản của bạn</div>
+      </div>
+      <button class="acc-modal-close" id="closeModal2FA">✕</button>
+    </div>
+    <div class="acc-modal-body">
+      <div class="twofa-status-box" id="twofaStatusBox">
+        <div class="twofa-status-icon">🛡️</div>
+        <div class="twofa-status-text" id="twofaStatusText">2FA đang được bật. Tài khoản của bạn được bảo vệ tốt hơn.</div>
+      </div>
+      <div class="twofa-actions">
+        <button class="btn-twofa-toggle" id="btnToggle2FAAction">Tắt 2FA</button>
+      </div>
+    </div>
+    <div class="acc-modal-footer">
+      <button class="btn-cancel" id="closeModal2FAFooter">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Thiết bị lạ -->
+<div class="acc-modal-overlay" id="modalDevice">
+  <div class="acc-modal-box">
+    <div class="acc-modal-header">
+      <div class="acc-modal-icon" style="background:#fff5f5;">⚠️</div>
+      <div>
+        <div class="acc-modal-title">Thiết bị lạ đang đăng nhập</div>
+        <div class="acc-modal-sub">Kiểm tra và xử lý phiên đăng nhập đáng ngờ</div>
+      </div>
+      <button class="acc-modal-close" id="closeModalDevice">✕</button>
+    </div>
+    <div class="acc-modal-body">
+      <div class="device-item danger-device">
+        <div class="device-icon">💻</div>
+        <div class="device-info">
+          <div class="device-name">Chrome · Danang, Vietnam</div>
+          <div class="device-time">Hôm qua lúc 3:00 sáng · IP 103.xx.xx.xx</div>
+        </div>
+        <button class="btn-revoke" id="btnRevokeDevice">Đăng xuất</button>
+      </div>
+      <div class="device-item">
+        <div class="device-icon">📱</div>
+        <div class="device-info">
+          <div class="device-name">Safari · iPhone · Hà Nội</div>
+          <div class="device-time">Hiện tại · Thiết bị này</div>
+        </div>
+        <span class="device-current">Hiện tại</span>
+      </div>
+    </div>
+    <div class="acc-modal-footer">
+      <button class="btn-cancel" id="closeModalDeviceFooter">Đóng</button>
+      <button class="btn-save btn-danger" id="btnRevokeAll">Đăng xuất tất cả thiết bị khác</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="acc-toast" id="accToast">
+  <span class="acc-toast-icon" id="accToastIcon">✅</span>
+  <span id="accToastMsg">Đã lưu thành công</span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/account.js' %}?v=4"></script>
+{% endblock %}

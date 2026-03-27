@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Trang cá nhân - Phạm Xuân Thương{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile_management/profile.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+  <!-- COVER + AVATAR -->
+  <div class="profile-cover">
+    <div class="cover-bg"></div>
+    <div class="profile-identity">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">PT</div>
+        <button class="avatar-edit-btn" title="Đổi ảnh">📷</button>
+      </div>
+      <div class="profile-name-wrap">
+        <h1 class="profile-name">Phạm Xuân Thương</h1>
+        <span class="profile-username">@xuanthuong</span>
+        <div class="profile-role-badge">Quản lý</div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn-edit-profile" id="editProfileBtn">✏️ Chỉnh sửa trang cá nhân</button>
+        <button class="btn-logout" id="logoutBtn">🚪 Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="profile-tabs">
+    <button class="profile-tab active" data-tab="info">Thông tin</button>
+    <button class="profile-tab" data-tab="posts">Bài viết</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="profile-content">
+
+    <!-- TAB: THÔNG TIN -->
+    <div class="tab-panel active" id="tab-info">
+      <div class="info-grid">
+
+        <!-- Thông tin cá nhân -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <h3>👤 Thông tin cá nhân</h3>
+            <button class="info-edit-btn" data-section="personal">✏️</button>
+          </div>
+          <div class="info-rows" id="personalInfo">
+            <div class="info-row"><span class="info-label">Họ và tên</span><span class="info-value">Phạm Xuân Thương</span></div>
+            <div class="info-row"><span class="info-label">Ngày sinh</span><span class="info-value">15/03/1990</span></div>
+            <div class="info-row"><span class="info-label">Giới tính</span><span class="info-value">Nam</span></div>
+            <div class="info-row"><span class="info-label">Số điện thoại</span><span class="info-value">0901 234 567</span></div>
+            <div class="info-row"><span class="info-label">Email</span><span class="info-value">xuanthuong@fourpoint.vn</span></div>
+            <div class="info-row"><span class="info-label">Địa chỉ</span><span class="info-value">123 Nguyễn Huệ, Q.1, TP.HCM</span></div>
+          </div>
+        </div>
+
+        <!-- Thông tin công việc -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <h3>💼 Thông tin công việc</h3>
+            <button class="info-edit-btn" data-section="work">✏️</button>
+          </div>
+          <div class="info-rows" id="workInfo">
+            <div class="info-row"><span class="info-label">Chức vụ</span><span class="info-value">Quản lý</span></div>
+            <div class="info-row"><span class="info-label">Bộ phận</span><span class="info-value">Ban Quản lý</span></div>
+            <div class="info-row"><span class="info-label">Ngày vào làm</span><span class="info-value">01/06/2018</span></div>
+            <div class="info-row"><span class="info-label">Mã nhân viên</span><span class="info-value">FP-2018-001</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB: BÀI VIẾT -->
+    <div class="tab-panel" id="tab-posts">
+      <!-- Ô đăng bài mới -->
+      <div class="create-post-box">
+        <div class="create-post-top">
+          <div class="post-avatar">PT</div>
+          <input type="text" class="create-post-input" id="newPostInput" placeholder="Hôm nay công việc của bạn thế nào?">
+        </div>
+        <!-- Preview ảnh/video/file -->
+        <div id="attachPreview" style="display:none;padding:8px 0 4px;font-size:13px;color:#667eea;"></div>
+        <div class="create-post-bottom">
+          <div class="create-post-options">
+            <button class="post-option-btn" id="btnPhoto">📷 Ảnh</button>
+            <button class="post-option-btn" id="btnVideo">📹 Video</button>
+            <button class="post-option-btn" id="btnFile">📎 File</button>
+            <!-- Input ẩn -->
+            <input type="file" id="inputPhoto" accept="image/*" style="display:none">
+            <input type="file" id="inputVideo" accept="video/*" style="display:none">
+            <input type="file" id="inputFile" style="display:none">
+          </div>
+          <button class="btn-submit-post" id="submitPostBtn">Đăng bài</button>
+        </div>
+      </div>
+
+      <div class="posts-list" id="profilePostsList">
+        <div class="post-card-profile">
+          <div class="post-card-header">
+            <div class="post-avatar">PT</div>
+            <div>
+              <div class="post-author">Phạm Xuân Thương</div>
+              <div class="post-time-label">2 giờ trước</div>
+            </div>
+          </div>
+          <p class="post-text">Hôm nay khách sạn đón tiếp đoàn khách VIP từ Nhật Bản. Cả đội đã làm việc rất chuyên nghiệp! 🎌</p>
+          <div class="post-card-footer">
+            <span>👍 12</span><span>💬 4</span><span>🔗 Chia sẻ</span>
+          </div>
+        </div>
+        <div class="post-card-profile">
+          <div class="post-card-header">
+            <div class="post-avatar">PT</div>
+            <div>
+              <div class="post-author">Phạm Xuân Thương</div>
+              <div class="post-time-label">Hôm qua</div>
+            </div>
+          </div>
+          <p class="post-text">Thông báo: Họp toàn thể nhân viên vào thứ 6 tuần này lúc 15:00 tại hội trường tầng 3. Mọi người sắp xếp tham dự đầy đủ nhé! 📢</p>
+          <div class="post-card-footer">
+            <span>👍 34</span><span>💬 8</span><span>🔗 Chia sẻ</span>
+          </div>
+        </div>
+      </div><!-- end posts-list -->
+    </div><!-- end tab-posts -->
+
+  </div>
+</div>
+
+<!-- MODAL CHỈNH SỬA -->
+<div class="edit-modal-overlay" id="editModal">
+  <div class="edit-modal-box">
+    <div class="edit-modal-header">
+      <h3>Chỉnh sửa thông tin</h3>
+      <button class="edit-modal-close" id="editModalClose">✕</button>
+    </div>
+    <div class="edit-form">
+      <div class="edit-field">
+        <label>Họ và tên</label>
+        <input type="text" value="Phạm Xuân Thương">
+      </div>
+      <div class="edit-field">
+        <label>Số điện thoại</label>
+        <input type="text" value="0901 234 567">
+      </div>
+      <div class="edit-field">
+        <label>Email</label>
+        <input type="email" value="xuanthuong@fourpoint.vn">
+      </div>
+      <div class="edit-field">
+        <label>Địa chỉ</label>
+        <input type="text" value="123 Nguyễn Huệ, Q.1, TP.HCM">
+      </div>
+      <div class="edit-field">
+        <label>Giới thiệu bản thân</label>
+        <textarea rows="3">Quản lý khách sạn với 6 năm kinh nghiệm tại FourPoint Hotel.</textarea>
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn-cancel" id="editCancelBtn">Hủy</button>
+      <button class="btn-save" id="editSaveBtn">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/profile_management/profile.js' %}?v=5"></script>
+{% endblock %}

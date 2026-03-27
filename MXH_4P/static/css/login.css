@@ -1,0 +1,282 @@
+/* ===== LOGIN PAGE - FourPoints Hotel ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.login-bg {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #b8a9a0 0%, #8b7b74 40%, #6b5c55 70%, #9b8a7a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 44px 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+}
+
+/* Logo */
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.login-logo img {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+/* Title */
+.login-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+}
+
+.login-subtitle {
+  text-align: center;
+  font-size: 13.5px;
+  color: #7c6fa0;
+  margin-bottom: 28px;
+}
+
+/* Error */
+.login-error {
+  background: #fff0f0;
+  border: 1px solid #ffcccc;
+  color: #c0392b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Form */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  background: #f9f9fb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #7c6fa0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(124,111,160,0.12);
+}
+
+/* Password toggle */
+.password-wrap {
+  position: relative;
+}
+
+.password-wrap input {
+  padding-right: 44px;
+}
+
+.toggle-pw {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.toggle-pw:hover { color: #7c6fa0; }
+
+/* Options row */
+.form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  font-size: 13px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #7c6fa0;
+  cursor: pointer;
+}
+
+.forgot-link {
+  color: #7c6fa0;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover { color: #5a4d8a; text-decoration: underline; }
+
+/* Submit button */
+.btn-login {
+  width: 100%;
+  padding: 12px;
+  background: #7c6fa0;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s, transform 0.1s;
+  font-family: inherit;
+}
+
+.btn-login:hover { background: #6a5d8e; }
+.btn-login:active { transform: scale(0.99); }
+
+/* Footer */
+.login-footer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #888;
+}
+
+.login-footer a {
+  color: #7c6fa0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-footer a:hover { text-decoration: underline; }
+
+/* ===== FORGOT PASSWORD MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px 40px 32px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #aaa;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover { color: #555; }
+
+.modal-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 22px;
+}
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 50%;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.phone-display {
+  background: #f4f1fa;
+  border: 1.5px solid #d5cef0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #7c6fa0;
+  text-align: center;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+
+input[type="password"]::-webkit-input-placeholder { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; letter-spacing: normal; }
+input[type="password"]::placeholder { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; letter-spacing: normal; }

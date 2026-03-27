@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tất cả thông báo - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/works_management/all_notifications.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="notifications-page">
+    <div class="notifications-header">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                <button class="btn-back" onclick="window.location.href='/employee-dashboard/'">
+                    ← Quay lại
+                </button>
+            </div>
+            <h1>Tất cả thông báo</h1>
+            <p class="notifications-subtitle">Xin chào Anh Thư, bạn có 3 thông báo mới chưa đọc.</p>
+                    <div class="notifications-actions">
+                        <button class="btn-action-notif" onclick="markAllAsReadPage()">
+                            <span>✓</span> Đánh dấu tất cả là đã đọc
+                        </button>
+                        <button class="btn-action-notif secondary" onclick="deleteAllRead()">
+                            <span>🗑️</span> Xóa tất cả
+                        </button>
+                    </div>
+                </div>
+
+                <div class="notifications-list-page" id="notificationsList">
+                    <!-- Notification 1 -->
+                    <div class="notification-item-page unread">
+                        <div class="notification-icon-page">📋</div>
+                        <div class="notification-content-page">
+                            <h3>Cập nhật nhiệm vụ: Dọn phòng Suite 502</h3>
+                            <p>Khách hàng yêu cầu dọn dẹp sớm lúc 14:00. Vui lòng kiểm tra và xác nhận trạng thái sẵn sàng của đồ ngủ.</p>
+                            <span class="notification-time-page">10 phút trước</span>
+                        </div>
+                        <div class="notification-status unread-dot"></div>
+                    </div>
+
+                    <!-- Notification 2 -->
+                    <div class="notification-item-page unread">
+                        <div class="notification-icon-page">📅</div>
+                        <div class="notification-content-page">
+                            <h3>Thay đổi lịch trực tuần tới</h3>
+                            <p>Ca trực: Thứ Tư của bạn đã được đổi sang ca sáng (06:00 - 14:00) theo yêu cầu của ca của nhân viên Nguyễn Văn A.</p>
+                            <span class="notification-time-page">2 giờ trước</span>
+                        </div>
+                        <div class="notification-status unread-dot"></div>
+                    </div>
+
+                    <!-- Notification 3 -->
+                    <div class="notification-item-page">
+                        <div class="notification-icon-page">🔧</div>
+                        <div class="notification-content-page">
+                            <h3>Báo trì hệ thống hoàn tất</h3>
+                            <p>Hệ thống quản lý phòng đã được cập nhật phiên bản mới nhất v2.4. Tính năng 'Quick Checkout' hiện đã khả dụng.</p>
+                            <span class="notification-time-page">Hôm qua</span>
+                        </div>
+                    </div>
+
+                    <!-- Notification 4 -->
+                    <div class="notification-item-page">
+                        <div class="notification-icon-page">🎯</div>
+                        <div class="notification-content-page">
+                            <h3>Yêu cầu phục vụ phòng #104</h3>
+                            <p>Khách hàng yêu cầu thêm 02 khăn tắm và bộ đồ dùng vệ nhất. Đã giao cho bộ phận buồng phòng xử lý.</p>
+                            <span class="notification-time-page">Hôm qua</span>
+                        </div>
+                    </div>
+
+                    <!-- Notification 5 -->
+                    <div class="notification-item-page">
+                        <div class="notification-icon-page">🛡️</div>
+                        <div class="notification-content-page">
+                            <h3>Thông báo an ninh</h3>
+                            <p>Phát hiện sáng nhật là vào khi khoản của bạn từ thiết bị mới. Nếu không phải bạn, hãy đổi mật khẩu ngay lập tức.</p>
+                            <span class="notification-time-page">2 ngày trước</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="load-more-section">
+                    <button class="btn-load-more" onclick="loadMoreNotifications()">
+                        Tải thêm thông báo ↓
+                    </button>
+                    <p class="load-more-hint">Hiện tại 5 trên 42 thông báo</p>
+                </div>
+            </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/all_notifications.js' %}"></script>
+{% endblock %}

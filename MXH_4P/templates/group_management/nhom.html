@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% load static %}
+{% block baocao_menu %}
+{% if user.role == "quanly" %}
+<h3 style="margin-top:16px;font-size:11px;color:#95a5a6;letter-spacing:.5px">BÁO CÁO</h3>
+<a href="/baocao/tuongtac/" class="menu-item {% block menu_bc_tt %}{% endblock %}">
+    <span class="icon">&#128202;</span> Báo cáo tương tác
+</a>
+<a href="/baocao/congviec/" class="menu-item {% block menu_bc_cv %}{% endblock %}">
+    <span class="icon">&#128203;</span> Báo cáo công việc
+</a>
+{% endif %}
+{% endblock %}
+{% block menu_nhom %}active{% endblock %}
+{% block main_class %}full-width{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/group_management/nhom.css' %}?v=6">
+{% endblock %}
+{% block content %}
+<div class="nhom-page">
+  <div class="nhom-topbar">
+    <h2>Quản Lý Nhóm</h2>
+    {% if user.role == "quanly" %}<a href="/nhom/new/sua/" class="btn-tao" style="text-decoration:none">+ Tạo nhóm mới</a>{% endif %}
+  </div>
+  <div class="nhom-search-bar">
+    <input type="text" id="searchInput" placeholder="Tìm kiếm nhóm..." oninput="filterNhom()">
+    <select id="filterLoai" onchange="filterNhom()" class="filter-select">
+      <option value="">Tất cả loại</option>
+      <option value="congkhai">Công khai</option>
+      <option value="phongban">Phòng ban</option>
+      <option value="riengtu">Riêng tư</option>
+    </select>
+  </div>
+  <div class="nhom-grid" id="nhomGrid">
+    {% for n in nhom_list %}
+    <a href="/nhom/{{ n.id }}/?role={{ user.role }}" class="nhom-card" data-ten="{{ n.ten }}" data-loai="{{ n.loai }}">
+      <div class="card-inner" style="background:{{ n.gradient }}">
+        <span class="loai-badge {{ n.loai }}">{{ n.loai_label }}</span>
+        <h3>{{ n.ten }}</h3>
+        <p>{{ n.mo_ta }}</p>
+        <div class="card-stats">
+          <span>&#128101; {{ n.so_tv }} thành viên</span>
+          <span>&#128221; {{ n.so_bv }} bài viết</span>
+        </div>
+        <div class="card-avs">
+          {% for tv in n.thanh_vien|slice:":4" %}
+          <div class="cav" style="background:{{ tv.color }}">{{ tv.av }}</div>
+          {% endfor %}
+          {% if n.so_tv > 4 %}<div class="cav more">+{{ n.so_tv|add:"-4" }}</div>{% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ===== MODAL TAO NHOM ===== -->
+<div class="overlay" id="ovTao" onclick="dongOverlay('ovTao')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3>Tạo nhóm mới</h3>
+      <button class="x-btn" onclick="dongOverlay('ovTao')">&#10005;</button>
+    </div>
+
+    <div class="form-g">
+      <label>Tên nhóm <span class="req">*</span></label>
+      <input type="text" id="inp-ten" placeholder="Nhập tên nhóm...">
+    </div>
+
+    <div class="form-g">
+      <label>Mô tả</label>
+      <textarea id="inp-mota" placeholder="Mô tả ve nhom..."></textarea>
+    </div>
+
+    <div class="form-g">
+      <label>Chế độ riêng tư</label>
+      <div class="priv-row">
+        <label class="priv-opt sel" id="priv-congkhai" onclick="chonPriv('congkhai')">
+          <input type="radio" name="priv" value="congkhai" checked>
+          <div>
+            <strong>&#127760; Công khai</strong>
+            <span>Mọi người đều xem và tham gia</span>
+          </div>
+        </label>
+        <label class="priv-opt" id="priv-riengtu" onclick="chonPriv('riengtu')">
+          <input type="radio" name="priv" value="riengtu">
+          <div>
+            <strong>&#128274; Riêng tư</strong>
+            <span>Chi thành viên moi xem duoc</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="dongOverlay('ovTao')">Hủy</button>
+      <button class="btn-tao" onclick="taoNhom()">Tạo nhóm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var _selPriv = 'congkhai';
+var _grads = [
+  'linear-gradient(135deg,#667eea,#764ba2)',
+  'linear-gradient(135deg,#f093fb,#f5576c)',
+  'linear-gradient(135deg,#43e97b,#38f9d7)',
+  'linear-gradient(135deg,#fa8231,#f7b731)',
+  'linear-gradient(135deg,#4facfe,#00f2fe)'
+];
+
+function moModalTao() {
+  document.getElementById('inp-ten').value = '';
+  document.getElementById('inp-mota').value = '';
+  chonPriv('congkhai');
+  document.getElementById('ovTao').classList.add('show');
+}
+function dongOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+function chonPriv(val) {
+  _selPriv = val;
+  ['congkhai','riengtu'].forEach(function(v) {
+    document.getElementById('priv-' + v).classList.remove('sel');
+  });
+  document.getElementById('priv-' + val).classList.add('sel');
+  document.querySelector('#priv-' + val + ' input').checked = true;
+}
+
+function taoNhom() {
+  var ten  = document.getElementById('inp-ten').value.trim();
+  var mota = document.getElementById('inp-mota').value.trim();
+  if (!ten) { showToast('Vui lòng nhập tên nhóm!', 'error'); return; }
+  var loai_label = _selPriv === 'congkhai' ? 'Công khai' : 'Riêng tư';
+  var grad = _grads[Math.floor(Math.random() * _grads.length)];
+  var nhomMoi = {
+    ten: ten, mo_ta: mota || 'Chưa có mô tả',
+    loai: _selPriv, loai_label: loai_label, gradient: grad, so_tv: 1
+  };
+  // Them card moi vao grid ngay
+  var card = document.createElement('a');
+  card.className = 'nhom-card';
+  card.href = '#';
+  card.dataset.ten  = ten;
+  card.dataset.loai = _selPriv;
+  card.innerHTML =
+    '<div class="card-inner" style="background:' + grad + '">' +
+      '<span class="loai-badge ' + _selPriv + '">' + loai_label + '</span>' +
+      '<h3>' + ten + '</h3>' +
+      '<p>' + (mota || 'Chưa có mô tả') + '</p>' +
+      '<div class="card-stats"><span>&#128101; 1 thành viên</span><span>&#128221; 0 bài viết</span></div>' +
+      '<div class="card-avs"><div class="cav" style="background:#3498db">PT</div></div>' +
+    '</div>';
+  var grid = document.getElementById('nhomGrid');
+  grid.insertBefore(card, grid.firstChild);
+  dongOverlay('ovTao');
+  showToast('✓ Tạo nhóm "' + ten + '" thành công!');
+}
+
+function filterNhom() {
+  var q    = document.getElementById('searchInput').value.toLowerCase();
+  var loai = document.getElementById('filterLoai').value;
+  document.querySelectorAll('.nhom-card').forEach(function(c) {
+    var tenOk  = c.dataset.ten.toLowerCase().includes(q);
+    var loaiOk = !loai || c.dataset.loai === loai;
+    c.style.display = (tenOk && loaiOk) ? '' : 'none';
+  });
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  var icon = type === 'error' ? '✕' : '✓';
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.innerHTML = '<span class="t-icon">' + icon + '</span>' + msg + '<button class="t-close" onclick="this.parentElement.classList.remove(\'show\')">✕</button>';
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// Doc nhom moi tu sessionStorage
+(function() {
+  var raw = sessionStorage.getItem("nhomMoi");
+  if (!raw) return;
+  sessionStorage.removeItem("nhomMoi");
+  var n = JSON.parse(raw);
+  var avHTML = "";
+  if (n.thanh_vien) {
+    n.thanh_vien.slice(0, 4).forEach(function(tv) {
+      avHTML += '<div class="cav" style="background:' + tv.color + '">' + tv.av + '</div>';
+    });
+    if (n.so_tv > 4) avHTML += '<div class="cav more">+' + (n.so_tv - 4) + '</div>';
+  } else {
+    avHTML = '<div class="cav" style="background:#3498db">PT</div>';
+  }
+  var card = document.createElement("a");
+  card.className = "nhom-card";
+  card.href = "#";
+  card.dataset.ten  = n.ten;
+  card.dataset.loai = n.loai;
+  card.innerHTML =
+    '<div class="card-inner" style="background:' + n.gradient + '">' +
+      '<span class="loai-badge ' + n.loai + '">' + n.loai_label + '</span>' +
+      '<h3>' + n.ten + '</h3>' +
+      '<p>' + n.mo_ta + '</p>' +
+      '<div class="card-stats"><span>&#128101; ' + n.so_tv + ' thành viên</span><span>&#128221; 0 bài viết</span></div>' +
+      '<div class="card-avs">' + avHTML + '</div>' +
+    '</div>';
+  var grid = document.getElementById("nhomGrid");
+  if (grid) grid.insertBefore(card, grid.firstChild);
+  setTimeout(function() {
+    showToast('✓ Tạo nhóm "' + n.ten + '" thành công!');
+  }, 200);
+})();
+
+</script>
+{% endblock %}

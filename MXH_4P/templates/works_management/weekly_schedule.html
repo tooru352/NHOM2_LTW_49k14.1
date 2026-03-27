@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lịch tuần - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}">
+<link rel="stylesheet" href="{% static 'css/works_management/weekly_schedule.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="weekly-schedule-page">
+    <!-- Header -->
+        <div class="schedule-header">
+            <div class="header-left-schedule">
+                <button class="btn-back" onclick="window.location.href='/employee-dashboard/'">
+                    ← Quay lại
+                </button>
+                <div class="header-title-schedule">
+                            <span class="header-icon">📋</span>
+                            <h1>Phân Công Chi Tiết</h1>
+                        </div>
+                    </div>
+                    <div class="header-right-schedule">
+                        <div class="date-selector">
+                            <span class="calendar-icon">📅</span>
+                            <input type="date" value="2026-02-04" id="scheduleDate">
+                            <span class="date-display">Thay đổi ngày</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="schedule-table-container">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>VỊ TRÍ / CÔNG VIỆC</th>
+                                <th>NHÂN VIÊN</th>
+                                <th>SỐ LƯỢNG</th>
+                                <th>CA LÀM VIỆC</th>
+                                <th>THỜI GIAN</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>GHI CHÚ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Row 1 -->
+                            <tr class="schedule-row highlight-yellow">
+                                <td class="task-name">Tài sản Core</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Nguyễn Văn An</span>
+                                </td>
+                                <td class="quantity-cell">1</td>
+                                <td><span class="shift-badge morning">Sáng</span></td>
+                                <td class="time-cell">06:00 - 14:00</td>
+                                <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                                <td class="note-cell">Quản lý tài sản khách sạn</td>
+                            </tr>
+
+                            <!-- Row 2 -->
+                            <tr class="schedule-row">
+                                <td class="task-name">Quản lý F&B</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Phạm Xuân Thương</span>
+                                </td>
+                                <td class="quantity-cell">1</td>
+                                <td><span class="shift-badge fullday">Cả ngày</span></td>
+                                <td class="time-cell">08:00 - 20:00</td>
+                                <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
+                                <td class="note-cell">Giám sát nhà hàng và bar</td>
+                            </tr>
+
+                            <!-- Row 3 -->
+                            <tr class="schedule-row">
+                                <td class="task-name">Nhân viên lễ tân</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Nguyễn Thị Lan</span>
+                                </td>
+                                <td class="quantity-cell">1</td>
+                                <td><span class="shift-badge morning">Sáng</span></td>
+                                <td class="time-cell">06:00 - 14:00</td>
+                                <td><span class="status-badge overdue">❌ Chưa xử lý</span></td>
+                                <td class="note-cell">Check-in/out khách</td>
+                            </tr>
+
+                            <!-- Row 4 -->
+                            <tr class="schedule-row">
+                                <td class="task-name">Thu ngân</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Yến</span>
+                                </td>
+                                <td class="quantity-cell">1</td>
+                                <td><span class="shift-badge morning">Sáng</span></td>
+                                <td class="time-cell">08:00 - 16:00</td>
+                                <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                                <td class="note-cell">Thanh toán và KT/Dịch</td>
+                            </tr>
+
+                            <!-- Row 5 -->
+                            <tr class="schedule-row highlight-yellow">
+                                <td class="task-name">Nhà hàng - Nhân viên phục vụ</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Ngọc</span>
+                                    <span class="employee-tag-readonly">Hiền</span>
+                                    <span class="employee-tag-readonly">Mai</span>
+                                </td>
+                                <td class="quantity-cell">3</td>
+                                <td><span class="shift-badge afternoon">Buổi trưa</span></td>
+                                <td class="time-cell">11:00 - 15:00</td>
+                                <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
+                                <td class="note-cell">Phục vụ bữa trưa buffet</td>
+                            </tr>
+
+                            <!-- Row 6 -->
+                            <tr class="schedule-row highlight-green">
+                                <td class="task-name">ELITE ROOMS</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Team Housekeeping</span>
+                                </td>
+                                <td class="quantity-cell">1</td>
+                                <td><span class="shift-badge morning">Sáng</span></td>
+                                <td class="time-cell">06:00 - 10:00</td>
+                                <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                                <td class="note-cell">Phòng cao cấp dịch vụ</td>
+                            </tr>
+
+                            <!-- Row 7 -->
+                            <tr class="schedule-row">
+                                <td class="task-name">F&B Morning Service</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Team F&B</span>
+                                </td>
+                                <td class="quantity-cell">4</td>
+                                <td><span class="shift-badge morning">Sáng</span></td>
+                                <td class="time-cell">11:00 - 15:00</td>
+                                <td><span class="status-badge completed">✅ Hoàn thành</span></td>
+                                <td class="note-cell">Phục vụ buffet sáng - KT%</td>
+                            </tr>
+
+                            <!-- Row 8 -->
+                            <tr class="schedule-row">
+                                <td class="task-name">Quản lý ca</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Kiên</span>
+                                </td>
+                                <td class="quantity-cell">1</td>
+                                <td><span class="shift-badge fullday">Cả ngày</span></td>
+                                <td class="time-cell">08:00 - 20:00</td>
+                                <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
+                                <td class="note-cell">Giám sát toàn bộ hoạt động</td>
+                            </tr>
+
+                            <!-- Row 9 -->
+                            <tr class="schedule-row">
+                                <td class="task-name">Thu ngân phụ</td>
+                                <td class="employee-cell-readonly">
+                                    <span class="employee-tag-readonly">Yến</span>
+                                </td>
+                                <td class="quantity-cell">1</td>
+                                <td><span class="shift-badge evening">Chiều</span></td>
+                                <td class="time-cell">14:00 - 22:00</td>
+                                <td><span class="status-badge overdue">❌ Chưa xử lý</span></td>
+                                <td class="note-cell">Hỗ trợ thanh toán buổi tối</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/weekly_schedule.js' %}"></script>
+{% endblock %}
