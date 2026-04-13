@@ -6,44 +6,56 @@ const SHIFTS = {
   DO:   { label: 'DO',   cls: 's-do'   },
 };
 
-// ID nhân viên hiện tại (nhân viên đang đăng nhập)
-const MY_EMP_ID = 2; // Hoàng Hải Yến
+// Data from database (injected by template)
+let scheduleData = typeof SCHEDULE_DATA !== 'undefined' ? SCHEDULE_DATA : {};
+let myUserId = typeof MY_USER_ID !== 'undefined' ? MY_USER_ID : null;
+let weekStart = typeof WEEK_START !== 'undefined' ? WEEK_START : null;
 
-const employees = [
-  { id: 1,  name: 'Đại Trung Tuấn',       role: 'Lễ tân'            },
-  { id: 2,  name: 'Hoàng Hải Yến',        role: 'Lễ tân'            },
-  { id: 3,  name: 'Nguyễn Lê Bảo Hân',   role: 'Lễ tân'            },
-  { id: 4,  name: 'Vũ Nguyễn Đức Trinh', role: 'Lễ tân'            },
-  { id: 5,  name: 'Dương Thị Quỳnh',     role: 'Lễ tân'            },
-  { id: 6,  name: 'Lê Quang Hải',        role: 'Lễ tân'            },
-  { id: 7,  name: 'Hoài Lâm',            role: 'Nhân viên phục vụ' },
-  { id: 8,  name: 'Hoài Lâm',            role: 'Nhân viên phục vụ' },
-  { id: 9,  name: 'Hoài Lâm',            role: 'Nhân viên phục vụ' },
-  { id: 10, name: 'Hoài Lâm',            role: 'Nhân viên phục vụ' },
-];
+// Convert schedule data to array format
+const employees = Object.entries(scheduleData).map(([id, data]) => ({
+  id: parseInt(id),
+  name: data.full_name,
+  role: 'Nhân viên'
+}));
 
+// Build week schedules from database
 const weekSchedules = {};
-weekSchedules['-1'] = {
-  1:['A1','E9','M5','A1','DO','M5','E9'], 2:['M5','DO','A1','M5','E9','A1','M5'],
-  3:['DO','M5','E9','A1','M5','M6SS','A1'], 4:['M5','A1','DO','E9','A1','M5','DO'],
-  5:['E9','M5','M5','DO','A1','E9','M5'], 6:['A1','M6SS','A1','M5','DO','A1','E9'],
-  7:['M5','A1','M5','A1','M5','DO','A1'], 8:['DO','M5','A1','M5','A1','M5','M5'],
-  9:['M5','A1','DO','A1','M5','A1','DO'], 10:['A1','M5','M5','DO','A1','M5','A1'],
-};
-weekSchedules['0'] = {
-  1:['M5','A1','E9','DO','E9','E9','A1'], 2:['M5','A1','E9','A1','A1','A1','DO'],
-  3:['E9','M6SS','M6SS','DO','A1','DO','A1'], 4:['DO','M5','M5','DO','M5','A1','M5'],
-  5:['DO','A1','DO','M5','DO','A1','M5'], 6:['A1','M5','M5','M6SS','M5','A1','A1'],
-  7:['A1','M5','A1','DO','M6SS','M5','M5'], 8:['A1','M5','A1','DO','M6SS','M5','M5'],
-  9:['A1','M5','A1','DO','M6SS','M5','M5'], 10:['A1','M5','A1','DO','M6SS','M5','M5'],
-};
+weekSchedules['0'] = {};
 
-// Status chỉ lưu của nhân viên hiện tại: weekStatus[offset][dayIdx]
+// Parse schedules for current week
+Object.entries(scheduleData).forEach(([empId, empData]) => {
+  const schedules = empData.schedules;
+  const weekArray = Array(7).fill(null);
+  
+  // Fill in schedules for each day of the week
+  Object.entries(schedules).forEach(([dateStr, schedule]) => {
+    const date = new Date(dateStr);
+    const dayOfWeek = (date.getDay() + 6) % 7; // Convert to Monday=0
+    weekArray[dayOfWeek] = schedule.shift_code;
+  });
+  
+  weekSchedules['0'][parseInt(empId)] = weekArray;
+});
+
+// Status tracking for current user
 const weekStatus = {};
 
 function getMyStatus(offset) {
   const key = String(offset);
-  if (!weekStatus[key]) weekStatus[key] = Array(7).fill('pending');
+  if (!weekStatus[key]) {
+    weekStatus[key] = Array(7).fill('pending');
+    
+    // Load status from database for current week
+    if (offset === 0 && scheduleData[myUserId]) {
+      const mySchedules = scheduleData[myUserId].schedules;
+      Object.entries(mySchedules).forEach(([dateStr, schedule]) => {
+        const date = new Date(dateStr);
+        const dayOfWeek = (date.getDay() + 6) % 7;
+        const status = schedule.status === 1 ? 'accepted' : schedule.status === 2 ? 'rejected' : 'pending';
+        weekStatus[key][dayOfWeek] = status;
+      });
+    }
+  }
   return weekStatus[key];
 }
 
@@ -54,6 +66,10 @@ function dotClass(s) {
 let currentWeekOffset = 0;
 
 function getCurrentMonday() {
+  if (weekStart) {
+    const parts = weekStart.split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  }
   const today = new Date();
   const dow = (today.getDay() + 6) % 7;
   const mon = new Date(today);
@@ -84,7 +100,7 @@ function getSchedule(offset) {
 
 function changeWeek(dir) {
   const next = currentWeekOffset + dir;
-  if (next > 1) return; // xem tối đa 1 tuần tới
+  if (next > 1) return;
   currentWeekOffset = next;
   updateWeekUI();
   renderTable();
@@ -107,27 +123,30 @@ const SHIFT_INFO = {
 const DAYS_VI = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ Nhật'];
 
 let feedbackDayIdx = null;
+let feedbackScheduleId = null;
 
 function openFeedback(dayIdx) {
   const sched = getSchedule(currentWeekOffset);
-  const shift = sched[MY_EMP_ID][dayIdx];
+  const shift = sched[myUserId][dayIdx];
   if (!shift) return;
 
-  // Chỉ mở nếu dot đang vàng (pending)
   const st = getMyStatus(currentWeekOffset);
   if (st[dayIdx] !== 'pending') return;
 
   feedbackDayIdx = dayIdx;
 
-  // Tính ngày
+  // Get schedule ID from database
   const base = getCurrentMonday();
-  const day  = new Date(base);
+  const day = new Date(base);
   day.setDate(base.getDate() + currentWeekOffset * 7 + dayIdx);
-  const dateStr = day.toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
-  dateStr.charAt(0).toUpperCase();
+  const dateStr = day.toISOString().split('T')[0];
+  
+  if (scheduleData[myUserId] && scheduleData[myUserId].schedules[dateStr]) {
+    feedbackScheduleId = scheduleData[myUserId].schedules[dateStr].id;
+  }
 
-  // Fill thông tin
-  document.getElementById('fbEmpName').textContent = employees.find(e => e.id === MY_EMP_ID)?.name || '';
+  const myName = scheduleData[myUserId]?.full_name || 'Bạn';
+  document.getElementById('fbEmpName').textContent = myName;
   document.getElementById('fbDate').textContent = DAYS_VI[dayIdx] + ', ' + day.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
 
   const info = SHIFT_INFO[shift];
@@ -147,6 +166,7 @@ function closeFeedback() {
   document.getElementById('fbOverlay').classList.remove('active');
   document.getElementById('feedbackModal').classList.remove('active');
   feedbackDayIdx = null;
+  feedbackScheduleId = null;
 }
 
 function submitFeedback(decision) {
@@ -156,6 +176,9 @@ function submitFeedback(decision) {
     showToast('Thiếu lý do', 'Lý do cần ít nhất 10 ký tự để gửi từ chối.', 'error');
     return;
   }
+  
+  // TODO: Send to server via AJAX
+  // For now, just update UI
   const st = getMyStatus(currentWeekOffset);
   st[feedbackDayIdx] = decision;
   const dot = document.getElementById(`mydot-${feedbackDayIdx}`);
@@ -172,23 +195,25 @@ function renderTable() {
   const mySt  = getMyStatus(currentWeekOffset);
 
   employees.forEach(emp => {
-    const isMe = emp.id === MY_EMP_ID;
+    const isMe = emp.id === myUserId;
     const tr = document.createElement('tr');
     if (isMe) tr.classList.add('my-row');
 
+    const empSchedule = sched[emp.id] || Array(7).fill(null);
+    
     tr.innerHTML = `
       <td class="col-emp">
         <div class="emp-name">${emp.name}${isMe ? ' <span style="font-size:10px;background:#3498db;color:white;padding:1px 6px;border-radius:4px">Bạn</span>' : ''}</div>
         <div class="emp-role">${emp.role}</div>
       </td>
-      ${sched[emp.id].map((s, i) => {
+      ${empSchedule.map((s, i) => {
         if (!s) return `<td><span class="shift-empty">—</span></td>`;
         const dotId   = isMe ? `id="mydot-${i}"` : '';
-        const dotCls  = isMe ? dotClass(mySt[i]) : (() => { const r = Math.random(); return r < 0.4 ? 'dot-green' : r < 0.7 ? 'dot-yellow' : 'dot-red'; })();
+        const dotCls  = isMe ? dotClass(mySt[i]) : 'dot-yellow';
         const onclick = isMe ? `onclick="openFeedback(${i})" title="Bấm để phản hồi ca làm việc"` : '';
         return `<td>
-          <span class="shift-cell ${SHIFTS[s].cls}">
-            ${SHIFTS[s].label}
+          <span class="shift-cell ${SHIFTS[s]?.cls || ''}">
+            ${SHIFTS[s]?.label || s}
             <span class="dot ${dotCls}" ${dotId} ${onclick}></span>
           </span>
         </td>`;
@@ -203,7 +228,10 @@ function renderTable() {
 function renderTotals() {
   const sched = getSchedule(currentWeekOffset);
   const counts = { M5:0, A1:0, E9:0, M6SS:0, DO:0 };
-  employees.forEach(emp => sched[emp.id].forEach(s => { if (s) counts[s]++; }));
+  employees.forEach(emp => {
+    const empSchedule = sched[emp.id] || [];
+    empSchedule.forEach(s => { if (s && counts.hasOwnProperty(s)) counts[s]++; });
+  });
   const colors = { M5:'#1565c0', A1:'#4338ca', E9:'#c2410c', M6SS:'#9d174d', DO:'#b91c1c' };
   document.getElementById('shiftTotals').innerHTML = Object.entries(counts).map(([k,v]) =>
     `<div class="total-item"><span class="total-badge" style="background:${colors[k]};color:white">${k[0]}</span>${v}</div>`

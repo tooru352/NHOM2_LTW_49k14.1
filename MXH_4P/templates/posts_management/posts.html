@@ -4,7 +4,7 @@
 {% block title %}Quản lý bài viết - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/posts_management/posts.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'css/posts_management/posts.css' %}?v=4">
 {% endblock %}
 
 {% block content %}
@@ -12,10 +12,13 @@
 <div class="top-bar">
   <div class="top-search-wrap">
     <span class="search-icon-top">🔍</span>
-    <input type="text" placeholder="Tìm kiếm tin nhắn, nhân viên...">
+    <input type="text" placeholder="Tìm kiếm bài viết, nhân viên..." id="searchInput">
   </div>
   <div class="top-bar-actions">
-    <button class="notif-btn">🔔<span class="notif-dot">5</span></button>
+    <button class="notif-btn" onclick="window.location.href='/all-notifications/'">
+      🔔
+      <span class="notif-dot">{{ user.meeting_participations.count }}</span>
+    </button>
   </div>
 </div>
 
@@ -23,119 +26,216 @@
 <div class="posts-layout">
   <!-- CENTER FEED -->
   <div class="center-feed">
-    <!-- Post 1 -->
-    <div class="post-card">
-      <div class="post-header">
-        <div class="post-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">NM</div>
-        <div class="post-info">
-          <div class="post-author">
-            Nguyễn Văn Minh
-            <span class="post-author-badge">Nhân viên</span>
+    
+    <!-- Create Post Form -->
+    <div class="post-card" style="background:#f8f9fa;border:2px dashed #ddd">
+      <form method="post" action="{% url 'create_post' %}" enctype="multipart/form-data" id="createPostForm">
+        {% csrf_token %}
+        <div style="display:flex;gap:12px;margin-bottom:12px">
+          <div class="post-avatar" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)">
+            {{ user.get_initials }}
           </div>
-          <div class="post-time">Hôm nay • 2 giờ trước</div>
+          <textarea name="content" rows="3" placeholder="Bạn đang nghĩ gì?" required style="flex:1;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:none"></textarea>
         </div>
-      </div>
-      
-      <div class="post-title">🎉 Thông báo đào tạo kỹ năng check-in mới</div>
-      <div class="post-content">
-        Buổi đào tạo sẽ diễn ra vào 14h chiều nay tại hội trường chính. Vui lòng tập trung đúng giờ để không bỏ lỡ những kỹ năng quan trọng. Xong sẽ có quiz để kiểm tra hiểu biết của mọi người.
-      </div>
-      
-      <div class="post-reactions">
-        <div class="reaction-item" style="background: #e74c3c;">❤️</div>
-        <div class="reaction-item" style="background: #3498db;">👍</div>
-        <div class="reaction-item" style="background: #f39c12;">😊</div>
-        <span class="reaction-count">12 người</span>
-      </div>
-      
-      <div class="post-actions">
-        <button class="post-action-btn">
-          <span>👍</span> Thích
-        </button>
-        <button class="post-action-btn">
-          <span>💬</span> Bình luận
-        </button>
-        <button class="post-action-btn">
-          <span>🔗</span> Chia sẻ
-        </button>
-      </div>
+        
+        <!-- Image Preview Area -->
+        <div id="imagePreviewContainer" style="display:none;margin-bottom:12px;padding:12px;background:#fff;border-radius:8px">
+          <div id="imagePreviewGrid" style="display:grid;gap:8px"></div>
+        </div>
+        
+        <!-- Scope Selection -->
+        <div style="margin-bottom:12px;padding:12px;background:#fff;border-radius:8px">
+          <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px">📍 Phạm vi bài đăng:</label>
+          <div style="display:flex;gap:16px;margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="scope" value="hotel" checked onchange="toggleGroupSelection(false)">
+              <span>🏨 Toàn khách sạn</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="scope" value="groups" onchange="toggleGroupSelection(true)">
+              <span>👥 Theo nhóm</span>
+            </label>
+          </div>
+          
+          <!-- Group Selection (hidden by default) -->
+          <div id="groupSelection" style="display:none;padding:12px;background:#f8f9fa;border-radius:6px">
+            <label style="display:block;margin-bottom:8px;font-size:12px;color:#666">Chọn nhóm (có thể chọn nhiều):</label>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:150px;overflow-y:auto">
+              {% for group in user_groups %}
+              <label style="display:flex;align-items:center;gap:6px;padding:6px;background:#fff;border-radius:4px;cursor:pointer;font-size:13px">
+                <input type="checkbox" name="groups" value="{{ group.id }}">
+                <span>{{ group.name }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;gap:8px">
+            <label style="padding:8px 12px;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;border:1px solid #ddd">
+              📷 Ảnh
+              <input type="file" name="images" accept="image/*" multiple style="display:none" onchange="handleImageSelect(this)">
+            </label>
+          </div>
+          <button type="submit" style="padding:10px 24px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer">
+            📝 Đăng bài
+          </button>
+        </div>
+      </form>
     </div>
 
-    <!-- Post 2 with Image -->
-    <div class="post-card">
-      <div class="post-header">
-        <div class="post-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">LH</div>
-        <div class="post-info">
-          <div class="post-author">
-            Lê Thị Hương
-            <span class="post-author-badge" style="background: #e74c3c;">QUẢN LÝ</span>
+    <!-- Posts List -->
+    {% if posts %}
+      {% for post in posts %}
+      <div class="post-card" data-post-id="{{ post.id }}">
+        <div class="post-header">
+          <div class="post-avatar" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)">
+            {{ post.user.get_initials }}
           </div>
-          <div class="post-time">Hôm nay • 4 giờ trước</div>
+          <div class="post-info">
+            <div class="post-author">
+              {{ post.user.first_name }} {{ post.user.last_name }}
+              <span class="post-author-badge" style="background:{% if post.user.is_manager %}#e74c3c{% else %}#3498db{% endif %}">
+                {% if post.user.is_manager %}QUẢN LÝ{% else %}NHÂN VIÊN{% endif %}
+              </span>
+            </div>
+            <div class="post-time">
+              {{ post.created_at|timesince }} trước • 
+              <span style="color:#667eea;font-weight:600">{{ post.get_scope_display_text }}</span>
+            </div>
+          </div>
+          {% if post.user == user %}
+          <div style="margin-left:auto;position:relative">
+            <button onclick="togglePostMenu({{ post.id }})" style="background:none;border:none;color:#999;cursor:pointer;font-size:20px;padding:4px 8px">⋮</button>
+            <div id="post-menu-{{ post.id }}" class="post-menu" style="display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);min-width:150px;z-index:100">
+              <button onclick="editPost({{ post.id }})" style="width:100%;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='none'">
+                <span>✏️</span> Chỉnh sửa
+              </button>
+              <button onclick="deletePost({{ post.id }})" style="width:100%;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;color:#e74c3c" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='none'">
+                <span>🗑️</span> Xóa bài
+              </button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="post-content">{{ post.content }}</div>
+        
+        {% if post.images.exists %}
+        <div class="post-images" style="margin-top:12px">
+          {% with image_count=post.images.count %}
+            {% if image_count == 1 %}
+              <!-- Single image: full width -->
+              <div style="border-radius:8px;overflow:hidden">
+                <img src="{{ post.images.first.image.url }}" alt="Post image" style="width:100%;display:block">
+              </div>
+            {% elif image_count == 2 %}
+              <!-- Two images: side by side -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:8px;overflow:hidden">
+                {% for img in post.images.all %}
+                <img src="{{ img.image.url }}" alt="Post image" style="width:100%;height:300px;object-fit:cover;display:block">
+                {% endfor %}
+              </div>
+            {% elif image_count == 3 %}
+              <!-- Three images: 1 large + 2 small -->
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:4px;border-radius:8px;overflow:hidden">
+                <img src="{{ post.images.all.0.image.url }}" alt="Post image" style="width:100%;height:400px;object-fit:cover;display:block">
+                <div style="display:grid;grid-template-rows:1fr 1fr;gap:4px">
+                  <img src="{{ post.images.all.1.image.url }}" alt="Post image" style="width:100%;height:198px;object-fit:cover;display:block">
+                  <img src="{{ post.images.all.2.image.url }}" alt="Post image" style="width:100%;height:198px;object-fit:cover;display:block">
+                </div>
+              </div>
+            {% elif image_count == 4 %}
+              <!-- Four images: 2x2 grid -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;border-radius:8px;overflow:hidden">
+                {% for img in post.images.all %}
+                <img src="{{ img.image.url }}" alt="Post image" style="width:100%;height:250px;object-fit:cover;display:block">
+                {% endfor %}
+              </div>
+            {% else %}
+              <!-- 5+ images: 2 large + grid with +N overlay on last -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:8px;overflow:hidden">
+                {% for img in post.images.all|slice:":4" %}
+                  {% if forloop.counter == 4 and image_count > 4 %}
+                  <div style="position:relative;width:100%;height:250px">
+                    <img src="{{ img.image.url }}" alt="Post image" style="width:100%;height:100%;object-fit:cover;display:block">
+                    <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;font-weight:600">
+                      +{{ image_count|add:"-4" }}
+                    </div>
+                  </div>
+                  {% else %}
+                  <img src="{{ img.image.url }}" alt="Post image" style="width:100%;height:250px;object-fit:cover;display:block">
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+        </div>
+        {% endif %}
+        
+        <div class="post-reactions">
+          {% if post.reaction_count > 0 %}
+          <div class="reaction-item" style="background:#e74c3c">❤️</div>
+          <div class="reaction-item" style="background:#3498db">👍</div>
+          <span class="reaction-count">{{ post.reaction_count }} người</span>
+          {% endif %}
+        </div>
+        
+        <div class="post-actions">
+          <button class="post-action-btn {% if post.user_reacted %}liked{% endif %}" onclick="toggleLike({{ post.id }}, this)">
+            <span>{% if post.user_reacted %}❤️{% else %}👍{% endif %}</span> 
+            {% if post.user_reacted %}Đã thích{% else %}Thích{% endif %}
+          </button>
+          <button class="post-action-btn" onclick="toggleComments({{ post.id }})">
+            <span>💬</span> Bình luận ({{ post.comment_count }})
+          </button>
+        </div>
+        
+        <!-- Comments Section -->
+        <div id="comments-{{ post.id }}" class="comments-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #e4e6eb">
+          <!-- Comment Form -->
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <div class="post-avatar" style="width:32px;height:32px;font-size:11px;background:linear-gradient(135deg,#667eea,#764ba2)">
+              {{ user.get_initials }}
+            </div>
+            <form onsubmit="submitComment(event, {{ post.id }})" style="flex:1;display:flex;gap:8px">
+              <input type="text" name="comment" placeholder="Viết bình luận..." required style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:20px;font-size:13px">
+              <button type="submit" style="padding:8px 16px;background:#667eea;color:#fff;border:none;border-radius:20px;font-size:13px;cursor:pointer">Gửi</button>
+            </form>
+          </div>
+          
+          <!-- Comments List -->
+          <div id="comments-list-{{ post.id }}">
+            {% for comment in post.comments %}
+            <div class="comment-item" style="display:flex;gap:8px;margin-bottom:12px">
+              <div class="post-avatar" style="width:32px;height:32px;font-size:11px;background:linear-gradient(135deg,#4facfe,#00f2fe)">
+                {{ comment.user.get_initials }}
+              </div>
+              <div style="flex:1">
+                <div style="background:#f0f2f5;padding:8px 12px;border-radius:12px">
+                  <div style="font-weight:600;font-size:13px;margin-bottom:2px">
+                    {{ comment.user.first_name }} {{ comment.user.last_name }}
+                  </div>
+                  <div style="font-size:13px">{{ comment.content }}</div>
+                </div>
+                <div style="font-size:11px;color:#999;margin-top:4px;margin-left:12px">
+                  {{ comment.created_at|timesince }} trước
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
-      
-      <div class="post-title">📢 Chúc mừng đã hoàn thành F&B II</div>
-      <div class="post-content">
-        Xin chúc mừng đội ngũ nhà hàng đã hoàn thành xuất sắc buổi tiệc buffet tối qua! Khách hàng rất hài lòng với chất lượng phục vụ và món ăn. Cảm ơn tất cả mọi người đã cố gắng hết mình!
-      </div>
-      
-      <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800" alt="Restaurant" class="post-image">
-      
-      <div class="post-reactions">
-        <div class="reaction-item" style="background: #e74c3c;">❤️</div>
-        <div class="reaction-item" style="background: #3498db;">👍</div>
-        <div class="reaction-item" style="background: #9b59b6;">🎉</div>
-        <span class="reaction-count">24 người</span>
-      </div>
-      
-      <div class="post-actions">
-        <button class="post-action-btn liked">
-          <span>❤️</span> Đã thích
-        </button>
-        <button class="post-action-btn">
-          <span>💬</span> Bình luận
-        </button>
-        <button class="post-action-btn">
-          <span>🔗</span> Chia sẻ
-        </button>
-      </div>
+      {% endfor %}
+    {% else %}
+    <div class="post-card" style="text-align:center;padding:60px 20px">
+      <p style="font-size:48px;margin-bottom:16px">📝</p>
+      <h3 style="margin-bottom:8px;color:#555">Chưa có bài viết nào</h3>
+      <p style="color:#888">Hãy là người đầu tiên đăng bài!</p>
     </div>
-
-    <!-- Post 3 -->
-    <div class="post-card">
-      <div class="post-header">
-        <div class="post-avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">PT</div>
-        <div class="post-info">
-          <div class="post-author">
-            Phạm Xuân Thương
-            <span class="post-author-badge" style="background: #667eea;">QUẢN LÝ</span>
-          </div>
-          <div class="post-time">Hôm qua • 18:30</div>
-        </div>
-      </div>
-      
-      <div class="post-title">🏨 Thông báo lịch làm tuần sau</div>
-      <div class="post-content">
-        Lịch làm việc tuần sau đã được cập nhật. Mọi người vui lòng kiểm tra lịch cá nhân và xác nhận. Nếu có vấn đề gì cần điều chỉnh, hãy liên hệ với bộ phận nhân sự trước thứ 6 tuần này.
-      </div>
-      
-      <div class="post-reactions">
-        <div class="reaction-item" style="background: #3498db;">👍</div>
-        <span class="reaction-count">8 người</span>
-      </div>
-      
-      <div class="post-actions">
-        <button class="post-action-btn">
-          <span>👍</span> Thích
-        </button>
-        <button class="post-action-btn">
-          <span>💬</span> Bình luận
-        </button>
-        <button class="post-action-btn">
-          <span>🔗</span> Chia sẻ
-        </button>
-      </div>
-    </div>
+    {% endif %}
   </div>
 
   <!-- RIGHT SIDEBAR -->
@@ -143,106 +243,541 @@
     <!-- Lịch hôm nay -->
     <div class="sidebar-card">
       <div class="sidebar-card-header">
-        <span class="sidebar-card-icon">�</span>
+        <span class="sidebar-card-icon">📅</span>
         <h3>Lịch hôm nay</h3>
       </div>
-      
-      <div class="schedule-item">
-        <div class="schedule-time">08:00 - Họp ban quản lý</div>
-        <div class="schedule-title">Họp đầu tuần</div>
-        <div class="schedule-desc">Phòng họp A</div>
-      </div>
-      
-      <div class="schedule-item">
-        <div class="schedule-time">14:00 - Đào tạo nhân viên</div>
-        <div class="schedule-title">Kỹ năng phục vụ</div>
-        <div class="schedule-desc">Hội trường chính</div>
-      </div>
-      
-      <div class="schedule-item">
-        <div class="schedule-time">18:30 - Review đơn booking</div>
-        <div class="schedule-title">Kiểm tra đặt phòng</div>
-        <div class="schedule-desc">Văn phòng</div>
-      </div>
+      {% if my_meetings %}
+        {% for meeting in my_meetings|slice:":3" %}
+        <div class="schedule-item">
+          <div class="schedule-time">{{ meeting.start_time|date:"H:i" }} - {{ meeting.title }}</div>
+          <div class="schedule-title">{{ meeting.title }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:13px;color:#888;padding:12px">Không có lịch hẹn hôm nay</p>
+      {% endif %}
     </div>
 
-    <!-- Nhân viên online -->
+    <!-- Nhóm của bạn -->
     <div class="sidebar-card">
       <div class="sidebar-card-header">
         <span class="sidebar-card-icon">👥</span>
-        <h3>Nhân viên online</h3>
-        <span class="count">(8)</span>
+        <h3>Nhóm của bạn</h3>
+        <span class="count">({{ user_groups.count }})</span>
       </div>
-      
-      <div class="online-user">
-        <div class="online-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-          NM
-          <div class="online-dot"></div>
+      {% for group in user_groups|slice:":5" %}
+      <div class="online-user" onclick="window.location.href='/nhom/{{ group.id }}/'">
+        <div class="online-avatar" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+          {{ group.name.0|upper }}
         </div>
         <div class="online-user-info">
-          <div class="online-user-name">Nguyễn Văn Minh</div>
-          <div class="online-user-role">Lễ tân</div>
+          <div class="online-user-name">{{ group.name }}</div>
+          <div class="online-user-role">{{ group.members.count }} thành viên</div>
         </div>
       </div>
-      
-      <div class="online-user">
-        <div class="online-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-          LH
-          <div class="online-dot"></div>
-        </div>
-        <div class="online-user-info">
-          <div class="online-user-name">Lê Thị Hương</div>
-          <div class="online-user-role">Quản lý F&B</div>
-        </div>
-      </div>
-      
-      <div class="online-user">
-        <div class="online-avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-          TA
-          <div class="online-dot"></div>
-        </div>
-        <div class="online-user-info">
-          <div class="online-user-name">Trần Anh</div>
-          <div class="online-user-role">Bảo vệ</div>
-        </div>
-      </div>
+      {% endfor %}
     </div>
 
-    <!-- Thông báo tuần này -->
+    <!-- Thông báo -->
     <div class="sidebar-card">
       <div class="sidebar-card-header">
         <span class="sidebar-card-icon">🔔</span>
-        <h3>Thông báo tuần này</h3>
+        <h3>Thông báo</h3>
       </div>
-      
-      <div class="notification-item">
-        <span class="notification-icon">📊</span>
-        <div class="notification-text">Báo cáo doanh thu tháng 3 đã sẵn sàng</div>
-        <div class="notification-time">2 giờ trước</div>
-      </div>
-      
-      <div class="notification-item">
-        <span class="notification-icon">🎂</span>
-        <div class="notification-text">Sinh nhật Mai Phương - 25/3</div>
-        <div class="notification-time">Hôm nay</div>
-      </div>
-      
-      <div class="notification-item">
-        <span class="notification-icon">📅</span>
-        <div class="notification-text">Họp đánh giá 85% công việc</div>
-        <div class="notification-time">Ngày mai</div>
-      </div>
-      
-      <div class="notification-item">
-        <span class="notification-icon">🏆</span>
-        <div class="notification-text">Trao giải nhân viên xuất sắc tháng</div>
-        <div class="notification-time">Thứ 6 tuần này</div>
-      </div>
+      {% if my_tasks %}
+        {% for task in my_tasks|slice:":3" %}
+        <div class="notification-item">
+          <span class="notification-icon">📋</span>
+          <div class="notification-text">{{ task.title }}</div>
+          <div class="notification-time">{{ task.created_at|timesince }} trước</div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:13px;color:#888;padding:12px">Không có thông báo mới</p>
+      {% endif %}
     </div>
   </aside>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/main.js' %}?v=2"></script>
+<script>
+// Get CSRF token from cookie
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Store selected images
+let selectedImages = [];
+
+function handleImageSelect(input) {
+  const files = Array.from(input.files);
+  selectedImages = files;
+  displayImagePreviews();
+}
+
+function displayImagePreviews() {
+  const container = document.getElementById('imagePreviewContainer');
+  const grid = document.getElementById('imagePreviewGrid');
+  
+  if (selectedImages.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  grid.innerHTML = '';
+  
+  // Set grid layout based on number of images
+  if (selectedImages.length === 1) {
+    grid.style.gridTemplateColumns = '1fr';
+  } else if (selectedImages.length === 2) {
+    grid.style.gridTemplateColumns = '1fr 1fr';
+  } else {
+    grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+  }
+  
+  selectedImages.forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const imageWrapper = document.createElement('div');
+      imageWrapper.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;';
+      
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.innerHTML = '✕';
+      removeBtn.type = 'button';
+      removeBtn.style.cssText = 'position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.7);color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background 0.2s';
+      removeBtn.onmouseover = () => removeBtn.style.background = 'rgba(220,53,69,0.9)';
+      removeBtn.onmouseout = () => removeBtn.style.background = 'rgba(0,0,0,0.7)';
+      removeBtn.onclick = () => removeImage(index);
+      
+      imageWrapper.appendChild(img);
+      imageWrapper.appendChild(removeBtn);
+      grid.appendChild(imageWrapper);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeImage(index) {
+  selectedImages.splice(index, 1);
+  
+  // Update file input
+  const input = document.querySelector('input[name="images"]');
+  const dt = new DataTransfer();
+  selectedImages.forEach(file => dt.items.add(file));
+  input.files = dt.files;
+  
+  displayImagePreviews();
+}
+
+function toggleGroupSelection(show) {
+  document.getElementById('groupSelection').style.display = show ? 'block' : 'none';
+  // Uncheck all groups if switching to hotel-wide
+  if (!show) {
+    document.querySelectorAll('input[name="groups"]').forEach(cb => cb.checked = false);
+  }
+}
+
+function toggleLike(postId, button) {
+  fetch(`/post/${postId}/like/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      if (data.liked) {
+        button.classList.add('liked');
+        button.innerHTML = '<span>❤️</span> Đã thích';
+      } else {
+        button.classList.remove('liked');
+        button.innerHTML = '<span>👍</span> Thích';
+      }
+      // Update reaction count
+      const card = button.closest('.post-card');
+      const reactionsDiv = card.querySelector('.post-reactions');
+      if (data.count > 0) {
+        reactionsDiv.innerHTML = `
+          <div class="reaction-item" style="background:#e74c3c">❤️</div>
+          <div class="reaction-item" style="background:#3498db">👍</div>
+          <span class="reaction-count">${data.count} người</span>
+        `;
+      } else {
+        reactionsDiv.innerHTML = '';
+      }
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+  });
+}
+
+function toggleComments(postId) {
+  const commentsDiv = document.getElementById(`comments-${postId}`);
+  commentsDiv.style.display = commentsDiv.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitComment(event, postId) {
+  event.preventDefault();
+  const form = event.target;
+  const content = form.comment.value.trim();
+  
+  if (!content) return;
+  
+  fetch(`/post/${postId}/comment/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ content: content })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Add comment to list
+      const commentsList = document.getElementById(`comments-list-${postId}`);
+      const commentHTML = `
+        <div class="comment-item" style="display:flex;gap:8px;margin-bottom:12px">
+          <div class="post-avatar" style="width:32px;height:32px;font-size:11px;background:linear-gradient(135deg,#4facfe,#00f2fe)">
+            {{ user.get_initials }}
+          </div>
+          <div style="flex:1">
+            <div style="background:#f0f2f5;padding:8px 12px;border-radius:12px">
+              <div style="font-weight:600;font-size:13px;margin-bottom:2px">
+                {{ user.first_name }} {{ user.last_name }}
+              </div>
+              <div style="font-size:13px">${content}</div>
+            </div>
+            <div style="font-size:11px;color:#999;margin-top:4px;margin-left:12px">
+              Vừa xong
+            </div>
+          </div>
+        </div>
+      `;
+      commentsList.insertAdjacentHTML('beforeend', commentHTML);
+      form.reset();
+      
+      // Update comment count
+      const commentBtn = form.closest('.post-card').querySelector('.post-action-btn:nth-child(2)');
+      const match = commentBtn.textContent.match(/\d+/);
+      const count = match ? parseInt(match[0]) + 1 : 1;
+      commentBtn.innerHTML = `<span>💬</span> Bình luận (${count})`;
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+  });
+}
+
+function deletePost(postId) {
+  if (!confirm('Bạn có chắc muốn xóa bài viết này?')) return;
+  
+  fetch(`/post/${postId}/delete/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+      if (postCard) {
+        postCard.remove();
+        alert('Đã xóa bài viết thành công!');
+      }
+    } else {
+      alert(data.error || 'Không thể xóa bài viết!');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+  });
+}
+
+function togglePostMenu(postId) {
+  // Close all other menus
+  document.querySelectorAll('.post-menu').forEach(menu => {
+    if (menu.id !== `post-menu-${postId}`) {
+      menu.style.display = 'none';
+    }
+  });
+  
+  // Toggle current menu
+  const menu = document.getElementById(`post-menu-${postId}`);
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(event) {
+  if (!event.target.closest('[onclick^="togglePostMenu"]') && !event.target.closest('.post-menu')) {
+    document.querySelectorAll('.post-menu').forEach(menu => {
+      menu.style.display = 'none';
+    });
+  }
+});
+
+function editPost(postId) {
+  // Close menu
+  document.getElementById(`post-menu-${postId}`).style.display = 'none';
+  
+  // Get post data
+  fetch(`/post/${postId}/data/`, {
+    method: 'GET',
+    headers: {
+      'X-CSRFToken': csrftoken
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showEditModal(postId, data.post);
+    } else {
+      alert(data.error || 'Không thể tải dữ liệu bài viết!');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+  });
+}
+
+function showEditModal(postId, postData) {
+  // Create modal overlay
+  const modal = document.createElement('div');
+  modal.id = `edit-modal-${postId}`;
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;overflow-y:auto;padding:20px';
+  
+  // Build existing images HTML
+  let existingImagesHTML = '';
+  if (postData.images && postData.images.length > 0) {
+    existingImagesHTML = `
+      <div style="margin-bottom:16px">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:14px">Ảnh hiện tại:</label>
+        <div id="existing-images-${postId}" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          ${postData.images.map(img => `
+            <div class="existing-image-item" data-image-id="${img.id}" style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1">
+              <img src="${img.url}" style="width:100%;height:100%;object-fit:cover">
+              <button type="button" onclick="removeExistingImage(${postId}, ${img.id})" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.7);color:#fff;border:none;cursor:pointer;font-size:16px">✕</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // Build groups checkboxes
+  let groupsHTML = '';
+  if (postData.user_groups && postData.user_groups.length > 0) {
+    groupsHTML = `
+      <div id="edit-group-selection-${postId}" style="display:${postData.scope === 'groups' ? 'block' : 'none'};padding:12px;background:#f8f9fa;border-radius:6px;margin-top:12px">
+        <label style="display:block;margin-bottom:8px;font-size:12px;color:#666">Chọn nhóm (có thể chọn nhiều):</label>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:150px;overflow-y:auto">
+          ${postData.user_groups.map(group => `
+            <label style="display:flex;align-items:center;gap:6px;padding:6px;background:#fff;border-radius:4px;cursor:pointer;font-size:13px">
+              <input type="checkbox" name="edit-groups-${postId}" value="${group.id}" ${postData.groups.includes(group.id) ? 'checked' : ''}>
+              <span>${group.name}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto">
+      <h3 style="margin:0 0 20px 0;font-size:20px">✏️ Chỉnh sửa bài viết</h3>
+      
+      <div style="margin-bottom:16px">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:14px">Nội dung:</label>
+        <textarea id="edit-content-${postId}" rows="5" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical">${postData.content}</textarea>
+      </div>
+      
+      ${existingImagesHTML}
+      
+      <div style="margin-bottom:16px">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:14px">Thêm ảnh mới:</label>
+        <input type="file" id="edit-new-images-${postId}" accept="image/*" multiple style="padding:8px;border:1px solid #ddd;border-radius:6px;width:100%" onchange="previewNewImages(${postId}, this)">
+        <div id="new-images-preview-${postId}" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div>
+      </div>
+      
+      <div style="margin-bottom:16px">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:14px">📍 Phạm vi bài đăng:</label>
+        <div style="display:flex;gap:16px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="edit-scope-${postId}" value="hotel" ${postData.scope === 'hotel' ? 'checked' : ''} onchange="document.getElementById('edit-group-selection-${postId}').style.display='none'">
+            <span>🏨 Toàn khách sạn</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="edit-scope-${postId}" value="groups" ${postData.scope === 'groups' ? 'checked' : ''} onchange="document.getElementById('edit-group-selection-${postId}').style.display='block'">
+            <span>👥 Theo nhóm</span>
+          </label>
+        </div>
+        ${groupsHTML}
+      </div>
+      
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px">
+        <button onclick="closeEditModal(${postId})" style="padding:10px 20px;background:#e0e0e0;color:#333;border:none;border-radius:6px;cursor:pointer;font-weight:600">Hủy</button>
+        <button onclick="saveEdit(${postId})" style="padding:10px 20px;background:#667eea;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">💾 Lưu thay đổi</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+// Store images to delete and new images to add
+window.editPostData = window.editPostData || {};
+
+function removeExistingImage(postId, imageId) {
+  if (!window.editPostData[postId]) {
+    window.editPostData[postId] = { imagesToDelete: [], newImages: [] };
+  }
+  window.editPostData[postId].imagesToDelete.push(imageId);
+  
+  // Hide the image
+  const imageItem = document.querySelector(`[data-image-id="${imageId}"]`);
+  if (imageItem) {
+    imageItem.style.display = 'none';
+  }
+}
+
+function previewNewImages(postId, input) {
+  if (!window.editPostData[postId]) {
+    window.editPostData[postId] = { imagesToDelete: [], newImages: [] };
+  }
+  
+  window.editPostData[postId].newImages = Array.from(input.files);
+  const previewContainer = document.getElementById(`new-images-preview-${postId}`);
+  previewContainer.innerHTML = '';
+  
+  window.editPostData[postId].newImages.forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1';
+      wrapper.innerHTML = `
+        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">
+        <button type="button" onclick="removeNewImage(${postId}, ${index})" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.7);color:#fff;border:none;cursor:pointer;font-size:16px">✕</button>
+      `;
+      previewContainer.appendChild(wrapper);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeNewImage(postId, index) {
+  window.editPostData[postId].newImages.splice(index, 1);
+  const input = document.getElementById(`edit-new-images-${postId}`);
+  const dt = new DataTransfer();
+  window.editPostData[postId].newImages.forEach(file => dt.items.add(file));
+  input.files = dt.files;
+  previewNewImages(postId, input);
+}
+
+function closeEditModal(postId) {
+  const modal = document.getElementById(`edit-modal-${postId}`);
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function saveEdit(postId) {
+  const content = document.getElementById(`edit-content-${postId}`).value.trim();
+  const scope = document.querySelector(`input[name="edit-scope-${postId}"]:checked`).value;
+  const groupCheckboxes = document.querySelectorAll(`input[name="edit-groups-${postId}"]:checked`);
+  const groups = Array.from(groupCheckboxes).map(cb => cb.value);
+  
+  if (!content) {
+    alert('Nội dung không được để trống!');
+    return;
+  }
+  
+  if (scope === 'groups' && groups.length === 0) {
+    alert('Vui lòng chọn ít nhất một nhóm!');
+    return;
+  }
+  
+  // Prepare form data for multipart upload
+  const formData = new FormData();
+  formData.append('content', content);
+  formData.append('scope', scope);
+  groups.forEach(groupId => formData.append('groups', groupId));
+  
+  // Add images to delete
+  if (window.editPostData[postId] && window.editPostData[postId].imagesToDelete) {
+    window.editPostData[postId].imagesToDelete.forEach(imageId => {
+      formData.append('delete_images', imageId);
+    });
+  }
+  
+  // Add new images
+  if (window.editPostData[postId] && window.editPostData[postId].newImages) {
+    window.editPostData[postId].newImages.forEach(file => {
+      formData.append('new_images', file);
+    });
+  }
+  
+  fetch(`/post/${postId}/edit/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Đã cập nhật bài viết!');
+      closeEditModal(postId);
+      // Clean up
+      delete window.editPostData[postId];
+      // Reload page to show updated post
+      window.location.reload();
+    } else {
+      alert(data.error || 'Không thể cập nhật bài viết!');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+  });
+}
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  const query = e.target.value.toLowerCase();
+  document.querySelectorAll('.post-card').forEach(card => {
+    const content = card.textContent.toLowerCase();
+    card.style.display = content.includes(query) ? 'block' : 'none';
+  });
+});
+</script>
+<script src="{% static 'js/main.js' %}?v=3"></script>
 {% endblock %}

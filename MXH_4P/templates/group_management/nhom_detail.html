@@ -3,358 +3,160 @@
 {% block menu_nhom %}active{% endblock %}
 {% block main_class %}full-width{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/group_management/nhom.css' %}?v=6">
-{% endblock %}
-{% block content %}
-<div class="nd-page">
-  <div class="nd-banner" style="background:{{ nhom.gradient }}">
-    <a href="/nhom/" class="nd-back">&#8592; Quay lại</a>
-    <div class="nd-banner-body">
-      <div>
-        <h1>{{ nhom.ten }}</h1>
-        <p>{{ nhom.mo_ta }}</p>
-        <div class="nd-meta">
-          <span class="loai-badge {{ nhom.loai }}">{{ nhom.loai_label }}</span>
-          <span>&#128101; {{ nhom.so_tv }} thành viên</span>
-          <span>&#128221; {{ nhom.so_bv }} bài viết</span>
-        </div>
-      </div>
-      {% if user.role == "quanly" %}<a href="/nhom/{{ nhom.id }}/sua/?role={{ user.role }}" class="nd-btn-edit">&#9998; Chỉnh sửa nhóm</a>{% endif %}
-    </div>
-  </div>
-  <div class="nd-tabs">
-    <button class="nd-tab active" onclick="switchTab('tab-bv',this)">&#128221; Bài viết</button>
-    <button class="nd-tab" onclick="switchTab('tab-tv',this)">&#128101; Thành viên ({{ nhom.so_tv }})</button>
-  </div>
-  <div id="tab-bv" class="nd-tab-content active">
-    <div class="nd-search-bar">
-      <input type="text" id="searchBV" placeholder="&#128269; Tìm kiếm bài viết..." oninput="searchBaiViet()">
-    </div>
-    <div class="nd-create" id="createBox">
-      <div class="nd-create-top">
-        <div class="sm-av" style="background:#3498db">{{ request.user.first_name.0|upper }}{{ request.user.last_name.0|upper }}</div>
-        <textarea id="newPost" placeholder="Viết gì đó về nhóm..." rows="3"></textarea>
-      </div>
-      <div id="imgWrap" style="display:none;margin:8px 0;position:relative">
-        <img id="imgPrev" src="" style="max-height:160px;border-radius:8px;display:block">
-        <button onclick="rmImg()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;width:22px;height:22px;border-radius:50%;cursor:pointer">&#10005;</button>
-      </div>
-      <div class="nd-create-foot">
-        <label class="nd-act-btn"><input type="file" id="imgFile" accept="image/*" style="display:none" onchange="prevImg(this)">&#128247; Ảnh</label>
-        <button class="nd-btn-post" onclick="dangBai()">&#128228; Đăng bài</button>
-      </div>
-    </div>
-    <div id="bvList">
-    {% for bv in nhom.bai_viet %}
-    <div class="nd-post">
-      <div class="nd-post-top">
-        <div class="sm-av" style="background:{{ bv.color }}">{{ bv.av }}</div>
-        <div class="nd-post-meta"><strong>{{ bv.tac_gia }}</strong><span class="nd-time">{{ bv.tg }}</span></div>
-        {% if user.role == "quanly" or bv.av == user.av %}
-        <div style="position:relative">
-          <button class="nd-menu-btn" onclick="toggleMenu(this)">&#8942;</button>
-          <div class="nd-dropdown" style="display:none">
-            <button onclick="openSua(this)">&#9998; Chỉnh sửa</button>
-            <button onclick="openXoa(this)">&#128465; Xóa bài</button>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-      <p class="nd-post-text">{{ bv.noi_dung }}</p>
-      <div class="nd-post-react">
-        <span class="rl">&#128077; {{ bv.like }}</span>
-        <span class="rc">&#128172; {{ bv.cmt }} bình luận</span>
-      </div>
-      <div class="nd-post-btns">
-        <button onclick="likePost(this)">&#128077; Thích</button>
-        <button onclick="toggleCmt(this)">&#128172; Bình luận</button>
-      </div>
-      <div class="cmt-area" style="display:none">
-        <div class="cmt-input-row">
-          <div class="sm-av" style="background:#3498db;width:30px;height:30px;font-size:10px">PT</div>
-          <input type="text" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')guiCmt(this)">
-          <button onclick="guiCmt(this.previousElementSibling)">Gửi</button>
-        </div>
-        <div class="cmt-list"></div>
-      </div>
-    </div>
-    {% endfor %}
-    </div>
-  </div>
-  <div id="tab-tv" class="nd-tab-content">
-    <div class="nd-search-bar" style="margin-bottom:16px">
-      <input type="text" id="searchTV" placeholder="&#128269; Tìm kiếm thành viên..." oninput="searchThanhVien()">
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="font-size:16px">Thành viên ({{ nhom.so_tv }})</h3>
-      {% if user.role == "quanly" and nhom.admin == "PT" %}<span class="admin-note">&#128081; Bạn là Quản trị viên</span>{% endif %}
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-    {% for tv in nhom.thanh_vien %}
-    <div class="tv-row">
-      <div class="nd-tv-av2" style="background:{{ tv.color }}">{{ tv.av }}</div>
-      <div style="flex:1;display:flex;align-items:center;gap:10px">
-        <strong style="font-size:14px">{{ tv.ten }}</strong>
-        {% if tv.av == nhom.admin %}<span class="badge-admin">&#128081; Quản trị viên</span>
-        {% else %}<span class="badge-tv">Thành viên</span>{% endif %}
-      </div>
-      {% if user.role == "quanly" and nhom.admin == "PT" and tv.av != nhom.admin %}
-      <button class="btn-trao" onclick="moTrao('{{ tv.ten }}')">Trao quyền Admin</button>
-      {% endif %}
-    </div>
-    {% endfor %}
-    </div>
-  </div>
-</div>
-<div class="ov" id="ovXoa" onclick="dongOv('ovXoa')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h3 style="color:#e74c3c;margin-bottom:12px">Xóa bài viết</h3>
-    <p style="color:#555;margin-bottom:20px;font-size:14px">Bạn có chắc muốn xóa bài viết này?</p>
-    <div style="display:flex;gap:10px">
-      <button class="btn-red" onclick="doXoa()">Xóa</button>
-      <button class="btn-gray" onclick="dongOv('ovXoa')">Hủy</button>
-    </div>
-  </div>
-</div>
-<div class="ov" id="ovSua" onclick="dongOv('ovSua')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h3 style="margin-bottom:12px">Chỉnh sửa bài viết</h3>
-    <textarea id="suaTxt" style="width:100%;height:120px;padding:10px;border:1.5px solid #e4e6eb;border-radius:8px;font-size:14px;outline:none;resize:none;font-family:inherit;box-sizing:border-box;margin-bottom:16px"></textarea>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
-      <button class="btn-gray" onclick="dongOv('ovSua')">Hủy</button>
-      <button class="btn-purple" onclick="doSua()">Lưu</button>
-    </div>
-  </div>
-</div>
-<div class="ov" id="ovTrao" onclick="dongOv('ovTrao')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h3 style="margin-bottom:12px">&#128081; Trao quyền Admin</h3>
-    <p style="color:#555;margin-bottom:20px;font-size:14px">Trao quyền cho <strong id="traoTen"></strong>?</p>
-    <div style="display:flex;gap:10px">
-      <button class="btn-purple" onclick="doTrao()">Xác nhận</button>
-      <button class="btn-gray" onclick="dongOv('ovTrao')">Hủy</button>
-    </div>
-  </div>
-</div>
-
-{% endblock %}
-
-{% block extra_js %}
+<link rel="stylesheet" href="{% static 'css/group_management/nhom.css' %}?v=7">
 <style>
 .nd-page{padding:20px;background:#f5f7fa}
-.nd-banner{border-radius:14px;padding:28px;color:#fff;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.nd-banner{border-radius:14px;padding:28px;color:#fff;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);background:linear-gradient(135deg,#667eea,#764ba2)}
 .nd-back{color:#fff;background:rgba(0,0,0,.25);padding:6px 14px;border-radius:20px;text-decoration:none;font-size:13px;display:inline-block;margin-bottom:14px;font-weight:600;transition:all 0.2s}
 .nd-back:hover{background:rgba(0,0,0,.4);transform:translateX(-2px)}
 .nd-banner-body{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
 .nd-banner-body h1{font-size:24px;margin-bottom:6px}
 .nd-banner-body p{font-size:13px;opacity:.85;margin-bottom:10px}
 .nd-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
-.loai-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
-.loai-badge.riengtu{background:rgba(0,0,0,.3)}
-.loai-badge.phongban{background:rgba(255,255,255,.3)}
-.loai-badge.congkhai{background:rgba(46,204,113,.75)}
+.loai-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(255,255,255,.3)}
 .nd-btn-edit{background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.6);padding:9px 18px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}
 .nd-tabs{display:flex;gap:4px;background:#fff;padding:8px 16px 0;border-bottom:2px solid #e4e6eb;margin-bottom:20px;border-radius:12px 12px 0 0;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
 .nd-tab{padding:10px 20px;border:none;background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:#65676b;border-bottom:3px solid transparent;margin-bottom:-2px}
 .nd-tab.active{color:#667eea;border-bottom-color:#667eea}
 .nd-tab-content{display:none}
 .nd-tab-content.active{display:block}
-.nd-search-bar{margin-bottom:16px}
-.nd-search-bar input{width:100%;padding:10px 16px;border:1.5px solid #e4e6eb;border-radius:20px;font-size:14px;outline:none;box-sizing:border-box;background:#fff}
-.nd-search-bar input:focus{border-color:#667eea}
-.nd-create{background:#fff;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-.nd-create-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
-.sm-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,#667eea,#764ba2)}
-#newPost{width:100%;padding:10px 14px;border:1.5px solid #e4e6eb;border-radius:12px;font-size:14px;outline:none;resize:none;font-family:inherit;line-height:1.5;box-sizing:border-box;background:#fff}
-#newPost:focus{border-color:#667eea}
-.nd-create-foot{display:flex;justify-content:space-between;align-items:center}
-.nd-act-btn{background:#f8f9fa;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#555;transition:all 0.2s}
-.nd-act-btn:hover{background:#e8e9ef}
-.nd-btn-post{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:9px 22px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s}
-.nd-btn-post:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(102,126,234,0.4)}
-.nd-post{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-.nd-post-top{display:flex;gap:12px;align-items:center;margin-bottom:14px}
-.nd-post-meta{flex:1}
-.nd-post-meta strong{display:block;font-size:14px;font-weight:700;color:#1a1a2e}
-.nd-time{font-size:11px;color:#999}
-.nd-menu-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#65676b;padding:4px 8px;border-radius:6px;line-height:1}
-.nd-menu-btn:hover{background:#f0f2f5}
-.nd-dropdown{position:absolute;right:0;top:100%;background:#fff;border:1px solid #e4e6eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:50;min-width:140px}
-.nd-dropdown button{display:block;width:100%;padding:10px 14px;background:none;border:none;text-align:left;cursor:pointer;font-size:13px;color:#333}
-.nd-dropdown button:hover{background:#f5f3ff;color:#667eea}
-.nd-post-text{font-size:13px;line-height:1.6;color:#555;margin-bottom:14px;white-space:pre-wrap}
-.nd-post-react{display:flex;gap:14px;font-size:13px;color:#65676b;padding:8px 0;border-top:1px solid #f0f2f5;border-bottom:1px solid #f0f2f5;margin-bottom:8px}
-.nd-post-btns{display:flex;gap:8px}
-.nd-post-btns button{flex:1;padding:8px;background:#f8f9fa;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#555;transition:all 0.2s}
-.nd-post-btns button:hover{background:#e8e9ef}
-.nd-post-btns button.liked{color:#e74c3c}
-.cmt-area{padding-top:10px;border-top:1px solid #f0f2f5;margin-top:4px}
-.cmt-input-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.cmt-input-row input{flex:1;padding:8px 14px;border:1.5px solid #e4e6eb;border-radius:20px;font-size:13px;outline:none;background:#fff}
-.cmt-input-row input:focus{border-color:#667eea}
-.cmt-input-row button{padding:8px 14px;background:#667eea;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.2s}
-.cmt-input-row button:hover{background:#5568d3}
-.cmt-list{display:flex;flex-direction:column;gap:8px}
-.cmt-item{display:flex;gap:8px;align-items:flex-start}
-.cmt-bubble{background:#f0f2f5;border-radius:12px;padding:8px 12px;font-size:13px;line-height:1.4;flex:1}
-.cmt-bubble strong{display:block;font-size:12px;color:#667eea;margin-bottom:2px}
 .tv-row{background:#fff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:10px}
-.nd-tv-av2{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.nd-tv-av2{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,#667eea,#764ba2)}
 .badge-admin{background:#fff3cd;color:#856404;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
 .badge-tv{background:#f0f2f5;color:#65676b;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
-.btn-trao{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s}
-.btn-trao:hover{transform:translateY(-1px)}
 .admin-note{font-size:13px;color:#667eea;font-weight:600;background:#f0f0ff;padding:4px 12px;border-radius:12px}
-.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
-.ov.show{display:flex}
-.modal{background:#fff;border-radius:16px;padding:28px;width:440px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
-.btn-red{flex:1;padding:10px;background:#e74c3c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s}
-.btn-red:hover{background:#c0392b}
-.btn-purple{flex:1;padding:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s}
-.btn-purple:hover{transform:translateY(-1px)}
-.btn-gray{flex:1;padding:10px;background:#f0f2f5;color:#333;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s}
-.btn-gray:hover{background:#e4e6eb}
 </style>
-<script>
-var USER_ROLE = "{{ user.role }}";
-var USER_AV = "{{ request.user.first_name.0|upper }}{{ request.user.last_name.0|upper }}";
-var USER_NAME = "{{ request.user.get_full_name }}";
+{% endblock %}
+{% block content %}
+<div class="nd-page">
+  <div class="nd-banner">
+    <a href="/nhom/" class="nd-back">&#8592; Quay lại</a>
+    <div class="nd-banner-body">
+      <div>
+        <h1>{{ nhom.name }}</h1>
+        <p>{{ nhom.description|default:"Chưa có mô tả" }}</p>
+        <div class="nd-meta">
+          <span class="loai-badge">{{ nhom.get_status_display }}</span>
+          <span>&#128101; {{ members.count }} thành viên</span>
+          <span>&#128221; {{ posts.count }} bài viết</span>
+        </div>
+      </div>
+      {% if is_admin %}
+      <a href="/nhom/{{ nhom.id }}/sua/" class="nd-btn-edit">&#9998; Chỉnh sửa nhóm</a>
+      {% endif %}
+    </div>
+  </div>
+  
+  <div class="nd-tabs">
+    <button class="nd-tab active" onclick="switchTab('tab-bv',this)">&#128221; Bài viết</button>
+    <button class="nd-tab" onclick="switchTab('tab-tv',this)">&#128101; Thành viên ({{ members.count }})</button>
+  </div>
+  
+  <div id="tab-bv" class="nd-tab-content active">
+    {% if is_member %}
+    <!-- Form đăng bài -->
+    <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <form method="post">
+        {% csrf_token %}
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
+          <div style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#667eea,#764ba2);flex-shrink:0">
+            {{ user.get_initials }}
+          </div>
+          <textarea name="content" rows="3" placeholder="Chia sẻ điều gì đó với nhóm..." required style="flex:1;padding:12px;border:1.5px solid #e4e6eb;border-radius:10px;font-size:14px;outline:none;resize:none;font-family:inherit;line-height:1.5"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button type="submit" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s">
+            📝 Đăng bài
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+    
+    {% if posts %}
+    <div style="display:flex;flex-direction:column;gap:14px">
+      {% for post in posts %}
+      <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+          <div style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#667eea,#764ba2)">
+            {{ post.user.get_initials }}
+          </div>
+          <div style="flex:1">
+            <strong style="display:block;font-size:14px;font-weight:700;color:#1a1a2e">
+              {{ post.user.first_name }} {{ post.user.last_name }}
+            </strong>
+            <span style="font-size:11px;color:#999">{{ post.created_at|timesince }} trước</span>
+          </div>
+          {% if post.user == user or is_admin %}
+          <a href="#" style="color:#888;font-size:20px;text-decoration:none" title="Xóa bài">🗑️</a>
+          {% endif %}
+        </div>
+        <p style="font-size:13px;line-height:1.6;color:#555;margin-bottom:14px;white-space:pre-wrap">{{ post.content }}</p>
+        {% if post.image %}
+        <img src="{{ post.image.url }}" alt="Post image" style="max-width:100%;border-radius:8px;margin-bottom:12px">
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:60px 20px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:48px;margin-bottom:16px;">📝</p>
+      <h3 style="margin-bottom:8px;color:#555;">Chưa có bài viết nào</h3>
+      <p style="color:#888;">
+        {% if is_member %}
+        Hãy là người đầu tiên đăng bài trong nhóm này
+        {% else %}
+        Tham gia nhóm để xem và đăng bài viết
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+  
+  <div id="tab-tv" class="nd-tab-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:16px">Thành viên ({{ members.count }})</h3>
+      {% if is_admin %}
+      <span class="admin-note">&#128081; Bạn là Quản trị viên</span>
+      <a href="/nhom/{{ nhom.id }}/add-member/" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">+ Thêm thành viên</a>
+      {% endif %}
+    </div>
+    
+    {% if members %}
+    <div style="display:flex;flex-direction:column;gap:10px">
+      {% for member in members %}
+      <div class="tv-row">
+        <div class="nd-tv-av2">{{ member.user.get_initials }}</div>
+        <div style="flex:1;display:flex;align-items:center;gap:10px">
+          <strong style="font-size:14px">{{ member.user.first_name }} {{ member.user.last_name }}</strong>
+          {% if member.user == nhom.created_by %}
+          <span class="badge-admin">&#128081; Quản trị viên</span>
+          {% else %}
+          <span class="badge-tv">Thành viên</span>
+          {% endif %}
+        </div>
+        <span style="font-size:12px;color:#888;">{{ member.joined_at|date:"d/m/Y" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:40px 20px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:48px;margin-bottom:16px;">👥</p>
+      <h3 style="margin-bottom:8px;color:#555;">Chưa có thành viên nào</h3>
+      <p style="color:#888;">Thêm thành viên để bắt đầu làm việc cùng nhau</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
 
-var _xoaEl=null,_suaEl=null,_traoTen="";
+{% block extra_js %}
+<script>
 function switchTab(id,btn){
   document.querySelectorAll(".nd-tab-content").forEach(function(t){t.classList.remove("active");});
   document.querySelectorAll(".nd-tab").forEach(function(b){b.classList.remove("active");});
   document.getElementById(id).classList.add("active");
   btn.classList.add("active");
-}
-function dongOv(id){document.getElementById(id).classList.remove("show");}
-function toggleMenu(btn){
-  document.querySelectorAll(".nd-dropdown").forEach(function(d){
-    if(d!==btn.nextElementSibling)d.style.display="none";
-  });
-  var dd=btn.nextElementSibling;
-  dd.style.display=dd.style.display==="none"?"block":"none";
-}
-document.addEventListener("click",function(e){
-  if(!e.target.closest(".nd-menu-btn")&&!e.target.closest(".nd-dropdown")){
-    document.querySelectorAll(".nd-dropdown").forEach(function(d){d.style.display="none";});
-  }
-});
-function openXoa(btn){
-  _xoaEl=btn.closest(".nd-post");
-  btn.closest(".nd-dropdown").style.display="none";
-  document.getElementById("ovXoa").classList.add("show");
-}
-function doXoa(){if(_xoaEl)_xoaEl.remove();dongOv("ovXoa");}
-function openSua(btn){
-  _suaEl=btn.closest(".nd-post");
-  btn.closest(".nd-dropdown").style.display="none";
-  document.getElementById("suaTxt").value=_suaEl.querySelector(".nd-post-text").textContent.trim();
-  document.getElementById("ovSua").classList.add("show");
-}
-function doSua(){
-  if(_suaEl){
-    var t=document.getElementById("suaTxt").value.trim();
-    if(t)_suaEl.querySelector(".nd-post-text").textContent=t;
-  }
-  dongOv("ovSua");
-}
-function likePost(btn){
-  btn.classList.toggle("liked");
-  var sp=btn.closest(".nd-post").querySelector(".rl");
-  var n=parseInt(sp.textContent.replace(/[^0-9]/g,""))||0;
-  sp.textContent="&#128077; "+(btn.classList.contains("liked")?n+1:Math.max(0,n-1));
-}
-function toggleCmt(btn){
-  var a=btn.closest(".nd-post").querySelector(".cmt-area");
-  a.style.display=a.style.display==="none"?"block":"none";
-}
-function guiCmt(inp){
-  var txt=inp.value.trim();if(!txt)return;
-  var list=inp.closest(".cmt-area").querySelector(".cmt-list");
-  var item=document.createElement("div");item.className="cmt-item";
-  item.innerHTML=
-    '<div class="sm-av" style="background:#3498db;width:30px;height:30px;font-size:10px">'+USER_AV+'</div>'
-    +'<div class="cmt-bubble">'
-    +'<strong>'+USER_NAME+'</strong>'
-    +txt
-    +'</div>';
-  list.appendChild(item);inp.value="";
-  var sp=inp.closest(".nd-post").querySelector(".rc");
-  var n=parseInt(sp.textContent.replace(/[^0-9]/g,""))||0;
-  sp.textContent="&#128172; "+(n+1)+" bình luận";
-}
-function prevImg(inp){
-  if(!inp.files||!inp.files[0])return;
-  var r=new FileReader();
-  r.onload=function(e){
-    document.getElementById("imgPrev").src=e.target.result;
-    document.getElementById("imgWrap").style.display="block";
-  };
-  r.readAsDataURL(inp.files[0]);
-}
-function rmImg(){document.getElementById("imgWrap").style.display="none";document.getElementById("imgFile").value="";document.getElementById("imgPrev").src="";}
-function searchBaiViet(){
-  var q=document.getElementById("searchBV").value.toLowerCase();
-  document.querySelectorAll("#bvList .nd-post").forEach(function(p){
-    var txt=p.querySelector(".nd-post-text")?p.querySelector(".nd-post-text").textContent.toLowerCase():"";
-    var author=p.querySelector(".nd-post-meta strong")?p.querySelector(".nd-post-meta strong").textContent.toLowerCase():"";
-    p.style.display=(txt.includes(q)||author.includes(q))?"":"none";
-  });
-}
-function searchThanhVien(){
-  var q=document.getElementById("searchTV").value.toLowerCase();
-  document.querySelectorAll(".tv-row").forEach(function(r){
-    var name=r.querySelector("strong")?r.querySelector("strong").textContent.toLowerCase():"";
-    r.style.display=name.includes(q)?"":"none";
-  });
-}
-function dangBai(){
-  var ta=document.getElementById("newPost");
-  var txt=ta.value.trim();
-  var imgSrc=document.getElementById("imgPrev").src;
-  var hasImg=document.getElementById("imgWrap").style.display!=="none"&&imgSrc;
-  if(!txt&&!hasImg)return;
-  var now=new Date();
-  var tg=now.getHours()+":"+String(now.getMinutes()).padStart(2,"0")+" - "+now.getDate()+"/"+(now.getMonth()+1)+"/"+now.getFullYear();
-  var imgH=hasImg?'<div style="margin-bottom:12px"><img src="'+imgSrc+'" style="max-width:100%;border-radius:8px"></div>':"";
-  var d=document.createElement("div");d.className="nd-post";
-  var menuHTML = '';
-  if(USER_ROLE === 'quanly'){
-    menuHTML = '<div style="position:relative"><button class="nd-menu-btn" onclick="toggleMenu(this)">&#8942;</button>'
-    +'<div class="nd-dropdown" style="display:none"><button onclick="openSua(this)">&#9998; Chỉnh sửa</button><button onclick="openXoa(this)">&#128465; Xóa bài</button></div></div>';
-  }
-  d.innerHTML=
-    '<div class="nd-post-top">'
-    +'<div class="sm-av" style="background:#3498db">'+USER_AV+'</div>'
-    +'<div class="nd-post-meta"><strong>'+USER_NAME+'</strong><span class="nd-time">'+tg+'</span></div>'
-    +menuHTML
-    +'</div>'
-    +'<p class="nd-post-text">'+txt+'</p>'
-    +imgH
-    +'<div class="nd-post-react"><span class="rl">&#128077; 0</span><span class="rc">&#128172; 0 bình luận</span></div>'
-    +'<div class="nd-post-btns"><button onclick="likePost(this)">&#128077; Thích</button><button onclick="toggleCmt(this)">&#128172; Bình luận</button></div>'
-    +'<div class="cmt-area" style="display:none">'
-    +'<div class="cmt-input-row">'
-    +'<div class="sm-av" style="background:#3498db;width:30px;height:30px;font-size:10px">'+USER_AV+'</div>'
-    +'<input type="text" placeholder="Viết bình luận..." onkeydown="if(event.key===\'Enter\')guiCmt(this)">'
-    +'<button onclick="guiCmt(this.previousElementSibling)">Gửi</button>'
-    +'</div><div class="cmt-list"></div></div>';
-  document.getElementById("bvList").insertBefore(d,document.getElementById("bvList").firstChild);
-  ta.value="";ta.style.height="auto";
-  rmImg();
-}
-document.getElementById("newPost").addEventListener("input",function(){this.style.height="auto";this.style.height=this.scrollHeight+"px";});
-function moTrao(ten){_traoTen=ten;document.getElementById("traoTen").textContent=ten;document.getElementById("ovTrao").classList.add("show");}
-function doTrao(){
-  document.querySelectorAll(".tv-row").forEach(function(row){
-    var s=row.querySelector("strong");var b=row.querySelector("span");var btn=row.querySelector(".btn-trao");
-    if(!s||!b)return;
-    if(s.textContent===_traoTen){b.className="badge-admin";b.innerHTML="&#128081; Quản trị viên";if(btn)btn.remove();}
-    else if(b.classList.contains("badge-admin")){b.className="badge-tv";b.textContent="Thành viên";}
-  });
-  var note=document.querySelector(".admin-note");if(note)note.textContent="";
-  dongOv("ovTrao");
 }
 </script>
 {% endblock %}

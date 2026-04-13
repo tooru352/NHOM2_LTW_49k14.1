@@ -4,315 +4,134 @@
 {% block title %}Bảng nhân viên - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
 <div class="employee-dashboard-content">
-<!-- Welcome Header -->
-<div class="welcome-header">
-    <div class="welcome-text">
-                <h1>Xin chào, Anh Thư!</h1>
-                <p>Chúc mừng bạn đến với ca làm việc ngày hôm nay. Hãy kiểm tra các nhiệm vụ sau đây bên dưới.</p>
-                <div class="work-shift-info">
-                    <div class="shift-label">LỊCH LÀM VIỆC</div>
-                    <div class="shift-date">Thứ Năm,<br>05/02/2026</div>
-                </div>
-            </div>
-            <div class="header-right-section">
-                <div class="notification-icon-header" onclick="toggleNotificationDropdown(event)">🔔</div>
-                
-                <!-- Notification Dropdown -->
-                <div class="notification-dropdown" id="notificationDropdown">
-                    <div class="notification-dropdown-header">
-                        <h3>Thông báo</h3>
-                        <button class="mark-all-read">Đánh dấu đã đọc</button>
-                        </div>
-                        <div class="notification-list">
-                            <!-- Notification 1 -->
-                            <div class="notification-dropdown-item unread">
-                                <div class="notification-icon-small">📋</div>
-                                <div class="notification-content-small">
-                                    <div class="notification-title-small">Nhiệm vụ mới: Kiểm tra sảnh chính</div>
-                                    <div class="notification-desc-small">Vui lòng kiểm tra tình trạng vệ sinh và sắp xếp lại khu vực giải trí tại sảnh chính trước 16h00.</div>
-                                    <div class="notification-time-small">Vừa xong</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Notification 2 -->
-                            <div class="notification-dropdown-item">
-                                <div class="notification-icon-small">📅</div>
-                                <div class="notification-content-small">
-                                    <div class="notification-title-small">Lịch làm việc ngày 06/02 đã được cập nhật</div>
-                                    <div class="notification-desc-small">Có sự thay đổi trong ca trực của bạn. Vui lòng kiểm tra lại tab "Schedule".</div>
-                                    <div class="notification-time-small">2 giờ trước</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Notification 3 -->
-                            <div class="notification-dropdown-item">
-                                <div class="notification-icon-small">👥</div>
-                                <div class="notification-content-small">
-                                    <div class="notification-title-small">Báo cáo tin nhắn mới từ Quản lý</div>
-                                    <div class="notification-desc-small">"Chúc bạn làm việc vui vẻ và nhiệt tình hôm nay! Nếu cần hỗ trợ hãy liên hệ với tôi."</div>
-                                    <div class="notification-time-small">5 giờ trước</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="notification-dropdown-footer">
-                            <button class="view-all-notifications">Xem tất cả →</button>
-                        </div>
-                    </div>
-                    
-                    <div class="shift-info-inline">
-                        <div class="shift-label-inline">CA LÀM VIỆC</div>
-                        <div class="shift-time-inline">Sáng (06:00 - 14:00)</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Urgent Notification -->
-            <div class="urgent-notification">
-                <div class="notification-header">
-                    <span class="notification-icon">📢</span>
-                    <span class="notification-title">Thông báo khẩn từ cấp trên</span>
-                    <span class="notification-time">VỪA XONG</span>
-                </div>
-                <div class="notification-item">
-                    <div class="notification-icon-box">📋</div>
-                    <div class="notification-content">
-                        <h3>Phân công nhiệm vụ mới: Kiểm tra sảnh chính lúc 14:00</h3>
-                        <p>Từ: Quản lý (Phạm Tiến Luân)</p>
-                        <div class="notification-actions">
-                            <span class="action-label">PHẢN HỒI CỦA BẠN</span>
-                            <button class="btn-action primary">✓ Đồng ý</button>
-                            <button class="btn-action secondary">✕ Từ chối</button>
-                        </div>
-                        <textarea class="feedback-input" placeholder="Nhập ý do nếu bạn từ chối..."></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Two Column Layout -->
-            <div class="content-grid">
-                <!-- Left Column: Tasks -->
-                <div class="tasks-section">
-                    <div class="section-header">
-                        <h2>Nhiệm vụ trong ngày</h2>
-                        <div class="section-actions">
-                            <button class="btn-link" onclick="window.location.href='/weekly-schedule/'">Xem chi tiết lịch tuần</button>
-                        </div>
-                    </div>
-
-                    <div class="task-list">
-                        <!-- Task 1 -->
-                        <div class="task-item">
-                            <div class="task-icon">🍽️</div>
-                            <div class="task-info">
-                                <h3>Chuẩn bị bàn ăn buffet</h3>
-                                <p>Nhà hàng tầng 1 • 10:30 - 11:30</p>
-                                <span class="task-time">10:30</span>
-                            </div>
-                            <div class="task-actions">
-                                <button class="btn-task-action detail" onclick="showTaskDetailModal('Chuẩn bị bàn ăn buffet', 'Nhà hàng tầng 1', '10:30 - 11:30', 'Sắp xếp bàn ghế, bày biện dụng cụ ăn uống cho bữa trưa buffet. Kiểm tra khăn trải bàn, dao nĩa, ly chén.', ['Đoàn Thị Anh Thư', 'Ngọc', 'Hiền'], 'pending')">Chi tiết</button>
-                                <button class="btn-task-action complete" onclick="reportTask('Chuẩn bị bàn ăn buffet')">Báo cáo</button>
-                            </div>
-                        </div>
-
-                        <!-- Task 2 -->
-                        <div class="task-item">
-                            <div class="task-icon">🍹</div>
-                            <div class="task-info">
-                                <h3>Phục vụ đồ uống tại Bar</h3>
-                                <p>Khu vực Bar Lounge • 14:00 - 17:00</p>
-                                <span class="task-time">14:00</span>
-                            </div>
-                            <div class="task-actions">
-                                <button class="btn-task-action detail" onclick="showTaskDetailModal('Phục vụ đồ uống tại Bar', 'Khu vực Bar Lounge', '14:00 - 17:00', 'Pha chế và phục vụ đồ uống cho khách tại khu vực bar. Đảm bảo vệ sinh quầy bar và trưng bày đẹp mắt.', ['Đoàn Thị Anh Thư'], 'pending')">Chi tiết</button>
-                                <button class="btn-task-action complete" onclick="reportTask('Phục vụ đồ uống tại Bar')">Báo cáo</button>
-                            </div>
-                        </div>
-
-                        <!-- Task 3 -->
-                        <div class="task-item completed">
-                            <div class="task-icon">🧹</div>
-                            <div class="task-info">
-                                <h3>Vệ sinh khu vực ăn uống</h3>
-                                <p>Nhà hàng tầng 1 • 06:30 - 07:30</p>
-                                <span class="task-time">06:30</span>
-                            </div>
-                            <div class="task-actions">
-                                <button class="btn-task-action done">Đã xong</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column: Meetings & Info -->
-                <div class="notes-section">
-                    <div class="section-header">
-                        <h2>Lịch họp sắp tới</h2>
-                    </div>
-
-                    <!-- Upcoming Meetings -->
-                    <div class="upcoming-meetings">
-                        <div class="meeting-card">
-                            <div class="meeting-card-header">
-                                <span class="meeting-badge upcoming">Hôm nay</span>
-                                <span class="meeting-time-small">15:00 - 17:00</span>
-                            </div>
-                            <h4>Họp menu mới cho mùa xuân</h4>
-                            <div class="meeting-info-row">
-                                <span>📍 Nhà hàng tầng 1</span>
-                            </div>
-                            <div class="meeting-info-row">
-                                <span>👤 Bộ phận Nhà hàng</span>
-                            </div>
-                        </div>
-
-                        <div class="meeting-card">
-                            <div class="meeting-card-header">
-                                <span class="meeting-badge tomorrow">Ngày mai</span>
-                                <span class="meeting-time-small">08:00 - 09:00</span>
-                            </div>
-                            <h4>Đào tạo kỹ năng phục vụ</h4>
-                            <div class="meeting-info-row">
-                                <span>📍 Phòng đào tạo tầng 2</span>
-                            </div>
-                            <div class="meeting-info-row">
-                                <span>👤 Nhân viên F&B</span>
-                            </div>
-                        </div>
-
-                        <div class="meeting-card">
-                            <div class="meeting-card-header">
-                                <span class="meeting-badge future">08/02</span>
-                                <span class="meeting-time-small">14:00 - 15:00</span>
-                            </div>
-                            <h4>Kiểm tra an toàn thực phẩm</h4>
-                            <div class="meeting-info-row">
-                                <span>📍 Bếp chính & Kho thực phẩm</span>
-                            </div>
-                            <div class="meeting-info-row">
-                                <span>👤 Bộ phận Nhà hàng</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Daily Note -->
-                    <div class="daily-note">
-                        <div class="note-icon">📝</div>
-                        <div class="note-content">
-                            <h3>Gợi ý hôm nay</h3>
-                            <p>Lưu ý: Buffet trưa có 45 khách đặt trước. Chuẩn bị thêm bàn ghế và kiểm tra kỹ thực đơn món chay.</p>
-                        </div>
-                    </div>
-
-                    <!-- Image Section -->
-                    <div class="image-section">
-                        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800" alt="Hotel view">
-                        <div class="image-caption">Hãy vì khách hàng của Mỹ (Hạ lúc 04:00)</div>
-                    </div>
-                </div>
-            </div>
-
-    <!-- Task Detail Modal -->
-    <div id="taskDetailModal" class="task-modal">
-        <div class="task-modal-content">
-            <div class="task-modal-header">
-                <div class="task-modal-title">
-                    <span class="task-modal-icon">📋</span>
-                    <span id="taskModalTitle">Chi tiết nhiệm vụ: Phục vụ tại Bar</span>
-                </div>
-                <span class="task-modal-close" onclick="closeTaskDetailModal()">&times;</span>
-            </div>
-            <div class="task-modal-body">
-                <div class="task-modal-badges">
-                    <span class="task-badge" id="taskStatusBadge">
-                        <span class="badge-icon">⏰</span> Đang thực hiện
-                    </span>
-                    <span class="task-badge">
-                        <span class="badge-icon">🕐</span> <span id="taskTimeBadge">08:00 - 11:00</span>
-                    </span>
-                    <span class="task-badge">
-                        <span class="badge-icon">📍</span> <span id="taskLocationBadge">Khu vực Lounge</span>
-                    </span>
-                </div>
-
-                <div class="task-modal-section">
-                    <h4>MÔ TẢ CÔNG VIỆC</h4>
-                    <p id="taskDescription">Chuẩn bị quầy bar, phục vụ đồ uống cho khách tại sảnh và khu vực Lounge. Đảm bảo vệ sinh và trưng bày đẹp mắt.</p>
-                </div>
-
-                <div class="task-modal-row">
-                    <div class="task-modal-col">
-                        <h4>NHÂN SỰ PHỤ TRÁCH</h4>
-                        <div class="task-employees" id="taskEmployees">
-                            <div class="task-employee-item">
-                                <div class="task-employee-avatar">AT</div>
-                                <div class="task-employee-info">
-                                    <strong>Đoàn Thị Anh Thư</strong>
-                                    <span>Chính</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="task-modal-col">
-                        <div class="task-image">
-                            <img src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600" alt="Bar Lounge">
-                            <div class="task-image-caption">📸 Ảnh hiện trường Lounge...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="task-modal-footer">
-                <button class="btn-task-modal-close" onclick="closeTaskDetailModal()">Đóng</button>
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+        <div class="welcome-text">
+            <h1>Xin chào, {{ request.user.get_full_name|default:request.user.username }}!</h1>
+            <p>Chúc mừng bạn đến với ca làm việc ngày hôm nay. Hãy kiểm tra các nhiệm vụ sau đây bên dưới.</p>
+            <div class="work-shift-info">
+                <div class="shift-label">NHIỆM VỤ CỦA BẠN</div>
+                <div class="shift-date">{{ tasks_total }} nhiệm vụ</div>
             </div>
         </div>
     </div>
 
-    <!-- Report Task Modal -->
-    <div id="reportTaskModal" class="task-modal">
-        <div class="report-modal-content">
-            <div class="report-modal-header">
-                <h3>Báo cáo hoàn thành nhiệm vụ</h3>
-                <span class="task-modal-close" onclick="closeReportModal()">&times;</span>
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ tasks_total }}</div>
+                <div class="stat-label">Tổng nhiệm vụ</div>
             </div>
-            <div class="report-modal-body">
-                <div class="report-task-info">
-                    <div class="report-task-icon">🍹</div>
-                    <div class="report-task-details">
-                        <div class="report-label">NHIỆM VỤ HIỆN TẠI</div>
-                        <div class="report-task-name" id="reportTaskName">Phục vụ tại Bar</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ tasks_in_progress }}</div>
+                <div class="stat-label">Đang thực hiện</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ tasks_done }}</div>
+                <div class="stat-label">Đã hoàn thành</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ tasks_todo }}</div>
+                <div class="stat-label">Chưa làm</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="content-grid">
+        <!-- Left Column: Tasks -->
+        <div class="tasks-section">
+            <div class="section-header">
+                <h2>Nhiệm vụ trong ngày</h2>
+                <div class="section-actions">
+                    <button class="btn-link" onclick="window.location.href='/all-tasks/'">Xem tất cả →</button>
+                </div>
+            </div>
+
+            <div class="task-list">
+                {% for task in my_tasks|slice:":5" %}
+                <div class="task-item {% if task.status == 'Done' %}completed{% endif %}">
+                    <div class="task-icon">
+                        {% if 'buffet' in task.title|lower or 'ăn' in task.title|lower %}🍽️
+                        {% elif 'bar' in task.title|lower or 'uống' in task.title|lower %}🍹
+                        {% elif 'vệ sinh' in task.title|lower or 'dọn' in task.title|lower %}🧹
+                        {% elif 'kiểm tra' in task.title|lower %}📋
+                        {% else %}📌{% endif %}
+                    </div>
+                    <div class="task-info">
+                        <h3>{{ task.title }}</h3>
+                        <p>{{ task.description|truncatewords:15 }}</p>
+                        <span class="task-time">{{ task.created_at|date:"H:i" }}</span>
+                    </div>
+                    <div class="task-actions">
+                        {% if task.status != 'Done' %}
+                        <button class="btn-task-action complete">Báo cáo</button>
+                        {% else %}
+                        <button class="btn-task-action done">Đã xong</button>
+                        {% endif %}
                     </div>
                 </div>
-
-                <div class="report-checkbox">
-                    <input type="checkbox" id="confirmCheckbox">
-                    <label for="confirmCheckbox">Tôi xác nhận đã hoàn thành nhiệm vụ này</label>
+                {% empty %}
+                <div class="task-item">
+                    <p style="text-align: center; color: #999; padding: 20px;">Bạn chưa có nhiệm vụ nào.</p>
                 </div>
+                {% endfor %}
+            </div>
+        </div>
 
-                <div class="report-section">
-                    <label class="report-section-label">Ảnh minh họa công việc</label>
-                    <div class="image-upload-area" id="imageUploadArea">
-                        <div class="upload-placeholder">
-                            <span class="upload-icon">📷</span>
-                            <div class="upload-text">Tải lên ảnh minh họa</div>
-                            <div class="upload-hint">PNG, JPG tối đa 5MB</div>
-                        </div>
-                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        <!-- Right Column: Meetings & Info -->
+        <div class="notes-section">
+            <div class="section-header">
+                <h2>Lịch họp sắp tới</h2>
+            </div>
+
+            <!-- Upcoming Meetings -->
+            <div class="upcoming-meetings">
+                {% for meeting in my_meetings %}
+                <div class="meeting-card">
+                    <div class="meeting-card-header">
+                        <span class="meeting-badge upcoming">
+                            {% if meeting.start_time|date:"Y-m-d" == today %}Hôm nay
+                            {% elif meeting.start_time|date:"Y-m-d" == tomorrow %}Ngày mai
+                            {% else %}{{ meeting.start_time|date:"d/m" }}{% endif %}
+                        </span>
+                        <span class="meeting-time-small">{{ meeting.start_time|date:"H:i" }} - {{ meeting.end_time|date:"H:i" }}</span>
+                    </div>
+                    <h4>{{ meeting.title }}</h4>
+                    <div class="meeting-info-row">
+                        <span>👤 {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</span>
                     </div>
                 </div>
-
-                <div class="report-section">
-                    <label class="report-section-label">Ghi chú thêm</label>
-                    <textarea id="reportNote" class="report-textarea" placeholder="Nhập thông tin chi tiết hoặc lưu ý đặc biệt tại đây..."></textarea>
+                {% empty %}
+                <div class="meeting-card">
+                    <p style="text-align: center; color: #999; padding: 20px;">Không có cuộc họp sắp tới.</p>
                 </div>
+                {% endfor %}
             </div>
-            <div class="report-modal-footer">
-                <button class="btn-report-cancel" onclick="closeReportModal()">Hủy</button>
-                <button class="btn-report-submit" onclick="submitReport()">Gửi báo cáo</button>
+
+            <!-- Daily Note -->
+            <div class="daily-note">
+                <div class="note-icon">📝</div>
+                <div class="note-content">
+                    <h3>Gợi ý hôm nay</h3>
+                    <p>Hãy hoàn thành tốt các nhiệm vụ được giao. Nếu cần hỗ trợ, hãy liên hệ với quản lý của bạn.</p>
+                </div>
             </div>
         </div>
     </div>

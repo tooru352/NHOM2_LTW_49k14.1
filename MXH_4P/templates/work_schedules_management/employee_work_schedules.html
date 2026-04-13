@@ -127,5 +127,11 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/employee_work_schedules.js' %}?v=4"></script>
+<script>
+// Inject database data into JavaScript
+const SCHEDULE_DATA = {{ schedule_json|safe }};
+const MY_USER_ID = {{ user.id }};
+const WEEK_START = "{{ week_start|date:'Y-m-d' }}";
+</script>
+<script src="{% static 'js/employee_work_schedules.js' %}?v=5"></script>
 {% endblock %}

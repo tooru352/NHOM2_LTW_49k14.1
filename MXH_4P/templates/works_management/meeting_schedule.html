@@ -4,7 +4,7 @@
 {% block title %}Lịch họp - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/works_management/meeting_schedule.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'css/works_management/meeting_schedule.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
@@ -12,285 +12,78 @@
     <!-- Header -->
     <div class="page-header">
         <div class="header-left">
-            <h1>📋 Quản Lý Công Việc</h1>
-            <p class="subtitle">Trang chủ / Quản lý công việc</p>
+            <h1>📋 Lịch Họp</h1>
         </div>
         <div class="header-right">
-            <button class="btn-export" onclick="window.location.href='/work-management/'">📥 JA</button>
-            <button class="btn-primary" onclick="openAddMeetingModal()">➕ Tạo lịch họp</button>
+            <button class="btn-export" onclick="window.location.href='/work-management/'">← Quay lại</button>
+            <button class="btn-primary" onclick="window.location.href='{% url 'create_meeting' %}'">➕ Tạo lịch họp</button>
         </div>
     </div>
 
     <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card active" onclick="filterMeetings('all')">
+        <div class="stat-card">
             <div class="stat-icon blue">📅</div>
             <div class="stat-content">
-                <h2>20</h2>
+                <h2>{{ meetings_total }}</h2>
                 <p>Tổng cuộc họp</p>
             </div>
         </div>
-        <div class="stat-card" onclick="filterMeetings('upcoming')">
+        <div class="stat-card">
             <div class="stat-icon yellow">🏆</div>
             <div class="stat-content">
-                <h2>5</h2>
+                <h2>{{ meetings_upcoming }}</h2>
                 <p>Sắp diễn ra</p>
             </div>
         </div>
-        <div class="stat-card" onclick="filterMeetings('completed')">
+        <div class="stat-card">
             <div class="stat-icon green">✅</div>
             <div class="stat-content">
-                <h2>12</h2>
+                <h2>{{ meetings_completed }}</h2>
                 <p>Hoàn thành</p>
             </div>
         </div>
-        <div class="stat-card" onclick="filterMeetings('pending')">
+        <div class="stat-card">
             <div class="stat-icon red">⏰</div>
             <div class="stat-content">
-                <h2>4</h2>
-                <p>Chưa xử lý</p>
+                <h2>{{ meetings_today }}</h2>
+                <p>Hôm nay</p>
             </div>
-        </div>
-    </div>
-
-    <!-- Filter Section -->
-    <div class="meeting-filter">
-        <div class="filter-left">
-            <span class="calendar-icon">📅</span>
-            <strong>Tháng 3, 2026</strong>
-        </div>
-        <div class="filter-center">
-            <button class="nav-btn" onclick="previousMonth()">‹ Tháng trước</button>
-            <button class="today-btn" onclick="goToday()">Hôm nay</button>
-            <button class="nav-btn" onclick="nextMonth()">Tháng sau ›</button>
-        </div>
-        <div class="filter-right">
-            <button class="btn-primary" onclick="openAddMeetingModal()">➕ Tạo lịch họp</button>
         </div>
     </div>
 
     <!-- Meetings List -->
     <div class="meetings-container">
-        <!-- Meeting Item 1 -->
-        <div class="meeting-item" data-status="completed" onclick="showMeetingDetail(this)">
-            <div class="meeting-time">08:00 - 10:00</div>
+        {% load tz %}
+        {% now "Y-m-d" as today %}
+        
+        {% for meeting in meetings %}
+        <div class="meeting-item {% if meeting.end_time < now %}completed{% endif %}">
+            <div class="meeting-time">{{ meeting.start_time|date:"H:i" }} - {{ meeting.end_time|date:"H:i" }}</div>
             <div class="meeting-content">
                 <div class="meeting-header">
                     <span class="meeting-icon">📊</span>
-                    <h3>Họp ban giám đốc</h3>
-                    <span class="status-badge-meeting completed">✅ Hoàn thành</span>
+                    <h3>{{ meeting.title }}</h3>
+                    <span class="status-badge-meeting {% if meeting.end_time < now %}completed{% else %}upcoming{% endif %}">
+                        {% if meeting.end_time < now %}✅ Hoàn thành
+                        {% else %}⏳ Sắp diễn ra{% endif %}
+                    </span>
                 </div>
                 <div class="meeting-details">
-                    <span class="detail-item">📅 28/02/2026</span>
-                    <span class="detail-item">📍 Phòng họp tầng 3</span>
-                    <span class="detail-item">👤 Ban giám đốc</span>
-                    <span class="detail-item">👥 Công Minh Tuấn</span>
-                </div>
-            </div>
-            <div style="display:none;" class="meeting-description">Cuộc họp nhằm đánh giá kết quả làm việc của nhân sự trong tháng 2, thảo luận các vấn đề tài, đề xuất phương án cải thiện hiệu suất công việc và kế hoạch phát triển nhân sự trong tháng tiếp theo.</div>
-        </div>
-
-        <!-- Meeting Item 2 -->
-        <div class="meeting-item" data-status="upcoming" onclick="showMeetingDetail(this)">
-            <div class="meeting-time">14:00 - 16:00</div>
-            <div class="meeting-content">
-                <div class="meeting-header">
-                    <span class="meeting-icon">💎</span>
-                    <h3>Đào tạo quy trình check-in mới</h3>
-                    <span class="status-badge-meeting upcoming">⏳ Sắp diễn ra</span>
-                </div>
-                <div class="meeting-details">
-                    <span class="detail-item">📅 28/02/2026</span>
-                    <span class="detail-item">📍 Phòng họp tầng 2</span>
-                    <span class="detail-item">👤 Lễ tân</span>
-                    <span class="detail-item">👥 Nguyễn Văn Minh</span>
-                </div>
-            </div>
-            <div style="display:none;" class="meeting-description">Đào tạo quy trình check-in mới cho nhân viên lễ tân, hướng dẫn sử dụng hệ thống mới và các thủ tục cập nhật.</div>
-        </div>
-
-        <!-- Meeting Item 3 -->
-        <div class="meeting-item" data-status="completed" onclick="showMeetingDetail(this)">
-            <div class="meeting-time">09:00 - 11:00</div>
-            <div class="meeting-content">
-                <div class="meeting-header">
-                    <span class="meeting-icon">💰</span>
-                    <h3>Review báo cáo tài chính Q1</h3>
-                    <span class="status-badge-meeting completed">✅ Hoàn thành</span>
-                </div>
-                <div class="meeting-details">
-                    <span class="detail-item">📅 28/02/2026</span>
-                    <span class="detail-item">📍 Phòng họp tầng 4</span>
-                    <span class="detail-item">👤 Tài chính</span>
-                    <span class="detail-item">👥 Hoàng Ngọc</span>
-                </div>
-            </div>
-            <div style="display:none;" class="meeting-description">Xem xét và phân tích báo cáo tài chính quý 1, đánh giá hiệu quả kinh doanh và đề xuất kế hoạch tài chính cho quý tiếp theo.</div>
-        </div>
-
-        <!-- Meeting Item 4 -->
-        <div class="meeting-item" data-status="upcoming" onclick="showMeetingDetail(this)">
-            <div class="meeting-time">15:00 - 17:00</div>
-            <div class="meeting-content">
-                <div class="meeting-header">
-                    <span class="meeting-icon">🍽️</span>
-                    <h3>Họp menu mới cho mùa xuân</h3>
-                    <span class="status-badge-meeting upcoming">⏳ Sắp diễn ra</span>
-                </div>
-                <div class="meeting-details">
-                    <span class="detail-item">📅 07/02/2026</span>
-                    <span class="detail-item">📍 Nhà hàng tầng 1</span>
-                    <span class="detail-item">👤 Nhà hàng</span>
-                    <span class="detail-item">👥 Trần Văn Hùng</span>
-                </div>
-            </div>
-            <div style="display:none;" class="meeting-description">Thảo luận và lên kế hoạch menu mới cho mùa xuân, bao gồm các món ăn đặc sản và thực đơn buffet.</div>
-        </div>
-
-        <!-- Meeting Item 5 -->
-        <div class="meeting-item" data-status="pending" onclick="showMeetingDetail(this)">
-            <div class="meeting-time">10:00 - 12:00</div>
-            <div class="meeting-content">
-                <div class="meeting-header">
-                    <span class="meeting-icon">🔧</span>
-                    <h3>Bảo trì hệ thống định kỳ</h3>
-                    <span class="status-badge-meeting pending">❌ Chưa xử lý</span>
-                </div>
-                <div class="meeting-details">
-                    <span class="detail-item">📅 08/02/2026</span>
-                    <span class="detail-item">📍 Phòng kỹ thuật B1</span>
-                    <span class="detail-item">👤 Kỹ thuật</span>
-                    <span class="detail-item">👥 Phạm Tuấn</span>
-                </div>
-            </div>
-            <div style="display:none;" class="meeting-description">Kiểm tra và bảo trì định kỳ hệ thống điện, nước, điều hòa và các thiết bị kỹ thuật của khách sạn.</div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal thêm lịch họp -->
-<div id="addMeetingModal" class="modal">
-    <div class="modal-content-new">
-        <div class="modal-header-new">
-            <h2>Tạo lịch họp mới</h2>
-            <span class="close" onclick="closeAddMeetingModal()">&times;</span>
-        </div>
-        <div class="modal-body-new">
-            <div class="form-group-new full-width">
-                <label>Tiêu đề cuộc họp</label>
-                <input type="text" id="meetingTitle" placeholder="Nhập tiêu đề cuộc họp">
-            </div>
-            
-            <div class="form-row-new">
-                <div class="form-group-new">
-                    <label>Ngày họp</label>
-                    <input type="date" id="meetingDate">
-                </div>
-                <div class="form-group-new">
-                    <label>Phòng ban</label>
-                    <select id="meetingDepartment">
-                        <option>Ban giám đốc</option>
-                        <option>Lễ tân</option>
-                        <option>Tài chính</option>
-                        <option>Nhà hàng</option>
-                        <option>Kỹ thuật</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group-new full-width">
-                <label>Địa điểm</label>
-                <input type="text" id="meetingLocation" placeholder="Nhập địa điểm họp">
-            </div>
-            
-            <div class="form-group-new full-width">
-                <label>Thời gian họp</label>
-                <div class="time-picker-row">
-                    <div class="time-input-wrapper">
-                        <input type="time" id="meetingStartTime" value="08:00">
-                        <span class="time-icon">🕐</span>
-                    </div>
-                    <span class="time-separator">đến</span>
-                    <div class="time-input-wrapper">
-                        <input type="time" id="meetingEndTime" value="10:00">
-                        <span class="time-icon">🕐</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group-new full-width">
-                <label>Người chủ trì</label>
-                <input type="text" id="meetingHost" placeholder="Nhập tên người chủ trì">
-            </div>
-            
-            <div class="form-group-new full-width">
-                <label>Ghi chú</label>
-                <textarea id="meetingNote" rows="3" placeholder="Nhập nội dung cuộc họp..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer-new">
-            <button class="btn-cancel-new" onclick="closeAddMeetingModal()">Hủy</button>
-            <button class="btn-submit-new" onclick="addNewMeeting()">Tạo lịch họp</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal chi tiết cuộc họp -->
-<div id="meetingDetailModal" class="modal">
-    <div class="modal-content-detail">
-        <div class="modal-header-detail">
-            <div class="header-tabs">
-                <button class="tab-btn active">Chi tiết cuộc họp</button>
-            </div>
-            <span class="close" onclick="closeMeetingDetailModal()">&times;</span>
-        </div>
-        <div class="modal-body-detail">
-            <h2>📅 Tiêu đề cuộc họp</h2>
-            <h3 id="meetingDetailTitle" class="task-subtitle">Họp ban giám đốc</h3>
-            
-            <div class="detail-section">
-                <h4>MÔ TẢ</h4>
-                <p id="meetingDetailDescription">Cuộc họp nhằm đánh giá kết quả làm việc...</p>
-            </div>
-            
-            <div class="detail-row">
-                <div class="detail-col">
-                    <h4>PHÒNG BAN</h4>
-                    <div class="info-badge">
-                        <span class="badge-icon">👥</span>
-                        <span id="meetingDetailDepartment">Ban giám đốc</span>
-                    </div>
-                    
-                    <h4 style="margin-top: 20px;">CHỦ TRÌ</h4>
-                    <div class="info-badge">
-                        <span class="badge-icon">👤</span>
-                        <span id="meetingDetailHost">Công Minh Tuấn</span>
-                    </div>
-                </div>
-                
-                <div class="detail-col">
-                    <h4>ĐỊA ĐIỂM</h4>
-                    <div class="info-badge">
-                        <span class="badge-icon">📍</span>
-                        <span id="meetingDetailLocation">Phòng họp tầng 3</span>
-                    </div>
-                    
-                    <h4 style="margin-top: 20px;">NGÀY & THỜI GIAN</h4>
-                    <div class="info-badge">
-                        <span class="badge-icon">📅</span>
-                        <span id="meetingDetailDateTime">28/02/2026<br>08:00 - 10:00</span>
-                    </div>
+                    <span class="detail-item">📅 {{ meeting.start_time|date:"d/m/Y" }}</span>
+                    <span class="detail-item">👤 {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</span>
+                    <span class="detail-item">👥 {{ meeting.participants.count }} người tham gia</span>
                 </div>
             </div>
         </div>
-        <div class="modal-footer-detail">
-            <button class="btn-edit" onclick="editMeeting()">Chỉnh sửa nội dung</button>
-            <button class="btn-delete" onclick="deleteMeeting()">Xóa cuộc họp</button>
+        {% empty %}
+        <div class="meeting-item">
+            <p style="text-align: center; color: #999; padding: 40px;">Chưa có cuộc họp nào. Hãy tạo cuộc họp mới!</p>
         </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
-
 
 {% block extra_js %}
 <script src="{% static 'js/meeting_schedule.js' %}"></script>

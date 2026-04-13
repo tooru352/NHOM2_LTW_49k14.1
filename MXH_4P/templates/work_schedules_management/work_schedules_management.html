@@ -1,332 +1,156 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Lịch Làm Việc - FourPoint Hotel{% endblock %}
+{% block title %}Quản lý lịch làm việc - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/work_schedules_management/lich_lam.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'css/work_schedules_management/lich_lam.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
-<!-- ===== SCHEDULE VIEW ===== -->
-<div class="schedule-page" id="scheduleView">
-
-  <div class="page-header">
-    <h1>Lịch Làm Việc Tuần</h1>
-    <div class="actions">
-      <button class="btn-create" id="btnCreate" onclick="openCreateView()">+ Tạo lịch làm việc</button>
-      <button class="btn-edit"   id="btnEdit"   onclick="openEditView()">🗓 Sửa lịch</button>
-      <button class="btn-del"    id="btnDel"    onclick="confirmDelete()">🗑 Xóa lịch</button>
+<div class="work-schedules-management">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>📅 Quản Lý Lịch Làm Việc</h1>
+            <p class="subtitle">Tuần bắt đầu: {{ week_start|date:"d/m/Y" }}</p>
+        </div>
+        <div class="header-right">
+            <button class="btn-primary" onclick="window.location.href='{% url 'create_work_schedule' %}'">➕ Tạo lịch mới</button>
+        </div>
     </div>
-  </div>
 
-  <div class="week-selector">
-    <label>Chọn tuần:</label>
-    <div class="week-nav">
-      <button class="week-btn" onclick="changeWeek(-1)">‹ Tuần trước</button>
-      <span class="week-range" id="weekRange"></span>
-      <span class="badge-current" id="badgeCurrent">TUẦN HIỆN TẠI</span>
-      <button class="week-btn" onclick="changeWeek(1)" id="btnNext">Tuần sau ›</button>
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue">📋</div>
+            <div class="stat-content">
+                <h2>{{ total_schedules }}</h2>
+                <p>Tổng lịch làm</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon yellow">⏳</div>
+            <div class="stat-content">
+                <h2>{{ pending_schedules }}</h2>
+                <p>Chờ xác nhận</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-content">
+                <h2>{{ accepted_schedules }}</h2>
+                <p>Đã chấp nhận</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon red">❌</div>
+            <div class="stat-content">
+                <h2>{{ rejected_schedules }}</h2>
+                <p>Từ chối</p>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th class="col-emp">NHÂN VIÊN</th>
-          <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
-          <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
-        </tr>
-      </thead>
-      <tbody id="scheduleBody"></tbody>
-    </table>
-  </div>
-
-  <div class="schedule-footer">
-    <div class="footer-top">
-      <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
-      <div class="shift-totals" id="shiftTotals"></div>
-    </div>
-    <div class="footer-bottom">
-      <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
-      <div class="shift-legend">
-        <div class="legend-item">
-          <span class="leg-badge leg-ms">M5</span>
-          <div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div>
-        </div>
-        <div class="legend-item">
-          <span class="leg-badge leg-a1">A1</span>
-          <div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div>
-        </div>
-        <div class="legend-item">
-          <span class="leg-badge leg-e9">E9</span>
-          <div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div>
-        </div>
-        <div class="legend-item">
-          <span class="leg-badge leg-mgss">M6SS</span>
-          <div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div>
-        </div>
-        <div class="legend-item">
-          <span class="leg-badge leg-do">DO</span>
-          <div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- end scheduleView -->
-
-<!-- ===== CREATE VIEW ===== -->
-<div class="create-view" id="createView">
-  <div class="create-header">
-    <div>
-      <h1>Lịch Làm Việc Tuần</h1>
-      <p>Quản lý lịch làm việc của nhân viên theo tuần</p>
-    </div>
-    <div class="create-week-pick">
-      <button class="week-display-btn" onclick="toggleCalPopup(event)" id="weekDisplayBtn">
-        <span id="weekDisplayText">Week 06, 2026</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2c3e50" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-      </button>
-      <div class="cal-popup" id="calPopup">
-        <div class="cal-nav">
-          <span class="cal-nav-title" id="calMonthTitle"></span>
-          <div class="cal-nav-arrows">
-            <button title="Không thể thay đổi">↑</button>
-            <button title="Không thể thay đổi">↓</button>
-          </div>
-        </div>
-        <table class="cal-grid">
-          <thead>
-            <tr>
-              <th class="week-col">Tuần</th>
-              <th>H</th><th>B</th><th>T</th><th>N</th><th>S</th><th>B</th><th>C</th>
-            </tr>
-          </thead>
-          <tbody id="calBody"></tbody>
+    <!-- Schedules Table -->
+    <div class="schedules-table-container">
+        <table class="schedules-table">
+            <thead>
+                <tr>
+                    <th>NHÂN VIÊN</th>
+                    <th>NGÀY LÀM</th>
+                    <th>CA LÀM VIỆC</th>
+                    <th>GIỜ</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>GHI CHÚ NHÂN VIÊN</th>
+                    <th>GHI CHÚ QUẢN LÝ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                <tr class="schedule-row {% if schedule.status == 1 %}accepted{% elif schedule.status == 2 %}rejected{% endif %}">
+                    <td class="employee-name">
+                        <div class="employee-avatar" style="background: {{ schedule.user.avatar_gradient|default:'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }};">
+                            {{ schedule.user.get_initials }}
+                        </div>
+                        {{ schedule.user.get_full_name|default:schedule.user.username }}
+                    </td>
+                    <td>{{ schedule.work_date|date:"d/m/Y (l)" }}</td>
+                    <td>
+                        <span class="shift-badge" style="background-color: {{ schedule.shift_code.color_code }};">
+                            {{ schedule.shift_code.shift_code }} - {{ schedule.shift_code.shift_name }}
+                        </span>
+                    </td>
+                    <td class="time-cell">{{ schedule.shift_code.start_time|time:"H:i" }} - {{ schedule.shift_code.end_time|time:"H:i" }}</td>
+                    <td>
+                        {% if schedule.status == 0 %}
+                        <span class="status-badge pending">⏳ Chờ xác nhận</span>
+                        {% elif schedule.status == 1 %}
+                        <span class="status-badge accepted">✅ Đã chấp nhận</span>
+                        {% elif schedule.status == 2 %}
+                        <span class="status-badge rejected">❌ Từ chối</span>
+                        {% else %}
+                        <span class="status-badge">{{ schedule.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="note-cell">{{ schedule.employee_note|default:"-" }}</td>
+                    <td class="note-cell">{{ schedule.manager_note|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <p style="color: #999; font-size: 16px;">Chưa có lịch làm việc nào cho tuần này.</p>
+                        <button class="btn-primary" onclick="window.location.href='{% url 'create_work_schedule' %}'">Tạo lịch mới</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
-        <div class="cal-footer">Tuần này</div>
-      </div>
     </div>
-  </div>
-  <div class="create-body">
-    <div class="create-table-wrap">
-      <table class="create-table">
-        <thead>
-          <tr>
-            <th class="col-emp">Nhân viên</th>
-            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
-            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
-          </tr>
-        </thead>
-        <tbody id="createBody"></tbody>
-      </table>
-    </div>
-    <div class="create-footer-bar">
-      <div class="create-totals-row">
-        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
-        <div class="shift-totals" id="createTotals"></div>
-      </div>
-      <div class="create-actions-row">
-        <button class="btn-cancel-create" onclick="closeCreateView()">Hủy tạo</button>
-        <button class="btn-save-create"   onclick="saveCreateView()">Lưu lịch làm việc</button>
-      </div>
-    </div>
-    <div class="create-footer-bar" style="margin-top:0">
-      <div class="footer-bottom">
-        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
-        <div class="shift-legend">
-          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+
+    <!-- Quick Create Section -->
+    <div class="quick-create-section">
+        <h3>📝 Tạo lịch nhanh</h3>
+        <p>Chọn nhân viên và ca làm việc để tạo lịch cho tuần này</p>
+        
+        <div class="quick-create-form">
+            <select class="form-select" id="quickEmployee">
+                <option value="">-- Chọn nhân viên --</option>
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                {% endfor %}
+            </select>
+            
+            <select class="form-select" id="quickShift">
+                <option value="">-- Chọn ca làm việc --</option>
+                {% for shift in shifts %}
+                <option value="{{ shift.id }}">{{ shift.shift_code }} - {{ shift.shift_name }} ({{ shift.start_time|time:"H:i" }}-{{ shift.end_time|time:"H:i" }})</option>
+                {% endfor %}
+            </select>
+            
+            <input type="date" class="form-input" id="quickDate" value="{{ week_start|date:'Y-m-d' }}">
+            
+            <button class="btn-primary" onclick="createQuickSchedule()">Tạo lịch</button>
         </div>
-      </div>
     </div>
-  </div>
-</div><!-- end createView -->
-
-<!-- ===== EDIT VIEW ===== -->
-<div class="edit-view" id="editView">
-  <div class="edit-header">
-    <h1>Lịch Làm Việc Tuần</h1>
-    <div class="edit-header-actions">
-      <button class="btn-edit-cancel" onclick="closeEditView()">Hủy</button>
-      <button class="btn-edit-save"   onclick="saveEditView()">Lưu thay đổi</button>
-    </div>
-  </div>
-  <div class="edit-body">
-    <div class="week-selector" style="margin-bottom:16px">
-      <label>Chọn tuần:</label>
-      <div class="week-nav">
-        <button class="week-btn" disabled style="opacity:0.4">‹ Tuần trước</button>
-        <span class="week-range" id="editWeekRange"></span>
-        <span class="badge-current" id="editBadgeCurrent">TUẦN HIỆN TẠI</span>
-        <button class="week-btn" disabled style="opacity:0.4">Tuần sau ›</button>
-      </div>
-    </div>
-    <div class="edit-table-wrap">
-      <table class="edit-table">
-        <thead>
-          <tr>
-            <th class="col-emp">NHÂN VIÊN</th>
-            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
-            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
-          </tr>
-        </thead>
-        <tbody id="editBody"></tbody>
-      </table>
-    </div>
-    <div class="schedule-footer">
-      <div class="footer-top">
-        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
-        <div class="shift-totals" id="editTotals"></div>
-      </div>
-      <div class="footer-bottom">
-        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
-        <div class="shift-legend">
-          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
-          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div><!-- end editView -->
-
-<!-- Modal Overlay -->
-<div class="overlay" id="modalOverlay" onclick="closeModal()"></div>
-<div class="modal" id="scheduleModal">
-  <div class="modal-header">
-    <h3 id="modalTitle">Tạo lịch làm việc</h3>
-    <button class="modal-close" onclick="closeModal()">✕</button>
-  </div>
-  <div class="modal-body">
-    <div class="form-group">
-      <label>Nhân viên</label>
-      <select id="empSelect"><option value="">-- Chọn nhân viên --</option></select>
-    </div>
-    <div class="form-group">
-      <label>Tuần áp dụng</label>
-      <input type="week" id="weekInput">
-    </div>
-    <div class="shift-grid">
-      <div class="shift-row-header">
-        <span></span>
-        <span>T2</span><span>T3</span><span>T4</span>
-        <span>T5</span><span>T6</span><span>T7</span><span>CN</span>
-      </div>
-      <div class="shift-row-input" id="shiftInputRow"><span>Ca làm</span></div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn-cancel" onclick="closeModal()">Hủy</button>
-    <button class="btn-save"   onclick="saveSchedule()">Lưu lịch</button>
-  </div>
-</div>
-
-<!-- Modal Xóa -->
-<div class="overlay" id="deleteOverlay" onclick="closeDelete()"></div>
-<div class="modal" id="deleteModal" style="width:380px;border-radius:20px;overflow:hidden">
-  <div style="padding:36px 28px 24px;text-align:center">
-    <div style="width:72px;height:72px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10" stroke-dasharray="4 2"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-    </div>
-    <p style="font-size:18px;font-weight:700;color:#1a1a2e;line-height:1.5;margin:0">
-      Bạn có chắc muốn xóa lịch làm tuần này không?
-    </p>
-  </div>
-  <div style="display:flex;border-top:1px solid #f0f0f0">
-    <button onclick="closeDelete()"
-      style="flex:1;padding:16px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:15px;font-weight:500;color:#6b7280;cursor:pointer">
-      Hủy
-    </button>
-    <button onclick="deleteSchedule()"
-      style="flex:1;padding:16px;background:none;border:none;font-size:15px;font-weight:700;color:#ef4444;cursor:pointer">
-      Đồng ý
-    </button>
-  </div>
-</div>
-
-<!-- Toast -->
-<div class="toast" id="toast">
-  <div class="toast-icon" id="toastIcon">✓</div>
-  <div class="toast-body">
-    <div class="toast-title" id="toastTitle"></div>
-    <div class="toast-desc"  id="toastDesc"></div>
-  </div>
-  <button class="toast-close" onclick="document.getElementById('toast').classList.remove('show')">×</button>
-</div>
-
-<!-- Reject Popup (quản lý xem ca bị từ chối) -->
-<div class="overlay" id="rejectOverlay" onclick="closeRejectPopup()"></div>
-<div class="reject-modal" id="rejectModal">
-  <div class="rj-header">
-    <div class="rj-header-left">
-      <span class="rj-warn-icon">⚠️</span>
-      <div>
-        <h3>Ca làm việc bị từ chối</h3>
-        <p>Nhân viên đã từ chối ca làm việc này</p>
-      </div>
-    </div>
-    <button class="rj-close" onclick="closeRejectPopup()">✕</button>
-  </div>
-  <div class="rj-body">
-    <div class="rj-field">
-      <div class="rj-label">Tên nhân viên</div>
-      <div class="rj-value" id="rjEmpName"></div>
-    </div>
-    <div class="rj-field">
-      <div class="rj-label">Ngày làm việc</div>
-      <div class="rj-value" id="rjDate"></div>
-    </div>
-    <div class="rj-field">
-      <div class="rj-label">Ca làm việc bị từ chối</div>
-      <div class="rj-shift-box">
-        <div class="rj-shift-icon" id="rjShiftIcon"></div>
-        <div>
-          <div class="rj-shift-name" id="rjShiftName"></div>
-          <div class="rj-shift-time" id="rjShiftTime"></div>
-        </div>
-      </div>
-    </div>
-    <div class="rj-reason-box">
-      <div class="rj-reason-title">
-        <div class="rj-reason-icon">💬</div>
-        Lý do nhân viên đưa ra:
-      </div>
-      <div class="rj-reason-text" id="rjReasonText"></div>
-    </div>
-    <div class="rj-reply-box">
-      <div class="rj-reply-label">Phản hồi của bạn <span>*</span></div>
-      <textarea id="rjReply" maxlength="500"
-        placeholder="Nhập phản hồi giải thích cho nhân viên (Ví dụ: Do thiếu nhân sự...)..."
-        oninput="document.getElementById('rjCharCount').textContent = this.value.length + ' / 500 ký tự'"></textarea>
-      <div class="rj-reply-footer">
-        <span>💡 Lý do cần có ít nhất 10 ký tự để gửi từ chối</span>
-        <span id="rjCharCount">0 / 500 ký tự</span>
-      </div>
-    </div>
-  </div>
-  <div class="rj-footer">
-    <button class="btn-rj-reassign" onclick="handleReassign()">🔄 Sắp xếp lại</button>
-    <button class="btn-rj-cancel"   onclick="handleManagerCancel()">✕ Từ chối</button>
-  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/work_schedules_management.js' %}?v=4"></script>
+<script src="{% static 'js/work_schedules_management.js' %}"></script>
+<script>
+function createQuickSchedule() {
+    const employee = document.getElementById('quickEmployee').value;
+    const shift = document.getElementById('quickShift').value;
+    const date = document.getElementById('quickDate').value;
+    
+    if (!employee || !shift || !date) {
+        alert('Vui lòng chọn đầy đủ thông tin!');
+        return;
+    }
+    
+    // Redirect to create page with params
+    window.location.href = `{% url 'create_work_schedule' %}?user=${employee}&shift=${shift}&date=${date}`;
+}
+</script>
 {% endblock %}

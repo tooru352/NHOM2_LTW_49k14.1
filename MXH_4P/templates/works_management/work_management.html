@@ -4,6 +4,122 @@
 {% block title %}Quản lý công việc - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}?v=5">
+{% endblock %}
+
+{% block content %}
+<div class="work-management">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>📋 Quản Lý Công Việc</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn-history" onclick="window.location.href='/meeting-schedule'">🕐 Lịch họp</button>
+            <button class="btn-primary" onclick="window.location.href='{% url 'create_task' %}'">➕ Tạo công việc mới</button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue">📋</div>
+            <div class="stat-content">
+                <h2>{{ tasks.count }}</h2>
+                <p>Tổng công việc</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon yellow">🏆</div>
+            <div class="stat-content">
+                <h2>{{ tasks_in_progress }}</h2>
+                <p>Đang thực hiện</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-content">
+                <h2>{{ tasks_done }}</h2>
+                <p>Hoàn thành</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon red">⏰</div>
+            <div class="stat-content">
+                <h2>{{ tasks_todo }}</h2>
+                <p>Chưa xử lý</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-left">
+            <span class="filter-icon">📅</span>
+            <strong>Danh Sách Công Việc</strong>
+        </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="tasks-table-container">
+        <table class="tasks-table">
+            <thead>
+                <tr>
+                    <th>CÔNG VIỆC</th>
+                    <th>NHÂN VIÊN</th>
+                    <th>NGƯỜI GIAO</th>
+                    <th>NGÀY TẠO</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>MÔ TẢ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr class="task-row {% if task.status == 'Done' %}highlight-green{% elif task.status == 'InProgress' %}highlight-yellow{% endif %}">
+                    <td class="task-name">{{ task.title }}</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags">
+                            <span class="employee-tag">
+                                {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>{{ task.created_by.get_full_name|default:task.created_by.username }}</td>
+                    <td class="time-cell">{{ task.created_at|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if task.status == 'Done' %}
+                        <span class="status-badge completed">✅ Hoàn thành</span>
+                        {% elif task.status == 'InProgress' %}
+                        <span class="status-badge pending">⏳ Đang thực hiện</span>
+                        {% elif task.status == 'Todo' %}
+                        <span class="status-badge overdue">❌ Chưa xử lý</span>
+                        {% else %}
+                        <span class="status-badge">{{ task.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="note-cell">{{ task.description|truncatewords:10 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px;">
+                        <p style="color: #999; font-size: 16px;">Chưa có công việc nào. Hãy tạo công việc mới!</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/work_management.js' %}"></script>
+{% endblock %}
+{% load static %}
+
+{% block title %}Quản lý công việc - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}?v=4">
 {% endblock %}
 

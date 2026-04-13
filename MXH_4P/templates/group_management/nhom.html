@@ -20,7 +20,7 @@
 <div class="nhom-page">
   <div class="nhom-topbar">
     <h2>Quản Lý Nhóm</h2>
-    {% if user.role == "quanly" %}<a href="/nhom/new/sua/" class="btn-tao" style="text-decoration:none">+ Tạo nhóm mới</a>{% endif %}
+    {% if user.is_manager %}<a href="/nhom/new/" class="btn-tao" style="text-decoration:none">+ Tạo nhóm mới</a>{% endif %}
   </div>
   <div class="nhom-search-bar">
     <input type="text" id="searchInput" placeholder="Tìm kiếm nhóm..." oninput="filterNhom()">
@@ -32,25 +32,36 @@
     </select>
   </div>
   <div class="nhom-grid" id="nhomGrid">
+    {% if nhom_list %}
     {% for n in nhom_list %}
-    <a href="/nhom/{{ n.id }}/?role={{ user.role }}" class="nhom-card" data-ten="{{ n.ten }}" data-loai="{{ n.loai }}">
-      <div class="card-inner" style="background:{{ n.gradient }}">
-        <span class="loai-badge {{ n.loai }}">{{ n.loai_label }}</span>
-        <h3>{{ n.ten }}</h3>
-        <p>{{ n.mo_ta }}</p>
+    <a href="/nhom/{{ n.id }}/" class="nhom-card" data-ten="{{ n.name }}" data-loai="{{ n.status }}">
+      <div class="card-inner" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+        <span class="loai-badge {{ n.status }}">{{ n.get_status_display }}</span>
+        <h3>{{ n.name }}</h3>
+        <p>{{ n.description|default:"Chưa có mô tả" }}</p>
         <div class="card-stats">
-          <span>&#128101; {{ n.so_tv }} thành viên</span>
-          <span>&#128221; {{ n.so_bv }} bài viết</span>
+          <span>&#128101; {{ n.member_count }} thành viên</span>
+          <span>&#128221; {{ n.post_count }} bài viết</span>
         </div>
         <div class="card-avs">
-          {% for tv in n.thanh_vien|slice:":4" %}
-          <div class="cav" style="background:{{ tv.color }}">{{ tv.av }}</div>
+          {% for member in n.members.all|slice:":4" %}
+          <div class="cav" style="background:#3498db">{{ member.user.get_initials }}</div>
           {% endfor %}
-          {% if n.so_tv > 4 %}<div class="cav more">+{{ n.so_tv|add:"-4" }}</div>{% endif %}
+          {% if n.member_count > 4 %}<div class="cav more">+{{ n.member_count|add:"-4" }}</div>{% endif %}
         </div>
       </div>
     </a>
     {% endfor %}
+    {% else %}
+    <div style="grid-column: 1/-1; text-align:center; padding:60px 20px; color:#888;">
+      <p style="font-size:48px; margin-bottom:16px;">📁</p>
+      <h3 style="margin-bottom:8px; color:#555;">Chưa có nhóm nào</h3>
+      <p style="margin-bottom:24px;">Tạo nhóm mới để bắt đầu làm việc cùng nhau</p>
+      {% if user.is_manager %}
+      <a href="/nhom/new/" class="btn-tao" style="display:inline-block; text-decoration:none;">+ Tạo nhóm đầu tiên</a>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 </div>
 

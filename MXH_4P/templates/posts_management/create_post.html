@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tạo bài viết mới{% endblock %}
+
+{% block extra_css %}
+<style>
+.create-post-page{max-width:700px;margin:20px auto;padding:20px}
+.create-post-card{background:#fff;border-radius:14px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.create-post-header{margin-bottom:24px}
+.create-post-header h2{font-size:22px;margin-bottom:8px;color:#1a1a2e}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
+.form-group textarea{width:100%;padding:12px;border:1.5px solid #e4e6eb;border-radius:10px;font-size:14px;outline:none;resize:vertical;font-family:inherit;min-height:120px}
+.form-group textarea:focus{border-color:#667eea}
+.scope-options{display:flex;gap:12px;margin-bottom:12px}
+.scope-option{flex:1;padding:16px;border:2px solid #e4e6eb;border-radius:10px;cursor:pointer;transition:all 0.2s;text-align:center}
+.scope-option input[type="radio"]{display:none}
+.scope-option.selected{border-color:#667eea;background:#f0f0ff}
+.scope-option:hover{border-color:#667eea}
+.scope-option .icon{font-size:24px;margin-bottom:8px}
+.scope-option .title{font-weight:600;font-size:14px;color:#333;margin-bottom:4px}
+.scope-option .desc{font-size:12px;color:#888}
+.groups-selection{display:none;padding:16px;background:#f8f9fa;border-radius:10px;margin-top:12px}
+.groups-selection.show{display:block}
+.group-checkbox{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;cursor:pointer;transition:all 0.2s}
+.group-checkbox:hover{background:#fff}
+.group-checkbox input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+.group-checkbox label{cursor:pointer;font-size:14px;color:#333;flex:1}
+.form-actions{display:flex;gap:12px;margin-top:28px}
+.btn-cancel{flex:1;padding:12px;background:#f0f2f5;color:#333;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;text-decoration:none;text-align:center}
+.btn-submit{flex:1;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600}
+.error-message{background:#fee;border:1px solid #fcc;color:#c33;padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-post-page">
+  <div class="create-post-card">
+    <div class="create-post-header">
+      <h2>📝 Tạo bài viết mới</h2>
+      <p style="font-size:14px;color:#888;">Chia sẻ thông tin với đồng nghiệp</p>
+    </div>
+
+    {% if form.errors %}
+    <div class="error-message">
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+          {{ error }}<br>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="postForm">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label>Nội dung <span style="color:#e74c3c;">*</span></label>
+        {{ form.content }}
+      </div>
+
+      <div class="form-group">
+        <label>Phạm vi bài đăng <span style="color:#e74c3c;">*</span></label>
+        <div class="scope-options">
+          <div class="scope-option" onclick="selectScope('hotel', this)">
+            <div class="icon">🏨</div>
+            <div class="title">Toàn khách sạn</div>
+            <div class="desc">Tất cả nhân viên</div>
+            <input type="radio" name="scope" value="hotel" {% if form.scope.value == 'hotel' or not form.scope.value %}checked{% endif %}>
+          </div>
+          <div class="scope-option" onclick="selectScope('groups', this)">
+            <div class="icon">👥</div>
+            <div class="title">Theo nhóm</div>
+            <div class="desc">Chọn nhóm cụ thể</div>
+            <input type="radio" name="scope" value="groups" {% if form.scope.value == 'groups' %}checked{% endif %}>
+          </div>
+        </div>
+        
+        <div class="groups-selection" id="groupsSelection">
+          <label style="font-weight:600;margin-bottom:12px;display:block;">Chọn nhóm (có thể chọn nhiều):</label>
+          {% for group in form.fields.groups.queryset %}
+          <div class="group-checkbox">
+            <input type="checkbox" name="groups" value="{{ group.id }}" id="group_{{ group.id }}"
+              {% if group.id in form.groups.value %}checked{% endif %}>
+            <label for="group_{{ group.id }}">{{ group.name }}</label>
+          </div>
+          {% empty %}
+          <p style="color:#888;font-size:13px;">Bạn chưa tham gia nhóm nào</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ảnh (tùy chọn)</label>
+        {{ form.image }}
+      </div>
+
+      <div class="form-actions">
+        <a href="{% url 'home' %}" class="btn-cancel">Hủy</a>
+        <button type="submit" class="btn-submit">✓ Đăng bài</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectScope(scope, element) {
+  // Remove selected class from all options
+  document.querySelectorAll('.scope-option').forEach(opt => opt.classList.remove('selected'));
+  
+  // Add selected class to clicked option
+  element.classList.add('selected');
+  
+  // Check the radio button
+  element.querySelector('input[type="radio"]').checked = true;
+  
+  // Show/hide groups selection
+  const groupsSelection = document.getElementById('groupsSelection');
+  if (scope === 'groups') {
+    groupsSelection.classList.add('show');
+  } else {
+    groupsSelection.classList.remove('show');
+    // Uncheck all group checkboxes
+    document.querySelectorAll('input[name="groups"]').forEach(cb => cb.checked = false);
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const checkedRadio = document.querySelector('input[name="scope"]:checked');
+  if (checkedRadio) {
+    const scopeOption = checkedRadio.closest('.scope-option');
+    scopeOption.classList.add('selected');
+    if (checkedRadio.value === 'groups') {
+      document.getElementById('groupsSelection').classList.add('show');
+    }
+  }
+});
+</script>
+{% endblock %}

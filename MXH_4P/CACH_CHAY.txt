@@ -1,0 +1,60 @@
+HƯỚNG DẪN CHẠY DỰ ÁN
+=====================
+
+0. XÓA DATABASE CŨ (nếu cần chạy lại từ đầu)
+---------------------------------------------
+# Xóa file database và migrations
+del db.sqlite3
+del /s /q social_media_4P\migrations\__pycache__
+del social_media_4P\migrations\0001_initial.py
+
+1. TẠO DATABASE VÀ MIGRATIONS
+------------------------------
+python manage.py makemigrations
+python manage.py migrate
+
+2. TẠO DJANGO GROUPS (Manager và Employee)
+-------------------------------------------
+python manage.py create_groups
+
+3. TẠO DỮ LIỆU MẪU
+-------------------
+# Tạo users (1 Admin + 3 Managers + 29 Employees)
+python create_hotel_data.py
+
+# Tạo posts, tasks, meetings
+python create_posts_tasks.py
+
+4. CHẠY SERVER
+--------------
+python manage.py runserver
+
+5. ĐĂNG NHẬP
+------------
+- Admin: admin / admin123
+- Managers: 
+  * doanxuantoan / doanxuantoan123 (F&B Manager)
+  * phamxuanthuong / phamxuanthuong123 (HK Manager)
+  * nguyennhatha / nguyennhatha123 (FO Manager)
+- Employees: xem file DANH_SACH_NHAN_SU.txt
+
+LƯU Ý QUAN TRỌNG
+----------------
+✓ Đã sửa lỗi field name mismatch:
+  - Task model: assigned_to, created_by (không phải assignee, assigner)
+  - TaskResponse model: user (không phải responder)
+  - Meeting model: created_by (không phải organizer)
+  - MeetingParticipant model: user (không phải participant)
+
+✓ Status values cho Task:
+  - 'Todo' (không phải 'pending')
+  - 'InProgress' (không phải 'in_progress')
+  - 'Done' (không phải 'completed')
+  - 'Cancelled'
+
+✓ Tất cả files đã được cập nhật:
+  - forms.py
+  - views.py
+  - create_posts_tasks.py
+
+✓ Nếu gặp lỗi "UNIQUE constraint failed", xóa database và chạy lại từ bước 0

@@ -1,48 +1,56 @@
 from django.core.management.base import BaseCommand
+from django.contrib.auth.models import Group
 from social_media_4P.models import User
 
 class Command(BaseCommand):
     help = 'Create sample users for testing'
 
     def handle(self, *args, **kwargs):
-        # Create Quản Lý user
-        if not User.objects.filter(email='quanly@fourpoints.com').exists():
-            quanly = User.objects.create_user(
-                username='quanly',
-                email='quanly@fourpoints.com',
+        # Get or create groups
+        manager_group, _ = Group.objects.get_or_create(name='Manager')
+        employee_group, _ = Group.objects.get_or_create(name='Employee')
+        
+        # Create Manager user
+        if not User.objects.filter(email='manager@fourpoints.com').exists():
+            manager = User.objects.create_user(
+                username='manager',
+                email='manager@fourpoints.com',
                 password='123456',
-                first_name='Đoàn Xuân',
-                last_name='Toàn',
-                role='quanly'
+                first_name='Doan Xuan',
+                last_name='Toan'
             )
-            self.stdout.write(self.style.SUCCESS(f'Created Quản Lý user: {quanly.email}'))
+            manager.groups.add(manager_group)
+            self.stdout.write(self.style.SUCCESS(f'✓ Created Manager user: {manager.email}'))
         else:
             # Update existing user
-            quanly = User.objects.get(email='quanly@fourpoints.com')
-            quanly.first_name = 'Đoàn Xuân'
-            quanly.last_name = 'Toàn'
-            quanly.save()
-            self.stdout.write(self.style.WARNING('Quản Lý user already exists - updated name'))
+            manager = User.objects.get(email='manager@fourpoints.com')
+            manager.first_name = 'Doan Xuan'
+            manager.last_name = 'Toan'
+            manager.groups.add(manager_group)
+            manager.save()
+            self.stdout.write(self.style.WARNING('○ Manager user already exists - updated'))
 
-        # Create Nhân Viên user
-        if not User.objects.filter(email='nhanvien@fourpoints.com').exists():
-            nhanvien = User.objects.create_user(
-                username='nhanvien',
-                email='nhanvien@fourpoints.com',
+        # Create Employee user
+        if not User.objects.filter(email='employee@fourpoints.com').exists():
+            employee = User.objects.create_user(
+                username='employee',
+                email='employee@fourpoints.com',
                 password='123456',
-                first_name='Võ Thị Kim',
-                last_name='Hoa',
-                role='nhanvien'
+                first_name='Vo Thi Kim',
+                last_name='Hoa'
             )
-            self.stdout.write(self.style.SUCCESS(f'Created Nhân Viên user: {nhanvien.email}'))
+            employee.groups.add(employee_group)
+            self.stdout.write(self.style.SUCCESS(f'✓ Created Employee user: {employee.email}'))
         else:
             # Update existing user
-            nhanvien = User.objects.get(email='nhanvien@fourpoints.com')
-            nhanvien.first_name = 'Võ Thị Kim'
-            nhanvien.last_name = 'Hoa'
-            nhanvien.save()
-            self.stdout.write(self.style.WARNING('Nhân Viên user already exists - updated name'))
+            employee = User.objects.get(email='employee@fourpoints.com')
+            employee.first_name = 'Vo Thi Kim'
+            employee.last_name = 'Hoa'
+            employee.groups.add(employee_group)
+            employee.save()
+            self.stdout.write(self.style.WARNING('○ Employee user already exists - updated'))
 
-        self.stdout.write(self.style.SUCCESS('\nSample users created successfully!'))
-        self.stdout.write('Quản Lý: quanly@fourpoints.com / 123456 - Đoàn Xuân Toàn')
-        self.stdout.write('Nhân Viên: nhanvien@fourpoints.com / 123456 - Võ Thị Kim Hoa')
+        self.stdout.write(self.style.SUCCESS('\n✓ Sample users created successfully!'))
+        self.stdout.write('Manager: manager@fourpoints.com / 123456 - Doan Xuan Toan')
+        self.stdout.write('Employee: employee@fourpoints.com / 123456 - Vo Thi Kim Hoa')
+
