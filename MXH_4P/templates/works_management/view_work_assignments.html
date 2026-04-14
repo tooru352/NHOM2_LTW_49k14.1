@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Xem phân công - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}?v=6">
+<style>
+    /* Read-only mode styles */
+    .readonly-banner {
+        background: #3498db;
+        color: white;
+        padding: 12px 20px;
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+    .add-employee-btn, .remove-tag, .btn-primary, .btn-filter {
+        display: none !important;
+    }
+    .task-row {
+        cursor: pointer;
+    }
+    .employee-tags {
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="work-management">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>📋 Xem Phân Công Công Việc</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn-back" onclick="window.location.href='/employee-dashboard/'">← Quay lại</button>
+        </div>
+    </div>
+
+    <!-- Read-only Banner -->
+    <div class="readonly-banner">
+        👁️ Chế độ xem - Bạn đang xem phân công của phòng ban {% if user_department %}{{ user_department }}{% else %}tất cả{% endif %}
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card" onclick="filterByStatus('all')" data-status="all">
+            <div class="stat-icon blue">📋</div>
+            <div class="stat-content">
+                <h2>{{ tasks.count }}</h2>
+                <p>Tổng công việc</p>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('InProgress')" data-status="InProgress">
+            <div class="stat-icon yellow">🏆</div>
+            <div class="stat-content">
+                <h2>{{ tasks_in_progress }}</h2>
+                <p>Đang thực hiện</p>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('Done')" data-status="Done">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-content">
+                <h2>{{ tasks_done }}</h2>
+                <p>Hoàn thành</p>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('Todo')" data-status="Todo">
+            <div class="stat-icon red">⏰</div>
+            <div class="stat-content">
+                <h2>{{ tasks_todo }}</h2>
+                <p>Chưa xử lý</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-left">
+            <span class="filter-icon">📅</span>
+            <strong>Phân Công Chi Tiết</strong>
+            <div class="date-picker">
+                <button class="btn-date-nav" onclick="navigateDate('{{ previous_date|date:'Y-m-d' }}')" title="Ngày trước">◀</button>
+                <span class="calendar-icon">📅</span>
+                <input type="date" value="{{ selected_date|date:'Y-m-d' }}" id="filterDate" onchange="navigateToDate(this.value)">
+                <span class="date-label" id="dateLabel">{{ selected_date|date:"l, d/m/Y" }}</span>
+                <button class="btn-date-nav" onclick="navigateDate('{{ next_date|date:'Y-m-d' }}')" title="Ngày sau">▶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="tasks-table-container">
+        <table class="tasks-table">
+            <thead>
+                <tr>
+                    <th>VỊ TRÍ / CÔNG VIỆC</th>
+                    <th>NHÂN VIÊN</th>
+                    <th>SỐ LƯỢNG</th>
+                    <th>CA LÀM VIỆC</th>
+                    <th>THỜI GIAN</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>GHI CHÚ</th>
+                </tr>
+            </thead>
+            <tbody id="tasksTableBody">
+                {% for task in tasks %}
+                <tr class="task-row {% if task.status == 'Done' %}highlight-green{% elif task.status == 'InProgress' %}highlight-yellow{% endif %}" 
+                    data-status="{{ task.status }}"
+                    onclick="showTaskDetail({{ task.id }}, '{{ task.title|escapejs }}', '{{ task.description|escapejs }}', '{{ task.created_by.get_full_name|default:task.created_by.username|escapejs }}', '{{ task.created_at|date:"d/m/Y H:i" }}', '{{ task.status }}')">
+                    <td class="task-name">{{ task.title }}</td>
+                    <td class="employee-cell">
+                        <div class="employee-tags" data-task-id="{{ task.id }}">
+                            {% for assignment in task.assignments.all %}
+                            <span class="employee-tag" data-user-id="{{ assignment.user.id }}">
+                                {{ assignment.user.get_full_name|default:assignment.user.username }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="quantity-cell"><span class="quantity-display" data-task-id="{{ task.id }}">{{ task.assignments.count|default:1 }}</span></td>
+                    <td><span class="shift-badge morning">{{ task.shift|default:"Sáng" }}</span></td>
+                    <td class="time-cell">
+                        {% if task.start_time and task.end_time %}
+                            {{ task.start_time|time:"H:i" }} - {{ task.end_time|time:"H:i" }}
+                        {% else %}
+                            {{ task.created_at|date:"H:i" }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if task.status == 'Done' %}
+                        <span class="status-badge completed">✅ Hoàn thành</span>
+                        {% elif task.status == 'InProgress' %}
+                        <span class="status-badge pending">⏳ Đang thực hiện</span>
+                        {% elif task.status == 'Todo' %}
+                        <span class="status-badge overdue">❌ Chưa xử lý</span>
+                        {% endif %}
+                    </td>
+                    <td class="note-cell">{{ task.description|truncatewords:10 }}</td>
+                    <!-- Hidden data for modal -->
+                    <td style="display:none;" class="task-department">{{ task.department|default:"Chung" }}</td>
+                    <td style="display:none;" class="task-shift">{{ task.shift|default:"Sáng" }}</td>
+                    <td style="display:none;" class="task-start-time">{% if task.start_time %}{{ task.start_time|time:"H:i" }}{% endif %}</td>
+                    <td style="display:none;" class="task-end-time">{% if task.end_time %}{{ task.end_time|time:"H:i" }}{% endif %}</td>
+                    <td style="display:none;" class="task-description">{{ task.description }}</td>
+                    <td style="display:none;" class="task-employees" data-employees='[{% for assignment in task.assignments.all %}{"id":{{ assignment.user.id }},"name":"{{ assignment.user.get_full_name|default:assignment.user.username|escapejs }}","initials":"{{ assignment.user.get_initials }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <p style="color: #999; font-size: 16px;">Chưa có công việc nào trong ngày này.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal chi tiết công việc (Read-only) -->
+<div id="taskDetailModal" class="modal">
+    <div class="modal-content-detail">
+        <div class="modal-header-detail">
+            <div class="header-tabs">
+                <button class="tab-btn active">THÔNG TIN CHUNG</button>
+                <button class="tab-btn">ID: JOB-<span id="taskIdNumber">10482</span></button>
+            </div>
+            <span class="close" onclick="closeTaskDetailModal()">&times;</span>
+        </div>
+        <div class="modal-body-detail">
+            <h2 id="detailTaskName">Chi tiết công việc</h2>
+            <h3 id="detailTaskTitle" class="task-subtitle">Tài sản Core</h3>
+            
+            <div class="detail-section">
+                <h4>MÔ TẢ CÔNG VIỆC</h4>
+                <p id="detailDescription">Kiểm tra và bảo trì tất cả tài sản cơ bản của khách sạn...</p>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-col">
+                    <h4>NHÂN VIÊN ĐƯỢC PHÂN CÔNG</h4>
+                    <div class="employee-list-detail" id="detailEmployees">
+                        <div class="employee-item-detail">
+                            <div class="employee-avatar">NA</div>
+                            <div class="employee-info-detail">
+                                <strong>Nguyễn Văn An</strong>
+                                <span>Đang thực hiện công việc</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-col">
+                    <h4>PHÒNG BAN</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">👥</span>
+                        <span id="detailDepartment">Quản lý & Vận hành</span>
+                    </div>
+                    
+                    <h4 style="margin-top: 20px;">CA LÀM VIỆC & THỜI GIAN</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">⏰</span>
+                        <span id="detailShiftTime">Ca Sáng<br>06:00 AM — 02:00 PM</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>GHI CHÚ TỪ GIÁM SÁT</h4>
+                <div class="note-box" id="detailNote">"Cần ưu tiên kiểm tra hệ thống thang máy và các thiết bị điện trong tầng hầm"</div>
+            </div>
+        </div>
+        <div class="modal-footer-detail">
+            <button class="btn-cancel-new" onclick="closeTaskDetailModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Current filter status
+let currentFilterStatus = 'all';
+let currentTaskId = null;
+
+// Filter tasks by status
+function filterByStatus(status) {
+    currentFilterStatus = status;
+    
+    // Update active state on stat cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    document.querySelector(`.stat-card[data-status="${status}"]`).classList.add('active');
+    
+    // Filter task rows
+    const taskRows = document.querySelectorAll('.task-row');
+    let visibleCount = 0;
+    
+    taskRows.forEach(row => {
+        const taskStatus = row.dataset.status;
+        
+        if (status === 'all' || taskStatus === status) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show notification
+    const statusNames = {
+        'all': 'Tất cả',
+        'InProgress': 'Đang thực hiện',
+        'Done': 'Hoàn thành',
+        'Todo': 'Chưa xử lý'
+    };
+    showNotification(`🔍 Đang hiển thị: ${statusNames[status]} (${visibleCount} công việc)`, 'success');
+}
+
+// Navigate to specific date
+function navigateDate(date) {
+    window.location.href = `?date=${date}`;
+}
+
+// Navigate to date from input
+function navigateToDate(date) {
+    if (date) {
+        window.location.href = `?date=${date}`;
+    }
+}
+
+// Show task detail modal
+function showTaskDetail(taskId, title, description, createdBy, createdAt, status) {
+    currentTaskId = taskId;
+    
+    // Find the row to get employee data
+    const row = event.currentTarget;
+    const employeesData = row.querySelector('.task-employees').dataset.employees;
+    const employees = JSON.parse(employeesData);
+    const department = row.querySelector('.task-department').textContent;
+    const shift = row.querySelector('.task-shift').textContent;
+    const startTime = row.querySelector('.task-start-time').textContent;
+    const endTime = row.querySelector('.task-end-time').textContent;
+    
+    // Update modal content
+    document.getElementById('taskIdNumber').textContent = taskId;
+    document.getElementById('detailTaskTitle').textContent = title;
+    document.getElementById('detailDescription').textContent = description;
+    document.getElementById('detailDepartment').textContent = department;
+    document.getElementById('detailNote').textContent = `"${description}"`;
+    
+    // Format and display shift and time
+    let shiftTimeDisplay = `Ca ${shift}`;
+    if (startTime && endTime) {
+        shiftTimeDisplay += `<br>${startTime} — ${endTime}`;
+    }
+    shiftTimeDisplay += `<br><small style="color: #95a5a6;">Ngày tạo: ${createdAt}</small>`;
+    document.getElementById('detailShiftTime').innerHTML = shiftTimeDisplay;
+    
+    // Update employees list
+    const employeesHtml = employees.map(emp => `
+        <div class="employee-item-detail">
+            <div class="employee-avatar">${emp.initials}</div>
+            <div class="employee-info-detail">
+                <strong>${emp.name}</strong>
+                <span>${status === 'Done' ? 'Đã hoàn thành công việc' : status === 'InProgress' ? 'Đang thực hiện công việc' : 'Chưa bắt đầu'}</span>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById('detailEmployees').innerHTML = employeesHtml || '<p style="color: #999;">Chưa có nhân viên được phân công</p>';
+    
+    // Show modal
+    document.getElementById('taskDetailModal').style.display = 'block';
+}
+
+// Close task detail modal
+function closeTaskDetailModal() {
+    document.getElementById('taskDetailModal').style.display = 'none';
+    currentTaskId = null;
+}
+
+// Show notification
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    const bgColor = type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#f39c12';
+    
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 2000;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('taskDetailModal');
+    if (event.target === modal) {
+        closeTaskDetailModal();
+    }
+}
+
+// Initialize: Set "Tổng công việc" as active on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.stat-card[data-status="all"]').classList.add('active');
+});
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

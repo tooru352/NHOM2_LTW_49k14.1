@@ -23,7 +23,7 @@
   </div>
   
   <div class="nav-section-label">QUẢN LÝ CÔNG VIỆC</div>
-  {% if request.user.role == 'quanly' %}
+  {% if request.user.is_manager %}
   <div class="nav-item {% if 'work-management' in request.path %}active{% endif %}" onclick="window.location.href='/work-management/'">
     <span class="nav-icon">📋</span> Quản lý công việc
   </div>
@@ -31,7 +31,7 @@
   <div class="nav-item {% if 'employee-dashboard' in request.path %}active{% endif %}" onclick="window.location.href='/employee-dashboard/'">
     <span class="nav-icon">📝</span> Công việc cá nhân
   </div>
-  {% if request.user.role == 'quanly' %}
+  {% if request.user.is_manager %}
   <div class="nav-item {% if 'work_schedules_management' in request.path %}active{% endif %}" onclick="window.location.href='/work_schedules_management/'">
     <span class="nav-icon">📅</span> Lịch làm
   </div>
@@ -46,7 +46,7 @@
     <span class="nav-icon">👥</span> Quản lý nhóm
   </div>
   
-  {% if request.user.role == 'quanly' %}
+  {% if request.user.is_manager %}
   <div class="nav-section-label">BÁO CÁO</div>
   <div class="nav-item {% if 'baocao/tuongtac' in request.path %}active{% endif %}" onclick="window.location.href='/baocao/tuongtac/'">
     <span class="nav-icon">📊</span> Báo cáo tương tác

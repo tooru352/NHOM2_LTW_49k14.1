@@ -4,57 +4,35 @@
 {% block title %}Tất cả thông báo - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/works_management/all_notifications.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
-<div class="all-notifications-page">
-    <!-- Header -->
+<div class="notifications-page">
     <div class="notifications-header">
-        <div class="header-left">
-            <button class="btn-back" onclick="window.location.href='/employee-dashboard/'">
-                ← Quay lại
-            </button>
-            <div class="header-title">
-                <span class="header-icon">🔔</span>
-                <div>
-                    <h1>Tất cả thông báo</h1>
-                    <p class="header-subtitle">{{ notifications.count }} thông báo</p>
-                </div>
-            </div>
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <button class="btn-back" onclick="window.location.href='/employee-dashboard/'">← Quay lại</button>
         </div>
+        <h1>Tất cả thông báo</h1>
+        <p class="notifications-subtitle">Xin chào {{ request.user.get_full_name|default:request.user.username }}, bạn có {{ notifications.count }} thông báo.</p>
     </div>
 
-    <!-- Notifications List -->
-    <div class="notifications-container">
-        {% for task in notifications %}
-        <div class="notification-card {% if task.status == 'Todo' %}unread{% endif %}">
-            <div class="notification-icon">
-                {% if task.status == 'Done' %}✅
-                {% elif task.status == 'InProgress' %}⏰
-                {% else %}📋{% endif %}
-            </div>
-            <div class="notification-content">
-                <div class="notification-header">
-                    <h3>Nhiệm vụ mới: {{ task.title }}</h3>
-                    <span class="notification-time">{{ task.created_at|timesince }} trước</span>
-                </div>
-                <div class="notification-body">
-                    <p><strong>Từ:</strong> {{ task.created_by.get_full_name|default:task.created_by.username }}</p>
-                    <p><strong>Mô tả:</strong> {{ task.description|default:"Không có mô tả" }}</p>
-                </div>
-                <div class="notification-footer">
-                    <span class="status-badge {% if task.status == 'Done' %}completed{% elif task.status == 'InProgress' %}pending{% else %}todo{% endif %}">
-                        {% if task.status == 'Done' %}✅ Đã hoàn thành
-                        {% elif task.status == 'InProgress' %}⏰ Đang thực hiện
-                        {% else %}📌 Chưa làm{% endif %}
-                    </span>
-                </div>
+    <div class="notifications-list-page" id="notificationsList">
+        {% for notification in notifications %}
+        <div class="notification-item-page">
+            <div class="notification-icon-page">📋</div>
+            <div class="notification-content-page">
+                <h3>{{ notification.title }}</h3>
+                <p>{{ notification.description|truncatewords:20 }}</p>
+                <span class="notification-time-page">{{ notification.created_at|timesince }} trước</span>
             </div>
         </div>
         {% empty %}
-        <div class="notification-card">
-            <p style="text-align: center; color: #999; padding: 40px;">Bạn chưa có thông báo nào.</p>
+        <div class="notification-item-page">
+            <div class="notification-content-page">
+                <p style="text-align: center; color: #999; padding: 40px;">Bạn chưa có thông báo nào.</p>
+            </div>
         </div>
         {% endfor %}
     </div>

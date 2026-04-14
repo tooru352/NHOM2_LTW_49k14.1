@@ -4,7 +4,7 @@
 {% block title %}Tất cả phản hồi - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/works_management/all_responses.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'css/works_management/all_responses.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
@@ -12,23 +12,13 @@
     <!-- Header -->
     <div class="responses-header">
         <div class="header-left">
-            <button class="btn-back-response" onclick="window.location.href='/work-management/'">
-                ←
-            </button>
+            <button class="btn-back-response" onclick="window.location.href='/work-management/'">←</button>
             <div class="header-title-group">
                 <span class="header-icon-large">📢</span>
                 <div>
                     <h1>Phản hồi từ nhân viên</h1>
                     <p class="header-subtitle">Quản lý phản hồi về phân công công việc</p>
                 </div>
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="filter-tabs-response">
-                <button class="tab-response active" onclick="filterResponses('all')">Tất cả (8)</button>
-                <button class="tab-response" onclick="filterResponses('pending')">Chờ phản hồi (2)</button>
-                <button class="tab-response" onclick="filterResponses('accepted')">Đã đồng ý (4)</button>
-                <button class="tab-response" onclick="filterResponses('rejected')">Đã từ chối (2)</button>
             </div>
         </div>
     </div>
@@ -41,250 +31,46 @@
                     <tr>
                         <th>NHÂN VIÊN</th>
                         <th>CÔNG VIỆC</th>
-                        <th>THỜI GIAN</th>
-                        <th>ĐỊA ĐIỂM</th>
                         <th>TRẠNG THÁI</th>
                         <th>PHẢN HỒI</th>
                         <th>THỜI GIAN GỬI</th>
-                        <th>HÀNH ĐỘNG</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Row 1 - Pending -->
-                    <tr class="response-row pending-row" data-status="pending">
+                    {% for response in responses %}
+                    <tr class="response-row">
                         <td class="employee-cell">
                             <div class="employee-info-cell">
-                                <div class="avatar-table">AT</div>
+                                <div class="avatar-table">{{ response.user.get_initials }}</div>
                                 <div>
-                                    <strong>Đoàn Thị Anh Thư</strong>
-                                    <span class="role-text">Nhân viên Nhà hàng</span>
+                                    <strong>{{ response.user.get_full_name|default:response.user.username }}</strong>
+                                    <span class="role-text">{{ response.user.get_role_display }}</span>
                                 </div>
                             </div>
                         </td>
                         <td class="task-cell">
                             <span class="task-icon-table">📋</span>
-                            <span>Kiểm tra sảnh chính lúc 14:00</span>
+                            <span>{{ response.task.title }}</span>
                         </td>
-                        <td class="time-cell">14:00 - 15:00</td>
-                        <td class="location-cell">📍 Sảnh chính tầng 1</td>
                         <td class="status-cell">
-                            <span class="status-badge-table pending">⏳ Chờ phản hồi</span>
-                        </td>
-                        <td class="message-cell">
-                            <span class="no-message">Chưa có phản hồi</span>
-                        </td>
-                        <td class="timestamp-cell">5 phút trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action remind" title="Nhắc nhở">🔔</button>
-                            <button class="btn-table-action view" title="Xem chi tiết">👁️</button>
-                        </td>
-                    </tr>
-
-                    <!-- Row 2 - Accepted -->
-                    <tr class="response-row accepted-row" data-status="accepted">
-                        <td class="employee-cell">
-                            <div class="employee-info-cell">
-                                <div class="avatar-table">NV</div>
-                                <div>
-                                    <strong>Nguyễn Văn An</strong>
-                                    <span class="role-text">Nhân viên Nhà hàng</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="task-cell">
-                            <span class="task-icon-table">🍽️</span>
-                            <span>Chuẩn bị bàn ăn buffet</span>
-                        </td>
-                        <td class="time-cell">10:30 - 11:30</td>
-                        <td class="location-cell">📍 Nhà hàng tầng 1</td>
-                        <td class="status-cell">
+                            {% if response.status %}
                             <span class="status-badge-table accepted">✓ Đã đồng ý</span>
-                        </td>
-                        <td class="message-cell">
-                            <span class="message-preview">"Tôi sẽ hoàn thành nhiệm vụ này đúng giờ..."</span>
-                        </td>
-                        <td class="timestamp-cell">15 phút trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action view" title="Xem chi tiết">👁️</button>
-                        </td>
-                    </tr>
-
-                    <!-- Row 3 - Rejected -->
-                    <tr class="response-row rejected-row" data-status="rejected">
-                        <td class="employee-cell">
-                            <div class="employee-info-cell">
-                                <div class="avatar-table">TH</div>
-                                <div>
-                                    <strong>Trần Văn Hùng</strong>
-                                    <span class="role-text">Nhân viên Vệ sinh</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="task-cell">
-                            <span class="task-icon-table">🧹</span>
-                            <span>Vệ sinh khu vực bếp</span>
-                        </td>
-                        <td class="time-cell">08:00 - 09:00</td>
-                        <td class="location-cell">📍 Khu vực bếp</td>
-                        <td class="status-cell">
+                            {% else %}
                             <span class="status-badge-table rejected">✕ Đã từ chối</span>
+                            {% endif %}
                         </td>
                         <td class="message-cell">
-                            <span class="message-preview rejected-text">"Tôi đang có ca làm việc khác..."</span>
+                            <span class="message-preview">{{ response.reason|default:"Không có phản hồi" }}</span>
                         </td>
-                        <td class="timestamp-cell">30 phút trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action reassign" title="Phân công lại">🔄</button>
-                            <button class="btn-table-action contact" title="Liên hệ">📞</button>
+                        <td class="timestamp-cell">{{ response.responded_at|timesince }} trước</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px;">
+                            <p style="color: #999;">Chưa có phản hồi nào.</p>
                         </td>
                     </tr>
-
-                    <!-- Row 4 - Accepted -->
-                    <tr class="response-row accepted-row" data-status="accepted">
-                        <td class="employee-cell">
-                            <div class="employee-info-cell">
-                                <div class="avatar-table">LM</div>
-                                <div>
-                                    <strong>Lê Minh Châu</strong>
-                                    <span class="role-text">Nhân viên Bar</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="task-cell">
-                            <span class="task-icon-table">🍹</span>
-                            <span>Phục vụ đồ uống tại Bar</span>
-                        </td>
-                        <td class="time-cell">14:00 - 17:00</td>
-                        <td class="location-cell">📍 Bar Lounge</td>
-                        <td class="status-cell">
-                            <span class="status-badge-table accepted">✓ Đã đồng ý</span>
-                        </td>
-                        <td class="message-cell">
-                            <span class="message-preview">"Đã sẵn sàng nhận nhiệm vụ."</span>
-                        </td>
-                        <td class="timestamp-cell">1 giờ trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action view" title="Xem chi tiết">👁️</button>
-                        </td>
-                    </tr>
-
-                    <!-- Row 5 - Pending -->
-                    <tr class="response-row pending-row" data-status="pending">
-                        <td class="employee-cell">
-                            <div class="employee-info-cell">
-                                <div class="avatar-table">HN</div>
-                                <div>
-                                    <strong>Hoàng Ngọc</strong>
-                                    <span class="role-text">Nhân viên Lễ tân</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="task-cell">
-                            <span class="task-icon-table">🛎️</span>
-                            <span>Hỗ trợ check-in khách VIP</span>
-                        </td>
-                        <td class="time-cell">16:00 - 17:00</td>
-                        <td class="location-cell">📍 Quầy lễ tân</td>
-                        <td class="status-cell">
-                            <span class="status-badge-table pending">⏳ Chờ phản hồi</span>
-                        </td>
-                        <td class="message-cell">
-                            <span class="no-message">Chưa có phản hồi</span>
-                        </td>
-                        <td class="timestamp-cell">2 giờ trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action remind" title="Nhắc nhở">🔔</button>
-                            <button class="btn-table-action view" title="Xem chi tiết">👁️</button>
-                        </td>
-                    </tr>
-
-                    <!-- Row 6 - Accepted -->
-                    <tr class="response-row accepted-row" data-status="accepted">
-                        <td class="employee-cell">
-                            <div class="employee-info-cell">
-                                <div class="avatar-table">PT</div>
-                                <div>
-                                    <strong>Phạm Thị Mai</strong>
-                                    <span class="role-text">Nhân viên Phục vụ</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="task-cell">
-                            <span class="task-icon-table">🍴</span>
-                            <span>Phục vụ bữa trưa buffet</span>
-                        </td>
-                        <td class="time-cell">11:00 - 15:00</td>
-                        <td class="location-cell">📍 Nhà hàng tầng 1</td>
-                        <td class="status-cell">
-                            <span class="status-badge-table accepted">✓ Đã đồng ý</span>
-                        </td>
-                        <td class="message-cell">
-                            <span class="message-preview">"OK, tôi sẽ chuẩn bị sẵn sàng."</span>
-                        </td>
-                        <td class="timestamp-cell">3 giờ trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action view" title="Xem chi tiết">👁️</button>
-                        </td>
-                    </tr>
-
-                    <!-- Row 7 - Rejected -->
-                    <tr class="response-row rejected-row" data-status="rejected">
-                        <td class="employee-cell">
-                            <div class="employee-info-cell">
-                                <div class="avatar-table">VH</div>
-                                <div>
-                                    <strong>Võ Thị Hà</strong>
-                                    <span class="role-text">Nhân viên Housekeeping</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="task-cell">
-                            <span class="task-icon-table">🛏️</span>
-                            <span>Dọn phòng Elite</span>
-                        </td>
-                        <td class="time-cell">06:00 - 10:00</td>
-                        <td class="location-cell">📍 Tầng 5</td>
-                        <td class="status-cell">
-                            <span class="status-badge-table rejected">✕ Đã từ chối</span>
-                        </td>
-                        <td class="message-cell">
-                            <span class="message-preview rejected-text">"Xin nghỉ phép hôm nay vì lý do sức khỏe."</span>
-                        </td>
-                        <td class="timestamp-cell">4 giờ trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action reassign" title="Phân công lại">🔄</button>
-                            <button class="btn-table-action contact" title="Liên hệ">📞</button>
-                        </td>
-                    </tr>
-
-                    <!-- Row 8 - Accepted -->
-                    <tr class="response-row accepted-row" data-status="accepted">
-                        <td class="employee-cell">
-                            <div class="employee-info-cell">
-                                <div class="avatar-table">KA</div>
-                                <div>
-                                    <strong>Kiên An</strong>
-                                    <span class="role-text">Quản lý ca</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="task-cell">
-                            <span class="task-icon-table">👔</span>
-                            <span>Giám sát toàn bộ hoạt động</span>
-                        </td>
-                        <td class="time-cell">08:00 - 20:00</td>
-                        <td class="location-cell">📍 Toàn khách sạn</td>
-                        <td class="status-cell">
-                            <span class="status-badge-table accepted">✓ Đã đồng ý</span>
-                        </td>
-                        <td class="message-cell">
-                            <span class="message-preview">"Đã sẵn sàng cho ca làm việc."</span>
-                        </td>
-                        <td class="timestamp-cell">5 giờ trước</td>
-                        <td class="action-cell">
-                            <button class="btn-table-action view" title="Xem chi tiết">👁️</button>
-                        </td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

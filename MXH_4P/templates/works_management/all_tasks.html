@@ -92,7 +92,13 @@
                 </div>
                 <div class="task-detail-row">
                     <span class="detail-icon">👥</span>
-                    <span class="detail-text">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                    <span class="detail-text">
+                        {% for assignment in task.assignments.all %}
+                            {{ assignment.user.get_full_name|default:assignment.user.username }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                        {% endfor %}
+                    </span>
                 </div>
                 <div class="task-description">
                     {{ task.description|default:"Không có mô tả" }}

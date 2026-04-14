@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Lịch họp - FourPoint Hotel{% endblock %}
+{% block title %}Quản Lý Công Việc - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/works_management/meeting_schedule.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'css/works_management/meeting_schedule.css' %}?v=10">
 {% endblock %}
 
 {% block content %}
@@ -12,79 +12,758 @@
     <!-- Header -->
     <div class="page-header">
         <div class="header-left">
-            <h1>📋 Lịch Họp</h1>
+            <h1>📋 Quản Lý Công Việc</h1>
+            <p class="subtitle">Trang chủ / Quản lý công việc</p>
         </div>
         <div class="header-right">
-            <button class="btn-export" onclick="window.location.href='/work-management/'">← Quay lại</button>
-            <button class="btn-primary" onclick="window.location.href='{% url 'create_meeting' %}'">➕ Tạo lịch họp</button>
+            <button class="btn-back" onclick="window.location.href='/work-management/'">👤 JA</button>
+            <button class="btn-primary" onclick="openCreateMeetingModal()">Tạo lịch họp</button>
         </div>
     </div>
 
     <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card" onclick="filterByStatus('all')" data-status="all">
             <div class="stat-icon blue">📅</div>
             <div class="stat-content">
                 <h2>{{ meetings_total }}</h2>
                 <p>Tổng cuộc họp</p>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon yellow">🏆</div>
+        <div class="stat-card" onclick="filterByStatus('Upcoming')" data-status="Upcoming">
+            <div class="stat-icon pink">📌</div>
             <div class="stat-content">
                 <h2>{{ meetings_upcoming }}</h2>
                 <p>Sắp diễn ra</p>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon green">✅</div>
+        <div class="stat-card" onclick="filterByStatus('Completed')" data-status="Completed">
+            <div class="stat-icon cyan">✅</div>
             <div class="stat-content">
                 <h2>{{ meetings_completed }}</h2>
                 <p>Hoàn thành</p>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon red">⏰</div>
+        <div class="stat-card" onclick="filterByStatus('Cancelled')" data-status="Cancelled">
+            <div class="stat-icon orange">⏰</div>
             <div class="stat-content">
-                <h2>{{ meetings_today }}</h2>
-                <p>Hôm nay</p>
+                <h2>{{ meetings_cancelled }}</h2>
+                <p>Chưa xử lý</p>
             </div>
         </div>
     </div>
 
-    <!-- Meetings List -->
-    <div class="meetings-container">
-        {% load tz %}
-        {% now "Y-m-d" as today %}
-        
+    <!-- Month Navigation -->
+    <div class="month-navigation">
+        <div class="month-nav-left">
+            <span class="calendar-icon">📅</span>
+            <strong>Tháng {{ current_month }}, {{ current_year }}</strong>
+        </div>
+        <div class="month-nav-right">
+            <button class="btn-nav" onclick="navigateMonth('prev')">‹ Tháng trước</button>
+            <button class="btn-nav-today" onclick="navigateMonth('today')">Hôm nay</button>
+            <button class="btn-nav" onclick="navigateMonth('next')">Tháng sau ›</button>
+        </div>
+    </div>
+
+    <!-- Meetings Timeline -->
+    <div class="meetings-timeline">
         {% for meeting in meetings %}
-        <div class="meeting-item {% if meeting.end_time < now %}completed{% endif %}">
-            <div class="meeting-time">{{ meeting.start_time|date:"H:i" }} - {{ meeting.end_time|date:"H:i" }}</div>
-            <div class="meeting-content">
-                <div class="meeting-header">
-                    <span class="meeting-icon">📊</span>
+        <div class="meeting-card" data-status="{{ meeting.status }}" onclick="showMeetingDetail({{ meeting.id }})">
+            <div class="meeting-time-badge">
+                {{ meeting.start_time|date:"H:i" }} - {{ meeting.end_time|date:"H:i" }}
+            </div>
+            <div class="meeting-card-content">
+                <div class="meeting-card-header">
+                    <span class="meeting-emoji">{{ meeting.get_emoji }}</span>
                     <h3>{{ meeting.title }}</h3>
-                    <span class="status-badge-meeting {% if meeting.end_time < now %}completed{% else %}upcoming{% endif %}">
-                        {% if meeting.end_time < now %}✅ Hoàn thành
-                        {% else %}⏳ Sắp diễn ra{% endif %}
+                    <span class="status-badge {% if meeting.status == 'Completed' %}completed{% elif meeting.status == 'Upcoming' %}upcoming{% else %}cancelled{% endif %}">
+                        {% if meeting.status == 'Completed' %}✅ Hoàn thành
+                        {% elif meeting.status == 'Upcoming' %}⏳ Sắp diễn ra
+                        {% else %}❌ Đã hủy{% endif %}
                     </span>
                 </div>
-                <div class="meeting-details">
+                <div class="meeting-card-details">
                     <span class="detail-item">📅 {{ meeting.start_time|date:"d/m/Y" }}</span>
+                    <span class="detail-item">📍 {{ meeting.location|default:"Phòng họp tầng 3" }}</span>
                     <span class="detail-item">👤 {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</span>
-                    <span class="detail-item">👥 {{ meeting.participants.count }} người tham gia</span>
+                    <span class="detail-item">👥 {{ meeting.participants.count }} người</span>
                 </div>
+            </div>
+            <!-- Hidden data for modal -->
+            <div style="display:none;" class="meeting-data"
+                 data-id="{{ meeting.id }}"
+                 data-title="{{ meeting.title|escapejs }}"
+                 data-description="{{ meeting.description|escapejs }}"
+                 data-location="{{ meeting.location|escapejs }}"
+                 data-start="{{ meeting.start_time|date:'d/m/Y H:i' }}"
+                 data-end="{{ meeting.end_time|date:'H:i' }}"
+                 data-organizer="{{ meeting.created_by.get_full_name|default:meeting.created_by.username|escapejs }}"
+                 data-participants='[{% for p in meeting.participants.all %}{"id":{{ p.user.id }},"name":"{{ p.user.get_full_name|default:p.user.username|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
             </div>
         </div>
         {% empty %}
-        <div class="meeting-item">
-            <p style="text-align: center; color: #999; padding: 40px;">Chưa có cuộc họp nào. Hãy tạo cuộc họp mới!</p>
+        <div class="no-meetings">
+            <p>📅 Chưa có cuộc họp nào trong tháng này</p>
         </div>
         {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Chi tiết cuộc họp -->
+<div id="meetingDetailModal" class="modal">
+    <div class="modal-content-detail">
+        <div class="modal-header-detail">
+            <div class="header-tabs">
+                <button class="tab-btn active">Chi tiết cuộc họp</button>
+            </div>
+            <span class="close" onclick="closeMeetingDetailModal()">&times;</span>
+        </div>
+        <div class="modal-body-detail">
+            <h2>📋 Tiêu đề cuộc họp</h2>
+            <h3 id="detailMeetingTitle" class="meeting-subtitle">Họp ban giám đốc</h3>
+            
+            <div class="detail-section">
+                <h4>MÔ TẢ</h4>
+                <p id="detailMeetingDescription">Cuộc họp nhằm đánh giá kết quả làm việc của nhân sự trong tháng 2...</p>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-col">
+                    <h4>PHÒNG BAN</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">👥</span>
+                        <span id="detailMeetingLocation">Ban giám đốc</span>
+                    </div>
+                </div>
+                <div class="detail-col">
+                    <h4>ĐỊA ĐIỂM</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">📍</span>
+                        <span id="detailMeetingRoom">Phòng họp tầng 3</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>CHỦ TRÌ</h4>
+                <div class="organizer-info">
+                    <div class="employee-avatar">CT</div>
+                    <div class="employee-info-detail">
+                        <strong id="detailMeetingOrganizer">Công Minh Tuấn</strong>
+                        <span>Người chủ trì</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>NGÀY & THỜI GIAN</h4>
+                <div class="info-badge">
+                    <span class="badge-icon">📅</span>
+                    <span id="detailMeetingDateTime">26/02/2026<br>08:00 - 10:00</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer-detail">
+            <button class="btn-edit" onclick="openEditMeetingModal()">Chỉnh sửa nội dung</button>
+            <button class="btn-delete" onclick="deleteMeetingFromModal()">Xóa cuộc họp</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tạo lịch họp mới -->
+<div id="createMeetingModal" class="modal">
+    <div class="modal-content-create">
+        <div class="modal-header-create">
+            <h2>Tạo lịch họp mới</h2>
+            <span class="close" onclick="closeCreateMeetingModal()">&times;</span>
+        </div>
+        <div class="modal-body-create">
+            <div class="form-group-create">
+                <label>Tiêu đề cuộc họp</label>
+                <input type="text" id="meetingTitle" placeholder="Nhập tiêu đề cuộc họp">
+            </div>
+            
+            <div class="form-row-create">
+                <div class="form-group-create">
+                    <label>Ngày họp</label>
+                    <input type="date" id="meetingDate">
+                </div>
+                <div class="form-group-create">
+                    <label>Phòng ban</label>
+                    <select id="meetingDepartment">
+                        <option value="">-- Chọn phòng ban --</option>
+                        <option value="Ban giám đốc">Ban giám đốc</option>
+                        <option value="F&B">F&B</option>
+                        <option value="HK">HK</option>
+                        <option value="FO">FO</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group-create">
+                <label>Nhóm (tùy chọn)</label>
+                <select id="meetingGroup">
+                    <option value="">-- Không chọn nhóm --</option>
+                    {% for group in groups %}
+                    <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                    * Nếu chọn nhóm, chỉ thành viên trong nhóm mới thấy cuộc họp này
+                </small>
+            </div>
+            
+            <div class="form-group-create">
+                <label>Địa điểm</label>
+                <input type="text" id="meetingLocation" placeholder="Nhập địa điểm họp">
+            </div>
+            
+            <div class="form-group-create">
+                <label>Thời gian họp</label>
+                <div class="time-picker-row">
+                    <input type="time" id="meetingStartTime" value="08:00">
+                    <span class="time-separator">đến</span>
+                    <input type="time" id="meetingEndTime" value="10:00">
+                </div>
+            </div>
+            
+            <div class="form-group-create">
+                <label>Người chủ trì</label>
+                <input type="text" id="meetingOrganizer" placeholder="Nhập tên người chủ trì">
+            </div>
+            
+            <div class="form-group-create">
+                <label>Ghi chú</label>
+                <textarea id="meetingNote" rows="3" placeholder="Nhập nội dung, cuộc họp..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer-create">
+            <button class="btn-cancel-create" onclick="closeCreateMeetingModal()">Hủy</button>
+            <button class="btn-submit-create" onclick="createMeeting()">Tạo lịch họp</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chỉnh sửa lịch họp -->
+<div id="editMeetingModal" class="modal">
+    <div class="modal-content-create">
+        <div class="modal-header-create">
+            <h2>Chỉnh sửa lịch họp</h2>
+            <span class="close" onclick="closeEditMeetingModal()">&times;</span>
+        </div>
+        <div class="modal-body-create">
+            <div class="form-group-create">
+                <label>Tiêu đề cuộc họp</label>
+                <input type="text" id="editMeetingTitle" placeholder="Nhập tiêu đề cuộc họp">
+            </div>
+            
+            <div class="form-row-create">
+                <div class="form-group-create">
+                    <label>Ngày họp</label>
+                    <input type="date" id="editMeetingDate">
+                </div>
+                <div class="form-group-create">
+                    <label>Phòng ban</label>
+                    <select id="editMeetingDepartment">
+                        <option value="">-- Chọn phòng ban --</option>
+                        <option value="Ban giám đốc">Ban giám đốc</option>
+                        <option value="F&B">F&B</option>
+                        <option value="HK">HK</option>
+                        <option value="FO">FO</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group-create">
+                <label>Nhóm (tùy chọn)</label>
+                <select id="editMeetingGroup">
+                    <option value="">-- Không chọn nhóm --</option>
+                    {% for group in groups %}
+                    <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                    * Nếu chọn nhóm, chỉ thành viên trong nhóm mới thấy cuộc họp này
+                </small>
+            </div>
+            
+            <div class="form-group-create">
+                <label>Địa điểm</label>
+                <input type="text" id="editMeetingLocation" placeholder="Nhập địa điểm họp">
+            </div>
+            
+            <div class="form-group-create">
+                <label>Thời gian họp</label>
+                <div class="time-picker-row">
+                    <input type="time" id="editMeetingStartTime">
+                    <span class="time-separator">đến</span>
+                    <input type="time" id="editMeetingEndTime">
+                </div>
+            </div>
+            
+            <div class="form-group-create">
+                <label>Ghi chú</label>
+                <textarea id="editMeetingNote" rows="3" placeholder="Nhập nội dung, cuộc họp..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer-create">
+            <button class="btn-cancel-create" onclick="closeEditMeetingModal()">Hủy</button>
+            <button class="btn-submit-create" onclick="updateMeeting()">Cập nhật</button>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/meeting_schedule.js' %}"></script>
+<script>
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+let currentMeetingId = null;
+
+// Current filter status
+let currentFilterStatus = 'all';
+
+// Filter meetings by status
+function filterByStatus(status) {
+    currentFilterStatus = status;
+    
+    // Update active state on stat cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    document.querySelector(`.stat-card[data-status="${status}"]`).classList.add('active');
+    
+    // Filter meeting cards
+    const meetingCards = document.querySelectorAll('.meeting-card');
+    let visibleCount = 0;
+    
+    meetingCards.forEach(card => {
+        const meetingStatus = card.dataset.status;
+        
+        if (status === 'all' || meetingStatus === status) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show notification
+    const statusNames = {
+        'all': 'Tất cả',
+        'Upcoming': 'Sắp diễn ra',
+        'Completed': 'Hoàn thành',
+        'Cancelled': 'Chưa xử lý'
+    };
+    showNotification(`🔍 Đang hiển thị: ${statusNames[status]} (${visibleCount} cuộc họp)`, 'success');
+}
+
+// Navigate month
+function navigateMonth(direction) {
+    const currentUrl = new URL(window.location.href);
+    const params = new URLSearchParams(currentUrl.search);
+    
+    let year = parseInt(params.get('year') || '{{ current_year }}');
+    let month = parseInt(params.get('month') || '{{ current_month }}');
+    
+    if (direction === 'prev') {
+        month--;
+        if (month < 1) {
+            month = 12;
+            year--;
+        }
+    } else if (direction === 'next') {
+        month++;
+        if (month > 12) {
+            month = 1;
+            year++;
+        }
+    } else if (direction === 'today') {
+        const today = new Date();
+        year = today.getFullYear();
+        month = today.getMonth() + 1;
+    }
+    
+    window.location.href = `/meeting-schedule/?year=${year}&month=${month}`;
+}
+
+// Show meeting detail modal
+function showMeetingDetail(meetingId) {
+    const card = event.currentTarget;
+    const data = card.querySelector('.meeting-data');
+    
+    if (!data) return;
+    
+    currentMeetingId = meetingId;
+    
+    // Update modal content
+    document.getElementById('detailMeetingTitle').textContent = data.dataset.title;
+    document.getElementById('detailMeetingDescription').textContent = data.dataset.description || 'Không có mô tả';
+    document.getElementById('detailMeetingLocation').textContent = data.dataset.location || 'Chưa xác định';
+    document.getElementById('detailMeetingRoom').textContent = data.dataset.location || 'Phòng họp tầng 3';
+    document.getElementById('detailMeetingOrganizer').textContent = data.dataset.organizer;
+    
+    const dateTime = `${data.dataset.start}<br>${data.dataset.start.split(' ')[1]} - ${data.dataset.end}`;
+    document.getElementById('detailMeetingDateTime').innerHTML = dateTime;
+    
+    // Show modal
+    document.getElementById('meetingDetailModal').style.display = 'block';
+}
+
+// Close meeting detail modal
+function closeMeetingDetailModal() {
+    document.getElementById('meetingDetailModal').style.display = 'none';
+    // Don't reset currentMeetingId here - it's needed for edit modal
+}
+
+// Open create meeting modal
+function openCreateMeetingModal() {
+    document.getElementById('createMeetingModal').style.display = 'block';
+    
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('meetingDate').value = today;
+}
+
+// Close create meeting modal
+function closeCreateMeetingModal() {
+    document.getElementById('createMeetingModal').style.display = 'none';
+    clearCreateForm();
+}
+
+// Clear create form
+function clearCreateForm() {
+    document.getElementById('meetingTitle').value = '';
+    document.getElementById('meetingDate').value = '';
+    document.getElementById('meetingDepartment').value = 'Ban giám đốc';
+    document.getElementById('meetingLocation').value = '';
+    document.getElementById('meetingStartTime').value = '08:00';
+    document.getElementById('meetingEndTime').value = '10:00';
+    document.getElementById('meetingOrganizer').value = '';
+    document.getElementById('meetingNote').value = '';
+}
+
+// Create meeting
+function createMeeting() {
+    const title = document.getElementById('meetingTitle').value.trim();
+    const date = document.getElementById('meetingDate').value;
+    const department = document.getElementById('meetingDepartment').value;
+    const location = document.getElementById('meetingLocation').value.trim();
+    const startTime = document.getElementById('meetingStartTime').value;
+    const endTime = document.getElementById('meetingEndTime').value;
+    const description = document.getElementById('meetingNote').value.trim();
+    const groupId = document.getElementById('meetingGroup').value;
+    
+    if (!title) {
+        showNotification('⚠️ Vui lòng nhập tiêu đề cuộc họp', 'error');
+        return;
+    }
+    
+    if (!date) {
+        showNotification('⚠️ Vui lòng chọn ngày họp', 'error');
+        return;
+    }
+    
+    // Combine department and location
+    // If both are provided: "F&B - Phòng họp tầng 1"
+    // If only department: "F&B"
+    // If only location: "Phòng họp tầng 1"
+    let finalLocation = '';
+    if (department && location) {
+        finalLocation = `${department} - ${location}`;
+    } else if (department) {
+        finalLocation = department;
+    } else if (location) {
+        finalLocation = location;
+    }
+    
+    // Prepare request data
+    const requestData = {
+        title: title,
+        description: description,
+        location: finalLocation,
+        date: date,
+        start_time: startTime,
+        end_time: endTime
+    };
+    
+    // Add group_id if selected
+    if (groupId) {
+        requestData.group_id = groupId;
+    }
+    
+    console.log('Creating meeting with data:', requestData); // Debug
+    
+    // Send AJAX request
+    fetch('/meetings/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ ' + data.message, 'success');
+            closeCreateMeetingModal();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('❌ ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('❌ Có lỗi xảy ra khi tạo cuộc họp', 'error');
+    });
+}
+
+// Delete meeting from modal
+function deleteMeetingFromModal() {
+    if (currentMeetingId && confirm('Bạn có chắc muốn xóa cuộc họp này?')) {
+        fetch(`/meetings/${currentMeetingId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('✅ Đã xóa cuộc họp thành công!', 'success');
+                closeMeetingDetailModal();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification('❌ ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('❌ Có lỗi xảy ra', 'error');
+        });
+    }
+}
+
+// Open edit meeting modal
+function openEditMeetingModal() {
+    if (!currentMeetingId) return;
+    
+    // Get current meeting data from detail modal
+    const card = document.querySelector(`.meeting-card[data-status] .meeting-data[data-id="${currentMeetingId}"]`);
+    if (!card) return;
+    
+    // Parse date and time
+    const startDateTime = card.dataset.start; // "26/02/2026 08:00"
+    const [datePart, timePart] = startDateTime.split(' ');
+    const [day, month, year] = datePart.split('/');
+    const dateFormatted = `${year}-${month}-${day}`;
+    
+    const endTime = card.dataset.end; // "10:00"
+    
+    // Parse location to extract department and actual location
+    const fullLocation = card.dataset.location;
+    let department = '';
+    let location = '';
+    
+    // Check if location contains department prefix (e.g., "F&B - Phòng họp")
+    if (fullLocation.includes(' - ')) {
+        const parts = fullLocation.split(' - ');
+        department = parts[0];
+        location = parts.slice(1).join(' - ');
+    } else {
+        // Check if location is just a department name
+        const departments = ['Ban giám đốc', 'F&B', 'HK', 'FO'];
+        if (departments.includes(fullLocation)) {
+            department = fullLocation;
+            location = '';
+        } else {
+            department = '';
+            location = fullLocation;
+        }
+    }
+    
+    // Fill edit form
+    document.getElementById('editMeetingTitle').value = card.dataset.title;
+    document.getElementById('editMeetingDate').value = dateFormatted;
+    document.getElementById('editMeetingDepartment').value = department;
+    document.getElementById('editMeetingLocation').value = location;
+    document.getElementById('editMeetingStartTime').value = timePart;
+    document.getElementById('editMeetingEndTime').value = endTime;
+    document.getElementById('editMeetingNote').value = card.dataset.description;
+    
+    // Close detail modal and open edit modal
+    closeMeetingDetailModal();
+    document.getElementById('editMeetingModal').style.display = 'block';
+}
+
+// Close edit meeting modal
+function closeEditMeetingModal() {
+    document.getElementById('editMeetingModal').style.display = 'none';
+    currentMeetingId = null; // Reset when closing edit modal
+}
+
+// Update meeting
+function updateMeeting() {
+    if (!currentMeetingId) return;
+    
+    const title = document.getElementById('editMeetingTitle').value.trim();
+    const date = document.getElementById('editMeetingDate').value;
+    const department = document.getElementById('editMeetingDepartment').value;
+    const location = document.getElementById('editMeetingLocation').value.trim();
+    const startTime = document.getElementById('editMeetingStartTime').value;
+    const endTime = document.getElementById('editMeetingEndTime').value;
+    const description = document.getElementById('editMeetingNote').value.trim();
+    const groupId = document.getElementById('editMeetingGroup').value;
+    
+    if (!title) {
+        showNotification('⚠️ Vui lòng nhập tiêu đề cuộc họp', 'error');
+        return;
+    }
+    
+    if (!date) {
+        showNotification('⚠️ Vui lòng chọn ngày họp', 'error');
+        return;
+    }
+    
+    // Combine department and location (same logic as create)
+    let finalLocation = '';
+    if (department && location) {
+        finalLocation = `${department} - ${location}`;
+    } else if (department) {
+        finalLocation = department;
+    } else if (location) {
+        finalLocation = location;
+    }
+    
+    // Prepare request data
+    const requestData = {
+        title: title,
+        description: description,
+        location: finalLocation,
+        date: date,
+        start_time: startTime,
+        end_time: endTime
+    };
+    
+    // Add group_id if selected
+    if (groupId) {
+        requestData.group_id = groupId;
+    }
+    
+    console.log('Updating meeting with data:', requestData); // Debug
+    
+    // Send AJAX request
+    fetch(`/meetings/${currentMeetingId}/update/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ ' + data.message, 'success');
+            closeEditMeetingModal();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('❌ ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('❌ Có lỗi xảy ra khi cập nhật cuộc họp', 'error');
+    });
+}
+
+// Show notification
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    const bgColor = type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#f39c12';
+    
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 2000;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const detailModal = document.getElementById('meetingDetailModal');
+    const createModal = document.getElementById('createMeetingModal');
+    const editModal = document.getElementById('editMeetingModal');
+    
+    if (event.target === detailModal) {
+        detailModal.style.display = 'none';
+        currentMeetingId = null;
+    }
+    if (event.target === createModal) {
+        closeCreateMeetingModal();
+    }
+    if (event.target === editModal) {
+        closeEditMeetingModal();
+    }
+}
+
+// Initialize: Set "Tổng cuộc họp" as active on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.stat-card[data-status="all"]').classList.add('active');
+});
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}

@@ -4,7 +4,7 @@
 {% block title %}Bảng nhân viên - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}?v=11">
 {% endblock %}
 
 {% block content %}
@@ -15,43 +15,68 @@
             <h1>Xin chào, {{ request.user.get_full_name|default:request.user.username }}!</h1>
             <p>Chúc mừng bạn đến với ca làm việc ngày hôm nay. Hãy kiểm tra các nhiệm vụ sau đây bên dưới.</p>
             <div class="work-shift-info">
-                <div class="shift-label">NHIỆM VỤ CỦA BẠN</div>
-                <div class="shift-date">{{ tasks_total }} nhiệm vụ</div>
+                <div class="shift-label">LỊCH LÀM VIỆC</div>
+                <div class="shift-date">{{ today|date:"l" }},<br>{{ today|date:"d/m/Y" }}</div>
+            </div>
+        </div>
+        <div class="header-right-section">
+            <div class="notification-icon-header" onclick="toggleNotificationDropdown(event)">
+                🔔
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-dropdown-header">
+                    <h3>Thông báo</h3>
+                    <button class="mark-all-read">Đánh dấu đã đọc</button>
+                </div>
+                <div class="notification-list">
+                    {% for task in my_tasks|slice:":3" %}
+                    <div class="notification-dropdown-item {% if task.status == 'Todo' %}unread{% endif %}">
+                        <div class="notification-icon-small">📋</div>
+                        <div class="notification-content-small">
+                            <div class="notification-title-small">Nhiệm vụ: {{ task.title }}</div>
+                            <div class="notification-desc-small">{{ task.description|truncatewords:10 }}</div>
+                            <div class="notification-time-small">{{ task.created_at|timesince }} trước</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="notification-dropdown-footer">
+                    <button class="view-all-notifications" onclick="window.location.href='/all-notifications/'">Xem tất cả →</button>
+                </div>
+            </div>
+            
+            <div class="shift-info-inline">
+                <div class="shift-label-inline">CA LÀM VIỆC</div>
+                <div class="shift-time-inline">Sáng (06:00 - 14:00)</div>
             </div>
         </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-info">
-                <div class="stat-value">{{ tasks_total }}</div>
-                <div class="stat-label">Tổng nhiệm vụ</div>
-            </div>
+    <!-- Urgent Notification -->
+    {% if urgent_tasks %}
+    <div class="urgent-notification">
+        <div class="notification-header">
+            <span class="notification-icon">📢</span>
+            <span class="notification-title">Thông báo khẩn từ cấp trên</span>
+            <span class="notification-time">VỪA XONG</span>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon">⏰</div>
-            <div class="stat-info">
-                <div class="stat-value">{{ tasks_in_progress }}</div>
-                <div class="stat-label">Đang thực hiện</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-info">
-                <div class="stat-value">{{ tasks_done }}</div>
-                <div class="stat-label">Đã hoàn thành</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🎯</div>
-            <div class="stat-info">
-                <div class="stat-value">{{ tasks_todo }}</div>
-                <div class="stat-label">Chưa làm</div>
+        <div class="notification-item">
+            <div class="notification-icon-box">📋</div>
+            <div class="notification-content">
+                <h3>{{ urgent_tasks.0.title }}</h3>
+                <p>Từ: Quản lý ({{ urgent_tasks.0.created_by.get_full_name|default:urgent_tasks.0.created_by.username }})</p>
+                <div class="notification-actions">
+                    <span class="action-label">PHẢN HỒI CỦA BẠN</span>
+                    <button class="btn-action primary" onclick="respondToTask({{ urgent_tasks.0.id }}, true)">✓ Đồng ý</button>
+                    <button class="btn-action secondary" onclick="respondToTask({{ urgent_tasks.0.id }}, false)">✕ Từ chối</button>
+                </div>
+                <textarea class="feedback-input" id="urgentNote" placeholder="Nhập lý do nếu bạn từ chối... (Bắt buộc khi từ chối)"></textarea>
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Two Column Layout -->
     <div class="content-grid">
@@ -60,13 +85,13 @@
             <div class="section-header">
                 <h2>Nhiệm vụ trong ngày</h2>
                 <div class="section-actions">
-                    <button class="btn-link" onclick="window.location.href='/all-tasks/'">Xem tất cả →</button>
+                    <button class="btn-link" onclick="window.location.href='/view-work-assignments/'">Xem JA</button>
                 </div>
             </div>
 
             <div class="task-list">
-                {% for task in my_tasks|slice:":5" %}
-                <div class="task-item {% if task.status == 'Done' %}completed{% endif %}">
+                {% for task in my_tasks %}
+                <div class="task-item {% if task.status == 'Done' %}completed{% endif %}" data-task-id="{{ task.id }}">
                     <div class="task-icon">
                         {% if 'buffet' in task.title|lower or 'ăn' in task.title|lower %}🍽️
                         {% elif 'bar' in task.title|lower or 'uống' in task.title|lower %}🍹
@@ -76,20 +101,31 @@
                     </div>
                     <div class="task-info">
                         <h3>{{ task.title }}</h3>
-                        <p>{{ task.description|truncatewords:15 }}</p>
-                        <span class="task-time">{{ task.created_at|date:"H:i" }}</span>
+                        <p>{{ task.department }} • {{ task.start_time|time:"H:i" }} - {{ task.end_time|time:"H:i" }}</p>
+                        <span class="task-time">{{ task.shift }}</span>
                     </div>
                     <div class="task-actions">
+                        <button class="btn-task-action detail" onclick="showTaskDetailModal({{ task.id }})">Chi tiết</button>
                         {% if task.status != 'Done' %}
-                        <button class="btn-task-action complete">Báo cáo</button>
+                        <button class="btn-task-action complete" onclick="reportTask({{ task.id }}, '{{ task.title|escapejs }}')">Báo cáo</button>
                         {% else %}
                         <button class="btn-task-action done">Đã xong</button>
                         {% endif %}
                     </div>
+                    <!-- Hidden data -->
+                    <div style="display:none;" class="task-data"
+                         data-title="{{ task.title|escapejs }}"
+                         data-description="{{ task.description|escapejs }}"
+                         data-location="{{ task.department }}"
+                         data-time="{{ task.start_time|time:'H:i' }} - {{ task.end_time|time:'H:i' }}"
+                         data-shift="{{ task.shift }}"
+                         data-status="{{ task.status }}"
+                         data-assignees='[{% for a in task.assignments.all %}{"name":"{{ a.user.get_full_name|default:a.user.username|escapejs }}","initials":"{{ a.user.get_initials }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                    </div>
                 </div>
                 {% empty %}
                 <div class="task-item">
-                    <p style="text-align: center; color: #999; padding: 20px;">Bạn chưa có nhiệm vụ nào.</p>
+                    <p style="text-align: center; color: #999; padding: 20px;">Bạn chưa có nhiệm vụ nào trong ngày hôm nay.</p>
                 </div>
                 {% endfor %}
             </div>
@@ -103,10 +139,10 @@
 
             <!-- Upcoming Meetings -->
             <div class="upcoming-meetings">
-                {% for meeting in my_meetings %}
+                {% for meeting in upcoming_meetings %}
                 <div class="meeting-card">
                     <div class="meeting-card-header">
-                        <span class="meeting-badge upcoming">
+                        <span class="meeting-badge {% if meeting.start_time|date:'Y-m-d' == today %}upcoming{% elif meeting.start_time|date:'Y-m-d' == tomorrow %}tomorrow{% else %}future{% endif %}">
                             {% if meeting.start_time|date:"Y-m-d" == today %}Hôm nay
                             {% elif meeting.start_time|date:"Y-m-d" == tomorrow %}Ngày mai
                             {% else %}{{ meeting.start_time|date:"d/m" }}{% endif %}
@@ -114,6 +150,9 @@
                         <span class="meeting-time-small">{{ meeting.start_time|date:"H:i" }} - {{ meeting.end_time|date:"H:i" }}</span>
                     </div>
                     <h4>{{ meeting.title }}</h4>
+                    <div class="meeting-info-row">
+                        <span>📍 {{ meeting.location|default:"Phòng họp" }}</span>
+                    </div>
                     <div class="meeting-info-row">
                         <span>👤 {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</span>
                     </div>
@@ -133,11 +172,331 @@
                     <p>Hãy hoàn thành tốt các nhiệm vụ được giao. Nếu cần hỗ trợ, hãy liên hệ với quản lý của bạn.</p>
                 </div>
             </div>
+
+            <!-- Image Section -->
+            <div class="image-section">
+                <img src="{% static 'img/hotel-cover.jpg' %}" alt="Hotel view">
+                <div class="image-caption">FourPoints Hotel - Nơi làm việc của bạn</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div id="taskDetailModal" class="task-modal">
+        <div class="task-modal-content">
+            <div class="task-modal-header">
+                <div class="task-modal-title">
+                    <span class="task-modal-icon">📋</span>
+                    <span id="taskModalTitle">Chi tiết nhiệm vụ</span>
+                </div>
+                <span class="task-modal-close" onclick="closeTaskDetailModal()">&times;</span>
+            </div>
+            <div class="task-modal-body">
+                <div class="task-modal-badges">
+                    <span class="task-badge" id="taskStatusBadge">
+                        <span class="badge-icon">⏰</span> Đang thực hiện
+                    </span>
+                    <span class="task-badge">
+                        <span class="badge-icon">🕐</span> <span id="taskTimeBadge">08:00 - 11:00</span>
+                    </span>
+                    <span class="task-badge">
+                        <span class="badge-icon">📍</span> <span id="taskLocationBadge">Khu vực</span>
+                    </span>
+                </div>
+
+                <div class="task-modal-section">
+                    <h4>MÔ TẢ CÔNG VIỆC</h4>
+                    <p id="taskDescription">Mô tả công việc...</p>
+                </div>
+
+                <div class="task-modal-row">
+                    <div class="task-modal-col">
+                        <h4>NHÂN SỰ PHỤ TRÁCH</h4>
+                        <div class="task-employees" id="taskEmployees">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+                    <div class="task-modal-col">
+                        <div class="task-image">
+                            <img src="{% static 'img/hotel-cover.jpg' %}" alt="Task image">
+                            <div class="task-image-caption">📸 Ảnh minh họa...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="task-modal-footer">
+                <button class="btn-task-modal-close" onclick="closeTaskDetailModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Task Modal -->
+    <div id="reportTaskModal" class="task-modal">
+        <div class="report-modal-content">
+            <div class="report-modal-header">
+                <h3>Báo cáo hoàn thành nhiệm vụ</h3>
+                <span class="task-modal-close" onclick="closeReportModal()">&times;</span>
+            </div>
+            <div class="report-modal-body">
+                <div class="report-task-info">
+                    <div class="report-task-icon">🍹</div>
+                    <div class="report-task-details">
+                        <div class="report-label">NHIỆM VỤ HIỆN TẠI</div>
+                        <div class="report-task-name" id="reportTaskName">Tên nhiệm vụ</div>
+                    </div>
+                </div>
+
+                <div class="report-checkbox">
+                    <input type="checkbox" id="confirmCheckbox">
+                    <label for="confirmCheckbox">Tôi xác nhận đã hoàn thành nhiệm vụ này</label>
+                </div>
+
+                <div class="report-section">
+                    <label class="report-section-label">Ảnh minh họa công việc</label>
+                    <div class="image-upload-area" onclick="document.getElementById('imageInput').click()">
+                        <div class="upload-placeholder">
+                            <span class="upload-icon">📷</span>
+                            <div class="upload-text">Tải lên ảnh minh họa</div>
+                            <div class="upload-hint">(PNG, JPG dưới 5MB)</div>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <label class="report-section-label">Ghi chú thêm</label>
+                    <textarea id="reportNote" class="report-textarea" placeholder="Nhập những lưu ý cần thiết hoặc vấn đề gặp phải..."></textarea>
+                </div>
+            </div>
+            <div class="report-modal-footer">
+                <button class="btn-report-cancel" onclick="closeReportModal()">Hủy</button>
+                <button class="btn-report-submit" onclick="submitReport()">Gửi báo cáo</button>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/employee_dashboard.js' %}"></script>
+<script>
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+let currentTaskId = null;
+
+// Toggle notification dropdown
+function toggleNotificationDropdown(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('notificationDropdown');
+    dropdown.classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('notificationDropdown');
+    if (dropdown && !dropdown.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+// Show task detail modal
+function showTaskDetailModal(taskId) {
+    const taskItem = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+    if (!taskItem) return;
+    
+    const data = taskItem.querySelector('.task-data');
+    const assignees = JSON.parse(data.dataset.assignees || '[]');
+    
+    // Update modal content
+    document.getElementById('taskModalTitle').textContent = 'Chi tiết nhiệm vụ: ' + data.dataset.title;
+    document.getElementById('taskDescription').textContent = data.dataset.description;
+    document.getElementById('taskTimeBadge').textContent = data.dataset.time;
+    document.getElementById('taskLocationBadge').textContent = data.dataset.location;
+    
+    // Update status badge
+    const statusBadge = document.getElementById('taskStatusBadge');
+    if (data.dataset.status === 'Done') {
+        statusBadge.innerHTML = '<span class="badge-icon">✅</span> Hoàn thành';
+    } else if (data.dataset.status === 'InProgress') {
+        statusBadge.innerHTML = '<span class="badge-icon">⏰</span> Đang thực hiện';
+    } else {
+        statusBadge.innerHTML = '<span class="badge-icon">❌</span> Chưa xử lý';
+    }
+    
+    // Update employees
+    const employeesHtml = assignees.map(a => `
+        <div class="task-employee-item">
+            <div class="task-employee-avatar">${a.initials}</div>
+            <div class="task-employee-info">
+                <strong>${a.name}</strong>
+                <span>Nhân viên</span>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById('taskEmployees').innerHTML = employeesHtml || '<p>Chưa có nhân viên được phân công</p>';
+    
+    // Show modal
+    document.getElementById('taskDetailModal').style.display = 'flex';
+}
+
+// Close task detail modal
+function closeTaskDetailModal() {
+    document.getElementById('taskDetailModal').style.display = 'none';
+}
+
+// Report task
+function reportTask(taskId, taskTitle) {
+    currentTaskId = taskId;
+    document.getElementById('reportTaskName').textContent = taskTitle;
+    document.getElementById('reportTaskModal').style.display = 'flex';
+}
+
+// Close report modal
+function closeReportModal() {
+    document.getElementById('reportTaskModal').style.display = 'none';
+    document.getElementById('confirmCheckbox').checked = false;
+    document.getElementById('reportNote').value = '';
+    currentTaskId = null;
+}
+
+// Submit report
+function submitReport() {
+    const confirmed = document.getElementById('confirmCheckbox').checked;
+    const note = document.getElementById('reportNote').value.trim();
+    
+    if (!confirmed) {
+        showNotification('⚠️ Vui lòng xác nhận đã hoàn thành nhiệm vụ', 'error');
+        return;
+    }
+    
+    if (!currentTaskId) {
+        showNotification('❌ Không tìm thấy nhiệm vụ', 'error');
+        return;
+    }
+    
+    // Send AJAX request
+    fetch(`/tasks/${currentTaskId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            note: note,
+            status: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ Đã gửi báo cáo thành công!', 'success');
+            closeReportModal();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('❌ ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('❌ Có lỗi xảy ra khi gửi báo cáo', 'error');
+    });
+}
+
+// Respond to urgent task
+function respondToTask(taskId, accepted) {
+    const note = document.getElementById('urgentNote').value.trim();
+    
+    // If rejecting, note is required
+    if (!accepted && !note) {
+        showNotification('⚠️ Vui lòng nhập lý do từ chối!', 'error');
+        return;
+    }
+    
+    fetch(`/tasks/${taskId}/respond/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            status: accepted,
+            note: note
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(accepted ? '✅ Đã đồng ý nhiệm vụ' : '❌ Đã từ chối nhiệm vụ', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('❌ ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('❌ Có lỗi xảy ra', 'error');
+    });
+}
+
+// Show notification
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    const bgColor = type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#f39c12';
+    
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 3000;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}

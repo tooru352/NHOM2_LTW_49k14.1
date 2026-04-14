@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     User, Post, InteractionType, Interaction, Group, GroupMember,
-    Task, TaskResponse, Meeting, MeetingParticipant,
+    Task, TaskAssignment, TaskResponse, TaskTemplate, Meeting, MeetingParticipant,
     Conversation, ConversationMember, Message,
     WorkShift, WorkSchedule
 )
@@ -64,6 +64,19 @@ class TaskAdmin(admin.ModelAdmin):
     list_display = ['id', 'title', 'assigned_to', 'created_by', 'status', 'created_at']
     list_filter = ['status', 'created_at']
     search_fields = ['title', 'description']
+
+@admin.register(TaskAssignment)
+class TaskAssignmentAdmin(admin.ModelAdmin):
+    list_display = ['task', 'user', 'assigned_at']
+    list_filter = ['assigned_at']
+    search_fields = ['task__title', 'user__username']
+
+@admin.register(TaskTemplate)
+class TaskTemplateAdmin(admin.ModelAdmin):
+    list_display = ['title', 'department', 'shift', 'start_time', 'end_time', 'order', 'is_active']
+    list_filter = ['department', 'shift', 'is_active']
+    search_fields = ['title', 'description']
+    ordering = ['department', 'order', 'shift']
 
 @admin.register(TaskResponse)
 class TaskResponseAdmin(admin.ModelAdmin):

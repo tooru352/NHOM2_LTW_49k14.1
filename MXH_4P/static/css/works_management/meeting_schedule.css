@@ -874,3 +874,463 @@
 .confirm-btn:active {
     transform: translateY(0);
 }
+
+/* Month Navigation */
+.month-navigation {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.month-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.month-nav-left .calendar-icon {
+    font-size: 22px;
+}
+
+.month-nav-left strong {
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.month-nav-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-nav {
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #5f6368;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-nav:hover {
+    background: #f8f9fa;
+    border-color: #5b6cf5;
+    color: #5b6cf5;
+}
+
+.btn-nav-today {
+    padding: 8px 20px;
+    background: #f8f9fa;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #5f6368;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-nav-today:hover {
+    background: #5b6cf5;
+    color: white;
+    border-color: #5b6cf5;
+}
+
+.btn-create-meeting {
+    padding: 8px 20px;
+    background: #5b6cf5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-create-meeting:hover {
+    background: #4a5bd6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(91, 108, 245, 0.3);
+}
+
+/* Meetings Timeline */
+.meetings-timeline {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.meeting-card {
+    display: flex;
+    gap: 15px;
+    padding: 18px;
+    border-left: 4px solid #5b6cf5;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.meeting-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background: #f0f2ff;
+}
+
+.meeting-card[data-status="Completed"] {
+    border-left-color: #27ae60;
+    opacity: 0.8;
+}
+
+.meeting-card[data-status="Cancelled"] {
+    border-left-color: #e74c3c;
+    opacity: 0.7;
+}
+
+.meeting-time-badge {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5b6cf5;
+    min-width: 110px;
+    padding: 5px 12px;
+    background: white;
+    border-radius: 8px;
+    text-align: center;
+    align-self: flex-start;
+}
+
+.meeting-card-content {
+    flex: 1;
+}
+
+.meeting-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.meeting-emoji {
+    font-size: 20px;
+}
+
+.meeting-card-header h3 {
+    flex: 1;
+    font-size: 16px;
+    color: #2c3e50;
+    margin: 0;
+    font-weight: 600;
+}
+
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.completed {
+    background: #d4edda;
+    color: #27ae60;
+}
+
+.status-badge.upcoming {
+    background: #fff3cd;
+    color: #f39c12;
+}
+
+.status-badge.cancelled {
+    background: #f8d7da;
+    color: #e74c3c;
+}
+
+.meeting-card-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.no-meetings {
+    text-align: center;
+    padding: 60px 20px;
+    color: #95a5a6;
+}
+
+.no-meetings p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* User info badge */
+.user-info {
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.btn-back {
+    padding: 10px 20px;
+    background: white;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #5f6368;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    background: #f8f9fa;
+    border-color: #5b6cf5;
+    color: #5b6cf5;
+}
+
+/* Modal Create Meeting */
+.modal-content-create {
+    background-color: white;
+    margin: 3% auto;
+    padding: 0;
+    border-radius: 16px;
+    width: 60%;
+    max-width: 700px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease;
+}
+
+.modal-header-create {
+    background: linear-gradient(135deg, #5b6cf5 0%, #4a5bd6 100%);
+    padding: 20px 30px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header-create h2 {
+    color: white;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-body-create {
+    padding: 25px 30px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-body-create::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body-create::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.modal-body-create::-webkit-scrollbar-thumb {
+    background: #5b6cf5;
+    border-radius: 10px;
+}
+
+.form-group-create {
+    margin-bottom: 18px;
+}
+
+.form-group-create label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.form-group-create input,
+.form-group-create select,
+.form-group-create textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.form-group-create input:focus,
+.form-group-create select:focus,
+.form-group-create textarea:focus {
+    outline: none;
+    border-color: #5b6cf5;
+    box-shadow: 0 0 0 3px rgba(91, 108, 245, 0.1);
+}
+
+.form-row-create {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.modal-footer-create {
+    padding: 20px 30px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn-cancel-create {
+    background: #e9ecef;
+    color: #5f6368;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-cancel-create:hover {
+    background: #dee2e6;
+}
+
+.btn-submit-create {
+    background: #5b6cf5;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-submit-create:hover {
+    background: #4a5bd6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(91, 108, 245, 0.3);
+}
+
+/* Stat icon colors */
+.stat-icon.pink {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-icon.cyan {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-icon.orange {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* Meeting detail modal specific styles */
+.meeting-subtitle {
+    font-size: 24px;
+    color: #2c3e50;
+    margin: 0 0 25px 0;
+    font-weight: 700;
+}
+
+.organizer-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.employee-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.employee-info-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+.employee-info-detail strong {
+    font-size: 15px;
+    color: #2c3e50;
+    margin-bottom: 3px;
+}
+
+.employee-info-detail span {
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .month-navigation {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .month-nav-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .meeting-card {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .meeting-time-badge {
+        min-width: auto;
+        align-self: stretch;
+    }
+    
+    .detail-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content-detail,
+    .modal-content-create {
+        width: 95%;
+        margin: 5% auto;
+    }
+}

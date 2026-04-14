@@ -91,9 +91,13 @@
                 <tr class="schedule-row {% if task.status == 'Done' %}highlight-green{% elif task.status == 'InProgress' %}highlight-yellow{% endif %}">
                     <td class="task-name">{{ task.title }}</td>
                     <td class="employee-cell-readonly">
-                        <span class="employee-tag-readonly">{{ task.assigned_to.first_name }} {{ task.assigned_to.last_name }}</span>
+                        {% for assignment in task.assignments.all %}
+                        <span class="employee-tag-readonly">{{ assignment.user.get_full_name|default:assignment.user.username }}</span>
+                        {% empty %}
+                        <span class="employee-tag-readonly">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                        {% endfor %}
                     </td>
-                    <td class="quantity-cell">1</td>
+                    <td class="quantity-cell">{{ task.assignments.count|default:1 }}</td>
                     <td>
                         {% if task.priority == 'High' %}
                         <span class="shift-badge evening">Cao</span>

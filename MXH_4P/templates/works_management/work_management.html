@@ -4,123 +4,7 @@
 {% block title %}Quản lý công việc - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}?v=5">
-{% endblock %}
-
-{% block content %}
-<div class="work-management">
-    <!-- Header -->
-    <div class="page-header">
-        <div class="header-left">
-            <h1>📋 Quản Lý Công Việc</h1>
-        </div>
-        <div class="header-right">
-            <button class="btn-history" onclick="window.location.href='/meeting-schedule'">🕐 Lịch họp</button>
-            <button class="btn-primary" onclick="window.location.href='{% url 'create_task' %}'">➕ Tạo công việc mới</button>
-        </div>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon blue">📋</div>
-            <div class="stat-content">
-                <h2>{{ tasks.count }}</h2>
-                <p>Tổng công việc</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon yellow">🏆</div>
-            <div class="stat-content">
-                <h2>{{ tasks_in_progress }}</h2>
-                <p>Đang thực hiện</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon green">✅</div>
-            <div class="stat-content">
-                <h2>{{ tasks_done }}</h2>
-                <p>Hoàn thành</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon red">⏰</div>
-            <div class="stat-content">
-                <h2>{{ tasks_todo }}</h2>
-                <p>Chưa xử lý</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter Section -->
-    <div class="filter-section">
-        <div class="filter-left">
-            <span class="filter-icon">📅</span>
-            <strong>Danh Sách Công Việc</strong>
-        </div>
-    </div>
-
-    <!-- Tasks Table -->
-    <div class="tasks-table-container">
-        <table class="tasks-table">
-            <thead>
-                <tr>
-                    <th>CÔNG VIỆC</th>
-                    <th>NHÂN VIÊN</th>
-                    <th>NGƯỜI GIAO</th>
-                    <th>NGÀY TẠO</th>
-                    <th>TRẠNG THÁI</th>
-                    <th>MÔ TẢ</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for task in tasks %}
-                <tr class="task-row {% if task.status == 'Done' %}highlight-green{% elif task.status == 'InProgress' %}highlight-yellow{% endif %}">
-                    <td class="task-name">{{ task.title }}</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags">
-                            <span class="employee-tag">
-                                {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
-                            </span>
-                        </div>
-                    </td>
-                    <td>{{ task.created_by.get_full_name|default:task.created_by.username }}</td>
-                    <td class="time-cell">{{ task.created_at|date:"d/m/Y H:i" }}</td>
-                    <td>
-                        {% if task.status == 'Done' %}
-                        <span class="status-badge completed">✅ Hoàn thành</span>
-                        {% elif task.status == 'InProgress' %}
-                        <span class="status-badge pending">⏳ Đang thực hiện</span>
-                        {% elif task.status == 'Todo' %}
-                        <span class="status-badge overdue">❌ Chưa xử lý</span>
-                        {% else %}
-                        <span class="status-badge">{{ task.get_status_display }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="note-cell">{{ task.description|truncatewords:10 }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px;">
-                        <p style="color: #999; font-size: 16px;">Chưa có công việc nào. Hãy tạo công việc mới!</p>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{% static 'js/work_management.js' %}"></script>
-{% endblock %}
-{% load static %}
-
-{% block title %}Quản lý công việc - FourPoint Hotel{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'css/works_management/work_management.css' %}?v=6">
 {% endblock %}
 
 {% block content %}
@@ -135,7 +19,7 @@
             <button class="btn-history" onclick="window.location.href='/meeting-schedule'">🕐 Lịch họp</button>
             <button class="btn-notification" onclick="toggleResponseNotification()">
                 📢 Phản hồi
-                <span class="notification-badge">3</span>
+                <span class="notification-badge">{{ responses.count }}</span>
             </button>
             <button class="btn-primary" onclick="openAddTaskModal()">➕ Tạo công việc mới</button>
         </div>
@@ -148,57 +32,25 @@
             <button class="btn-close-dropdown" onclick="toggleResponseNotification()">×</button>
         </div>
         <div class="response-dropdown-body">
-            <!-- Response 1 - Pending -->
-            <div class="response-dropdown-item pending-item">
+            {% for response in responses|slice:":4" %}
+            <div class="response-dropdown-item {% if response.status %}accepted-item{% else %}rejected-item{% endif %}">
                 <div class="response-item-left">
-                    <div class="avatar-mini">AT</div>
+                    <div class="avatar-mini">{{ response.user.get_initials }}</div>
                     <div class="response-info">
-                        <strong>Đoàn Thị Anh Thư</strong>
-                        <span class="task-mini">📋 Kiểm tra sảnh chính lúc 14:00</span>
-                        <span class="time-ago">5 phút trước</span>
+                        <strong>{{ response.user.get_full_name|default:response.user.username }}</strong>
+                        <span class="task-mini">📋 {{ response.task.title|truncatewords:5 }}</span>
+                        <span class="time-ago">{{ response.responded_at|timesince }} trước</span>
                     </div>
                 </div>
-                <span class="badge-mini pending">⏳ Chờ</span>
+                <span class="badge-mini {% if response.status %}accepted{% else %}rejected{% endif %}">
+                    {% if response.status %}✓ Đồng ý{% else %}✕ Từ chối{% endif %}
+                </span>
             </div>
-
-            <!-- Response 2 - Accepted -->
-            <div class="response-dropdown-item accepted-item">
-                <div class="response-item-left">
-                    <div class="avatar-mini">NV</div>
-                    <div class="response-info">
-                        <strong>Nguyễn Văn An</strong>
-                        <span class="task-mini">🍽️ Chuẩn bị bàn ăn buffet</span>
-                        <span class="time-ago">15 phút trước</span>
-                    </div>
-                </div>
-                <span class="badge-mini accepted">✓ Đồng ý</span>
+            {% empty %}
+            <div class="response-dropdown-item">
+                <p style="text-align: center; color: #999; padding: 20px;">Chưa có phản hồi nào.</p>
             </div>
-
-            <!-- Response 3 - Rejected -->
-            <div class="response-dropdown-item rejected-item">
-                <div class="response-item-left">
-                    <div class="avatar-mini">TH</div>
-                    <div class="response-info">
-                        <strong>Trần Văn Hùng</strong>
-                        <span class="task-mini">🧹 Vệ sinh khu vực bếp</span>
-                        <span class="time-ago">30 phút trước</span>
-                    </div>
-                </div>
-                <span class="badge-mini rejected">✕ Từ chối</span>
-            </div>
-
-            <!-- Response 4 - Accepted -->
-            <div class="response-dropdown-item accepted-item">
-                <div class="response-item-left">
-                    <div class="avatar-mini">LM</div>
-                    <div class="response-info">
-                        <strong>Lê Minh Châu</strong>
-                        <span class="task-mini">🍹 Phục vụ đồ uống tại Bar</span>
-                        <span class="time-ago">1 giờ trước</span>
-                    </div>
-                </div>
-                <span class="badge-mini accepted">✓ Đồng ý</span>
-            </div>
+            {% endfor %}
         </div>
         <div class="response-dropdown-footer">
             <button class="btn-view-all-responses" onclick="window.location.href='/all-responses/'">Xem tất cả phản hồi →</button>
@@ -207,31 +59,31 @@
 
     <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card" onclick="filterByStatus('all')">
+        <div class="stat-card" onclick="filterByStatus('all')" data-status="all">
             <div class="stat-icon blue">📋</div>
             <div class="stat-content">
-                <h2>24</h2>
+                <h2>{{ tasks.count }}</h2>
                 <p>Tổng công việc</p>
             </div>
         </div>
-        <div class="stat-card" onclick="filterByStatus('pending')">
+        <div class="stat-card" onclick="filterByStatus('InProgress')" data-status="InProgress">
             <div class="stat-icon yellow">🏆</div>
             <div class="stat-content">
-                <h2>8</h2>
+                <h2>{{ tasks_in_progress }}</h2>
                 <p>Đang thực hiện</p>
             </div>
         </div>
-        <div class="stat-card" onclick="filterByStatus('completed')">
+        <div class="stat-card" onclick="filterByStatus('Done')" data-status="Done">
             <div class="stat-icon green">✅</div>
             <div class="stat-content">
-                <h2>12</h2>
+                <h2>{{ tasks_done }}</h2>
                 <p>Hoàn thành</p>
             </div>
         </div>
-        <div class="stat-card" onclick="filterByStatus('overdue')">
+        <div class="stat-card" onclick="filterByStatus('Todo')" data-status="Todo">
             <div class="stat-icon red">⏰</div>
             <div class="stat-content">
-                <h2>4</h2>
+                <h2>{{ tasks_todo }}</h2>
                 <p>Chưa xử lý</p>
             </div>
         </div>
@@ -243,13 +95,15 @@
             <span class="filter-icon">📅</span>
             <strong>Phân Công Chi Tiết</strong>
             <div class="date-picker">
+                <button class="btn-date-nav" onclick="navigateDate('{{ previous_date|date:'Y-m-d' }}')" title="Ngày trước">◀</button>
                 <span class="calendar-icon">📅</span>
-                <input type="date" value="2025-02-04" id="filterDate">
-                <span class="date-label" id="dateLabel">Thay đổi ngày</span>
+                <input type="date" value="{{ selected_date|date:'Y-m-d' }}" id="filterDate" onchange="navigateToDate(this.value)">
+                <span class="date-label" id="dateLabel">{{ selected_date|date:"l, d/m/Y" }}</span>
+                <button class="btn-date-nav" onclick="navigateDate('{{ next_date|date:'Y-m-d' }}')" title="Ngày sau">▶</button>
             </div>
         </div>
         <div class="filter-right">
-            <button class="btn-filter" onclick="saveAssignments()">📋 Lưu phân công</button>
+            <button class="btn-filter" onclick="saveAssignments()">💾 Lưu phân công</button>
         </div>
     </div>
 
@@ -268,180 +122,60 @@
                 </tr>
             </thead>
             <tbody id="tasksTableBody">
-                <!-- Row 1 -->
-                <tr class="task-row highlight-yellow" onclick="showTaskDetail(this)">
-                    <td class="task-name">Tài sản Core</td>
+                {% for task in tasks %}
+                <tr class="task-row {% if task.status == 'Done' %}highlight-green{% elif task.status == 'InProgress' %}highlight-yellow{% endif %}" 
+                    data-status="{{ task.status }}"
+                    onclick="showTaskDetail({{ task.id }}, '{{ task.title|escapejs }}', '{{ task.description|escapejs }}', '{{ task.created_by.get_full_name|default:task.created_by.username|escapejs }}', '{{ task.created_at|date:"d/m/Y H:i" }}', '{{ task.status }}')">
+                    <td class="task-name">{{ task.title }}</td>
                     <td class="employee-cell">
-                        <div class="employee-tags" id="employees-1">
-                            <span class="employee-tag">
-                                Nguyễn Văn An
+                        <div class="employee-tags" data-task-id="{{ task.id }}">
+                            {% for assignment in task.assignments.all %}
+                            <span class="employee-tag" data-user-id="{{ assignment.user.id }}">
+                                {{ assignment.user.get_full_name|default:assignment.user.username }}
+                                {% if task.status != 'Done' %}
+                                <span class="remove-tag" onclick="event.stopPropagation(); removeEmployee({{ task.id }}, {{ assignment.user.id }}, this)">×</span>
+                                {% endif %}
                             </span>
+                            {% endfor %}
+                            {% if task.status != 'Done' %}
+                            <button class="add-employee-btn" onclick="event.stopPropagation(); addEmployee({{ task.id }}, this)">+ Thêm</button>
+                            {% endif %}
                         </div>
                     </td>
-                    <td><input type="number" value="1" class="quantity-input" disabled onclick="event.stopPropagation()"></td>
-                    <td><span class="shift-badge morning">Sáng</span></td>
-                    <td class="time-cell">06:00 - 14:00</td>
-                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
-                    <td class="note-cell">Quản lý tài sản khách sạn</td>
-                    <td style="display:none;" class="task-department">Quản lý & Vận hành</td>
-                    <td style="display:none;" class="task-description">Kiểm tra và bảo trì tất cả tài sản cơ bản của khách sạn bao gồm hệ thống điện, nước và các thiết bị vận hành chính tại khu vực tầng hầm và sảnh.</td>
-                </tr>
-
-                <!-- Row 2 -->
-                <tr class="task-row" onclick="showTaskDetail(this)">
-                    <td class="task-name">Quản lý F&B</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-2">
-                            <span class="employee-tag">
-                                Phạm Xuân Thương
-                                <span class="remove-tag" onclick="event.stopPropagation(); removeEmployee(this)">×</span>
-                            </span>
-                            <button class="add-employee-btn" onclick="event.stopPropagation(); addEmployee(this)">+ Thêm</button>
-                        </div>
+                    <td class="quantity-cell"><span class="quantity-display" data-task-id="{{ task.id }}">{{ task.assignments.count|default:1 }}</span></td>
+                    <td><span class="shift-badge morning">{{ task.shift|default:"Sáng" }}</span></td>
+                    <td class="time-cell">
+                        {% if task.start_time and task.end_time %}
+                            {{ task.start_time|time:"H:i" }} - {{ task.end_time|time:"H:i" }}
+                        {% else %}
+                            {{ task.created_at|date:"H:i" }}
+                        {% endif %}
                     </td>
-                    <td><input type="number" value="1" class="quantity-input" onclick="event.stopPropagation()"></td>
-                    <td><span class="shift-badge fullday">Cả ngày</span></td>
-                    <td class="time-cell">08:00 - 20:00</td>
-                    <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
-                    <td class="note-cell">Giám sát nhà hàng và bar</td>
-                    <td style="display:none;" class="task-department">Quản lý & Vận hành</td>
-                    <td style="display:none;" class="task-description">Giám sát toàn bộ hoạt động của nhà hàng và bar, đảm bảo chất lượng dịch vụ và thực phẩm.</td>
-                </tr>
-
-                <!-- Row 3 -->
-                <tr class="task-row">
-                    <td class="task-name">Nhân viên lễ tân</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-3">
-                            <span class="employee-tag">
-                                Nguyễn Thị Lan
-                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
-                            </span>
-                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
-                        </div>
+                    <td>
+                        {% if task.status == 'Done' %}
+                        <span class="status-badge completed">✅ Hoàn thành</span>
+                        {% elif task.status == 'InProgress' %}
+                        <span class="status-badge pending">⏳ Đang thực hiện</span>
+                        {% elif task.status == 'Todo' %}
+                        <span class="status-badge overdue">❌ Chưa xử lý</span>
+                        {% endif %}
                     </td>
-                    <td><input type="number" value="1" class="quantity-input"></td>
-                    <td><span class="shift-badge morning">Sáng</span></td>
-                    <td class="time-cell">06:00 - 14:00</td>
-                    <td><span class="status-badge overdue">❌ Chưa xử lý</span></td>
-                    <td class="note-cell">Check-in/out khách</td>
+                    <td class="note-cell">{{ task.description|truncatewords:10 }}</td>
+                    <!-- Hidden data for modal -->
+                    <td style="display:none;" class="task-department">{{ task.get_department_display_name }}</td>
+                    <td style="display:none;" class="task-shift">{{ task.shift|default:"Sáng" }}</td>
+                    <td style="display:none;" class="task-start-time">{% if task.start_time %}{{ task.start_time|time:"H:i" }}{% endif %}</td>
+                    <td style="display:none;" class="task-end-time">{% if task.end_time %}{{ task.end_time|time:"H:i" }}{% endif %}</td>
+                    <td style="display:none;" class="task-description">{{ task.description }}</td>
+                    <td style="display:none;" class="task-employees" data-employees='[{% for assignment in task.assignments.all %}{"id":{{ assignment.user.id }},"name":"{{ assignment.user.get_full_name|default:assignment.user.username|escapejs }}","initials":"{{ assignment.user.get_initials }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'></td>
                 </tr>
-
-                <!-- Row 4 -->
-                <tr class="task-row">
-                    <td class="task-name">Thu ngân</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-4">
-                            <span class="employee-tag">
-                                Yến
-                            </span>
-                        </div>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <p style="color: #999; font-size: 16px;">Chưa có công việc nào. Hãy tạo công việc mới!</p>
                     </td>
-                    <td><input type="number" value="1" class="quantity-input" disabled></td>
-                    <td><span class="shift-badge morning">Sáng</span></td>
-                    <td class="time-cell">08:00 - 16:00</td>
-                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
-                    <td class="note-cell">Thanh toán và KT/Dịch</td>
                 </tr>
-
-                <!-- Row 5 -->
-                <tr class="task-row highlight-yellow">
-                    <td class="task-name">Nhà hàng - Nhân viên phục vụ</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-5">
-                            <span class="employee-tag">
-                                Ngọc
-                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
-                            </span>
-                            <span class="employee-tag">
-                                Hiền
-                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
-                            </span>
-                            <span class="employee-tag">
-                                Mai
-                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
-                            </span>
-                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
-                        </div>
-                    </td>
-                    <td><input type="number" value="3" class="quantity-input"></td>
-                    <td><span class="shift-badge afternoon">Buổi trưa</span></td>
-                    <td class="time-cell">11:00 - 15:00</td>
-                    <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
-                    <td class="note-cell">Phục vụ bữa trưa buffet</td>
-                </tr>
-
-                <!-- Row 6 -->
-                <tr class="task-row highlight-green">
-                    <td class="task-name">ELITE ROOMS</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-6">
-                            <span class="employee-tag">
-                                Team Housekeeping
-                            </span>
-                        </div>
-                    </td>
-                    <td><input type="number" value="1" class="quantity-input" disabled></td>
-                    <td><span class="shift-badge morning">Sáng</span></td>
-                    <td class="time-cell">06:00 - 10:00</td>
-                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
-                    <td class="note-cell">Phòng cao cấp dịch vụ</td>
-                </tr>
-
-                <!-- Row 7 -->
-                <tr class="task-row">
-                    <td class="task-name">F&B Morning Service</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-7">
-                            <span class="employee-tag">
-                                Team F&B
-                            </span>
-                        </div>
-                    </td>
-                    <td><input type="number" value="4" class="quantity-input" disabled></td>
-                    <td><span class="shift-badge morning">Sáng</span></td>
-                    <td class="time-cell">11:00 - 15:00</td>
-                    <td><span class="status-badge completed">✅ Hoàn thành</span></td>
-                    <td class="note-cell">Phục vụ buffet sáng - KT%</td>
-                </tr>
-
-                <!-- Row 8 -->
-                <tr class="task-row">
-                    <td class="task-name">Quản lý ca</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-8">
-                            <span class="employee-tag">
-                                Kiên
-                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
-                            </span>
-                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
-                        </div>
-                    </td>
-                    <td><input type="number" value="1" class="quantity-input"></td>
-                    <td><span class="shift-badge fullday">Cả ngày</span></td>
-                    <td class="time-cell">08:00 - 20:00</td>
-                    <td><span class="status-badge pending">⏳ Đang thực hiện</span></td>
-                    <td class="note-cell">Giám sát toàn bộ hoạt động</td>
-                </tr>
-
-                <!-- Row 9 -->
-                <tr class="task-row">
-                    <td class="task-name">Thu ngân phụ</td>
-                    <td class="employee-cell">
-                        <div class="employee-tags" id="employees-9">
-                            <span class="employee-tag">
-                                Yến
-                                <span class="remove-tag" onclick="removeEmployee(this)">×</span>
-                            </span>
-                            <button class="add-employee-btn" onclick="addEmployee(this)">+ Thêm</button>
-                        </div>
-                    </td>
-                    <td><input type="number" value="1" class="quantity-input"></td>
-                    <td><span class="shift-badge evening">Chiều</span></td>
-                    <td class="time-cell">14:00 - 22:00</td>
-                    <td><span class="status-badge overdue">❌ Chưa xử lý</span></td>
-                    <td class="note-cell">Hỗ trợ thanh toán buổi tối</td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -516,7 +250,7 @@
         <div class="modal-header-detail">
             <div class="header-tabs">
                 <button class="tab-btn active">THÔNG TIN CHUNG</button>
-                <button class="tab-btn">ID: JOB-10482</button>
+                <button class="tab-btn">ID: JOB-<span id="taskIdNumber">10482</span></button>
             </div>
             <span class="close" onclick="closeTaskDetailModal()">&times;</span>
         </div>
@@ -542,7 +276,6 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="detail-col">
                     <h4>PHÒNG BAN</h4>
                     <div class="info-badge">
@@ -560,21 +293,937 @@
             
             <div class="detail-section">
                 <h4>GHI CHÚ TỪ GIÁM SÁT</h4>
-                <div class="note-box" id="detailNote">
-                    "Cần ưu tiên kiểm tra hệ thống thang máy và các thiết bị điện trong tầng hầm"
-                </div>
+                <div class="note-box" id="detailNote">"Cần ưu tiên kiểm tra hệ thống thang máy và các thiết bị điện trong tầng hầm"</div>
             </div>
         </div>
         <div class="modal-footer-detail">
-            <button class="btn-edit" id="btnEdit" onclick="toggleEditMode()">Chỉnh sửa công việc</button>
-            <button class="btn-delete" onclick="deleteTask()">Xóa công việc</button>
+            <button class="btn-edit" id="btnEdit" onclick="editTaskFromModal()">Chỉnh sửa công việc</button>
+            <button class="btn-delete" onclick="deleteTaskFromModal()">Xóa công việc</button>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
-
 {% block extra_js %}
-<script src="{% static 'js/work_management.js' %}"></script>
+<script>
+// Available employees data from backend
+const availableEmployees = [
+    {% for emp in employees %}
+    { id: {{ emp.id }}, name: '{{ emp.get_full_name|default:emp.username|escapejs }}' }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Current selected date
+const selectedDate = '{{ selected_date|date:"Y-m-d" }}';
+const managerDepartment = '{{ manager_department }}';
+
+// Track pending changes
+const pendingChanges = {
+    additions: {}, // taskId: [userId1, userId2, ...]
+    removals: {}   // taskId: [userId1, userId2, ...]
+};
+
+// Current filter status
+let currentFilterStatus = 'all';
+
+// Filter tasks by status
+function filterByStatus(status) {
+    currentFilterStatus = status;
+    
+    // Update active state on stat cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    document.querySelector(`.stat-card[data-status="${status}"]`).classList.add('active');
+    
+    // Filter task rows
+    const taskRows = document.querySelectorAll('.task-row');
+    let visibleCount = 0;
+    
+    taskRows.forEach(row => {
+        const taskStatus = row.dataset.status;
+        
+        if (status === 'all' || taskStatus === status) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show message if no tasks
+    const tbody = document.getElementById('tasksTableBody');
+    const existingMessage = tbody.querySelector('.no-tasks-message');
+    
+    if (visibleCount === 0) {
+        if (!existingMessage) {
+            const messageRow = document.createElement('tr');
+            messageRow.className = 'no-tasks-message';
+            messageRow.innerHTML = `
+                <td colspan="7" style="text-align: center; padding: 40px;">
+                    <p style="color: #999; font-size: 16px;">Không có công việc nào với trạng thái này.</p>
+                </td>
+            `;
+            tbody.appendChild(messageRow);
+        }
+    } else {
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+    }
+    
+    // Show notification
+    const statusNames = {
+        'all': 'Tất cả',
+        'InProgress': 'Đang thực hiện',
+        'Done': 'Hoàn thành',
+        'Todo': 'Chưa xử lý'
+    };
+    showNotification(`🔍 Đang hiển thị: ${statusNames[status]} (${visibleCount} công việc)`, 'success');
+}
+
+// Navigate to specific date
+function navigateDate(date) {
+    // Check for unsaved changes
+    if (hasUnsavedChanges()) {
+        if (!confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn rời khỏi trang này?')) {
+            return;
+        }
+    }
+    window.location.href = `?date=${date}`;
+}
+
+// Navigate to date from input
+function navigateToDate(date) {
+    if (date) {
+        // Check for unsaved changes
+        if (hasUnsavedChanges()) {
+            if (!confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn rời khỏi trang này?')) {
+                return;
+            }
+        }
+        window.location.href = `?date=${date}`;
+    }
+}
+
+// Check if there are unsaved changes
+function hasUnsavedChanges() {
+    return Object.keys(pendingChanges.additions).length > 0 || 
+           Object.keys(pendingChanges.removals).length > 0;
+}
+
+// Show unsaved indicator
+function showUnsavedIndicator() {
+    const saveBtn = document.querySelector('.btn-filter');
+    if (saveBtn) {
+        saveBtn.classList.add('has-unsaved');
+        saveBtn.style.animation = 'pulse 1.5s infinite';
+        saveBtn.style.background = '#e74c3c';
+    }
+}
+
+// Hide unsaved indicator
+function hideUnsavedIndicator() {
+    const saveBtn = document.querySelector('.btn-filter');
+    if (saveBtn) {
+        saveBtn.classList.remove('has-unsaved');
+        saveBtn.style.animation = '';
+        saveBtn.style.background = '';
+    }
+}
+
+// Save all assignments
+function saveAssignments() {
+    if (!hasUnsavedChanges()) {
+        showNotification('ℹ️ Không có thay đổi nào để lưu', 'warning');
+        return;
+    }
+    
+    showNotification('💾 Đang lưu phân công...', 'success');
+    
+    const promises = [];
+    
+    // Process additions
+    for (const taskId in pendingChanges.additions) {
+        const userIds = pendingChanges.additions[taskId];
+        userIds.forEach(userId => {
+            promises.push(
+                fetch(`/tasks/${taskId}/add-employee/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: `user_id=${userId}`
+                })
+                .then(response => response.json())
+            );
+        });
+    }
+    
+    // Process removals
+    for (const taskId in pendingChanges.removals) {
+        const userIds = pendingChanges.removals[taskId];
+        userIds.forEach(userId => {
+            promises.push(
+                fetch(`/tasks/${taskId}/remove-employee/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: `user_id=${userId}`
+                })
+                .then(response => response.json())
+            );
+        });
+    }
+    
+    // Execute all promises
+    Promise.all(promises)
+        .then(results => {
+            const errors = results.filter(r => !r.success);
+            if (errors.length > 0) {
+                showNotification('⚠️ Một số thay đổi không được lưu', 'error');
+            } else {
+                showNotification('✅ Đã lưu phân công thành công!', 'success');
+                
+                // Clear pending changes
+                pendingChanges.additions = {};
+                pendingChanges.removals = {};
+                
+                // Hide unsaved indicator
+                hideUnsavedIndicator();
+                
+                // Reload page after 1 second
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('❌ Có lỗi xảy ra khi lưu', 'error');
+        });
+}
+
+// Current task ID for modal actions
+let currentTaskId = null;
+let isEditMode = false;
+
+// Toggle response notification dropdown
+function toggleResponseNotification() {
+    const dropdown = document.getElementById('responseDropdown');
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('responseDropdown');
+    const button = document.querySelector('.btn-notification');
+    
+    if (dropdown && !dropdown.contains(event.target) && !button.contains(event.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+// Update quantity display
+function updateQuantity(taskId) {
+    const container = document.querySelector(`.employee-tags[data-task-id="${taskId}"]`);
+    const quantityDisplay = document.querySelector(`.quantity-display[data-task-id="${taskId}"]`);
+    
+    if (container && quantityDisplay) {
+        // Count only tags that are not pending removal
+        const count = container.querySelectorAll('.employee-tag:not(.pending-removal)').length;
+        quantityDisplay.textContent = count || 1;
+    }
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Show task detail modal
+function showTaskDetail(taskId, title, description, createdBy, createdAt, status) {
+    currentTaskId = taskId;
+    
+    // Find the row to get employee data
+    const row = event.currentTarget;
+    const employeesData = row.querySelector('.task-employees').dataset.employees;
+    const employees = JSON.parse(employeesData);
+    const department = row.querySelector('.task-department').textContent;
+    const shift = row.querySelector('.task-shift').textContent;
+    const startTime = row.querySelector('.task-start-time').textContent;
+    const endTime = row.querySelector('.task-end-time').textContent;
+    
+    // Update modal content
+    document.getElementById('taskIdNumber').textContent = taskId;
+    document.getElementById('detailTaskTitle').textContent = title;
+    document.getElementById('detailDescription').textContent = description;
+    document.getElementById('detailDepartment').textContent = department;
+    document.getElementById('detailNote').textContent = `"${description}"`;
+    
+    // Format and display shift and time
+    let shiftTimeDisplay = `Ca ${shift}`;
+    if (startTime && endTime) {
+        shiftTimeDisplay += `<br>${startTime} — ${endTime}`;
+    }
+    shiftTimeDisplay += `<br><small style="color: #95a5a6;">Ngày tạo: ${createdAt}</small>`;
+    document.getElementById('detailShiftTime').innerHTML = shiftTimeDisplay;
+    
+    // Update employees list with user IDs
+    const employeesHtml = employees.map(emp => `
+        <div class="employee-item-detail" data-user-id="${emp.id || ''}">
+            <div class="employee-avatar">${emp.initials}</div>
+            <div class="employee-info-detail">
+                <strong>${emp.name}</strong>
+                <span>${status === 'Done' ? 'Đã hoàn thành công việc' : status === 'InProgress' ? 'Đang thực hiện công việc' : 'Chưa bắt đầu'}</span>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById('detailEmployees').innerHTML = employeesHtml;
+    
+    // Show modal
+    document.getElementById('taskDetailModal').style.display = 'block';
+}
+
+// Close task detail modal
+function closeTaskDetailModal() {
+    document.getElementById('taskDetailModal').style.display = 'none';
+    currentTaskId = null;
+    isEditMode = false;
+    
+    // Reset edit mode
+    document.getElementById('btnEdit').textContent = 'Chỉnh sửa công việc';
+    document.getElementById('btnEdit').style.background = '';
+    
+    // Reset contenteditable
+    document.getElementById('detailTaskTitle').contentEditable = 'false';
+    document.getElementById('detailDescription').contentEditable = 'false';
+    document.getElementById('detailNote').contentEditable = 'false';
+    
+    // Reset background
+    document.getElementById('detailTaskTitle').style.background = '';
+    document.getElementById('detailDescription').style.background = '';
+    document.getElementById('detailNote').style.background = '';
+    
+    // Remove edit buttons from employee list
+    const employeeList = document.getElementById('detailEmployees');
+    employeeList.classList.remove('editable');
+    
+    // Remove all remove buttons
+    const removeButtons = employeeList.querySelectorAll('.remove-employee-detail');
+    removeButtons.forEach(btn => btn.remove());
+    
+    // Remove add button
+    const addBtn = employeeList.querySelector('.add-employee-detail-btn');
+    if (addBtn) addBtn.remove();
+}
+
+// Edit task from modal
+function editTaskFromModal() {
+    if (!isEditMode) {
+        // Enable edit mode
+        isEditMode = true;
+        
+        // Make fields editable
+        document.getElementById('detailTaskTitle').contentEditable = 'true';
+        document.getElementById('detailDescription').contentEditable = 'true';
+        document.getElementById('detailNote').contentEditable = 'true';
+        
+        // Enable employee editing
+        const employeeList = document.getElementById('detailEmployees');
+        employeeList.classList.add('editable');
+        
+        // Add remove buttons to employees
+        const employeeItems = employeeList.querySelectorAll('.employee-item-detail');
+        employeeItems.forEach(item => {
+            if (!item.querySelector('.remove-employee-detail')) {
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'remove-employee-detail';
+                removeBtn.innerHTML = '×';
+                removeBtn.style.cssText = 'margin-left: auto; cursor: pointer; color: #e74c3c; font-size: 20px; font-weight: bold;';
+                removeBtn.onclick = function() {
+                    item.remove();
+                };
+                item.appendChild(removeBtn);
+            }
+        });
+        
+        // Add "Add Employee" button
+        if (!employeeList.querySelector('.add-employee-detail-btn')) {
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-employee-detail-btn';
+            addBtn.innerHTML = '+ Thêm nhân viên';
+            addBtn.style.cssText = 'width: 100%; padding: 12px; background: #5b6cf5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px;';
+            addBtn.onclick = function() {
+                addEmployeeToDetail();
+            };
+            employeeList.appendChild(addBtn);
+        }
+        
+        // Change button text
+        document.getElementById('btnEdit').textContent = '💾 Lưu thay đổi';
+        document.getElementById('btnEdit').style.background = '#27ae60';
+        
+        // Add visual feedback
+        document.getElementById('detailTaskTitle').style.background = '#fff9e6';
+        document.getElementById('detailDescription').style.background = '#fff9e6';
+        document.getElementById('detailNote').style.background = '#fff9e6';
+        
+        showNotification('✏️ Chế độ chỉnh sửa đã bật', 'success');
+    } else {
+        // Save changes
+        const title = document.getElementById('detailTaskTitle').textContent.trim();
+        const description = document.getElementById('detailDescription').textContent.trim();
+        
+        if (currentTaskId && title) {
+            // Collect employee IDs
+            const employeeList = document.getElementById('detailEmployees');
+            const employeeItems = employeeList.querySelectorAll('.employee-item-detail');
+            const employeeIds = [];
+            
+            employeeItems.forEach(item => {
+                const userId = item.dataset.userId;
+                if (userId) {
+                    employeeIds.push(parseInt(userId));
+                }
+            });
+            
+            // Send AJAX request to update task
+            fetch(`/tasks/${currentTaskId}/edit/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    title: title,
+                    description: description,
+                    employee_ids: employeeIds
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('✅ Đã lưu thay đổi thành công!', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showNotification('❌ ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('❌ Có lỗi xảy ra khi lưu', 'error');
+            });
+        }
+    }
+}
+
+// Add employee to detail modal
+function addEmployeeToDetail() {
+    const employeeList = document.getElementById('detailEmployees');
+    
+    // Get already assigned employee IDs
+    const assignedIds = Array.from(employeeList.querySelectorAll('.employee-item-detail'))
+        .map(item => parseInt(item.dataset.userId))
+        .filter(id => !isNaN(id));
+    
+    // Filter available employees (already filtered by department from backend)
+    const unassignedEmployees = availableEmployees.filter(emp => !assignedIds.includes(emp.id));
+    
+    console.log('Manager Department:', managerDepartment);
+    console.log('Available Employees:', availableEmployees);
+    console.log('Unassigned Employees:', unassignedEmployees);
+    
+    if (unassignedEmployees.length === 0) {
+        showNotification('⚠️ Tất cả nhân viên đã được giao công việc này', 'warning');
+        return;
+    }
+    
+    // Create select dropdown
+    const select = document.createElement('select');
+    select.style.cssText = 'width: 100%; padding: 10px; border: 1px solid #5b6cf5; border-radius: 8px; margin-bottom: 10px;';
+    
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '-- Chọn nhân viên --';
+    select.appendChild(option);
+    
+    unassignedEmployees.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = emp.name;
+        select.appendChild(opt);
+    });
+    
+    // Insert before add button
+    const addBtn = employeeList.querySelector('.add-employee-detail-btn');
+    employeeList.insertBefore(select, addBtn);
+    select.focus();
+    
+    select.addEventListener('change', function() {
+        if (this.value) {
+            const empId = this.value;
+            const empName = this.options[this.selectedIndex].text;
+            const initials = empName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            
+            // Create employee item
+            const item = document.createElement('div');
+            item.className = 'employee-item-detail';
+            item.dataset.userId = empId;
+            item.innerHTML = `
+                <div class="employee-avatar">${initials}</div>
+                <div class="employee-info-detail">
+                    <strong>${empName}</strong>
+                    <span>Được phân công</span>
+                </div>
+                <span class="remove-employee-detail" style="margin-left: auto; cursor: pointer; color: #e74c3c; font-size: 20px; font-weight: bold;">×</span>
+            `;
+            
+            item.querySelector('.remove-employee-detail').onclick = function() {
+                item.remove();
+            };
+            
+            employeeList.insertBefore(item, addBtn);
+        }
+        this.remove();
+    });
+    
+    select.addEventListener('blur', function() {
+        setTimeout(() => this.remove(), 200);
+    });
+}
+
+// Delete task from modal
+function deleteTaskFromModal() {
+    if (currentTaskId && confirm('Bạn có chắc muốn xóa công việc này?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tasks/${currentTaskId}/delete/`;
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrftoken;
+        form.appendChild(csrfInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Open add task modal
+function openAddTaskModal() {
+    document.getElementById('addTaskModal').style.display = 'block';
+}
+
+// Close add task modal
+function closeAddTaskModal() {
+    document.getElementById('addTaskModal').style.display = 'none';
+    clearModalForm();
+}
+
+// Clear modal form
+function clearModalForm() {
+    document.getElementById('taskName').value = '';
+    document.getElementById('taskQuantity').value = '1';
+    document.getElementById('taskStartTime').value = '08:00';
+    document.getElementById('taskEndTime').value = '16:00';
+    document.getElementById('taskNote').value = '';
+    
+    // Clear employee tags
+    const modalEmployees = document.getElementById('modalEmployees');
+    const tags = modalEmployees.querySelectorAll('.employee-tag');
+    tags.forEach(tag => tag.remove());
+    
+    // Reset shift buttons
+    document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.shift-btn[data-shift="Sáng"]').classList.add('active');
+}
+
+// Add employee to modal
+function addEmployeeToModal() {
+    const container = document.getElementById('modalEmployees');
+    const button = container.querySelector('.add-employee-btn-modal');
+    
+    // Get selected employee IDs
+    const selectedEmployeeIds = Array.from(container.querySelectorAll('.employee-tag'))
+        .map(tag => parseInt(tag.dataset.employeeId));
+    
+    // Create dropdown
+    const select = document.createElement('select');
+    select.className = 'employee-select-temp';
+    select.style.cssText = 'margin-right: 5px; margin-bottom: 5px; padding: 8px 12px; border-radius: 6px; border: 1px solid #5b6cf5;';
+    
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '-- Chọn nhân viên --';
+    select.appendChild(option);
+    
+    availableEmployees.forEach(emp => {
+        if (!selectedEmployeeIds.includes(emp.id)) {
+            const opt = document.createElement('option');
+            opt.value = emp.id;
+            opt.textContent = emp.name;
+            select.appendChild(opt);
+        }
+    });
+    
+    container.insertBefore(select, button);
+    select.focus();
+    
+    select.addEventListener('change', function() {
+        if (this.value) {
+            const empId = this.value;
+            const empName = this.options[this.selectedIndex].text;
+            
+            const tag = document.createElement('span');
+            tag.className = 'employee-tag';
+            tag.dataset.employeeId = empId;
+            tag.innerHTML = `${empName}<span class="remove-tag" onclick="removeEmployeeFromModal(this)">×</span>`;
+            container.insertBefore(tag, button);
+            
+            // Update quantity
+            updateModalQuantity();
+        }
+        this.remove();
+    });
+    
+    select.addEventListener('blur', function() {
+        setTimeout(() => this.remove(), 200);
+    });
+}
+
+// Remove employee from modal
+function removeEmployeeFromModal(element) {
+    element.parentElement.remove();
+    updateModalQuantity();
+}
+
+// Update quantity in modal
+function updateModalQuantity() {
+    const container = document.getElementById('modalEmployees');
+    const count = container.querySelectorAll('.employee-tag').length;
+    document.getElementById('taskQuantity').value = count || 1;
+}
+
+// Shift time mappings
+const shiftTimes = {
+    'Sáng': { start: '06:00', end: '14:00' },
+    'Chiều': { start: '14:00', end: '22:00' },
+    'Tối': { start: '22:00', end: '06:00' },
+    'Cả ngày': { start: '08:00', end: '17:00' }
+};
+
+// Handle shift button clicks and auto-update time
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('shift-btn')) {
+        document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // Auto-update time based on shift
+        const shift = e.target.dataset.shift;
+        if (shiftTimes[shift]) {
+            document.getElementById('taskStartTime').value = shiftTimes[shift].start;
+            document.getElementById('taskEndTime').value = shiftTimes[shift].end;
+        }
+    }
+});
+
+// Add new task
+function addNewTask() {
+    const taskName = document.getElementById('taskName').value.trim();
+    const taskNote = document.getElementById('taskNote').value.trim();
+    const startTime = document.getElementById('taskStartTime').value;
+    const endTime = document.getElementById('taskEndTime').value;
+    
+    // Get selected shift
+    const activeShiftBtn = document.querySelector('.shift-btn.active');
+    const shift = activeShiftBtn ? activeShiftBtn.dataset.shift : 'Sáng';
+    
+    // Get selected employee IDs
+    const container = document.getElementById('modalEmployees');
+    const employeeIds = Array.from(container.querySelectorAll('.employee-tag'))
+        .map(tag => parseInt(tag.dataset.employeeId));
+    
+    if (!taskName) {
+        showNotification('⚠️ Vui lòng nhập tên công việc', 'error');
+        return;
+    }
+    
+    if (employeeIds.length === 0) {
+        showNotification('⚠️ Vui lòng chọn ít nhất một nhân viên', 'error');
+        return;
+    }
+    
+    // Send AJAX request
+    fetch('/tasks/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            title: taskName,
+            description: taskNote,
+            employee_ids: employeeIds,
+            shift: shift,
+            start_time: startTime,
+            end_time: endTime,
+            work_date: selectedDate  // Add work_date
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('✅ ' + data.message, 'success');
+            closeAddTaskModal();
+            
+            // Reload page to show new task
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('❌ ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('❌ Có lỗi xảy ra khi tạo công việc', 'error');
+    });
+}
+
+// Add employee to task
+function addEmployee(taskId, button) {
+    const container = button.parentElement;
+    
+    const assignedEmployees = Array.from(container.querySelectorAll('.employee-tag'))
+        .map(tag => parseInt(tag.dataset.userId));
+    
+    const unassignedEmployees = availableEmployees.filter(emp => !assignedEmployees.includes(emp.id));
+    
+    if (unassignedEmployees.length === 0) {
+        showNotification('⚠️ Tất cả nhân viên đã được giao công việc này', 'warning');
+        return;
+    }
+    
+    const select = document.createElement('select');
+    select.className = 'employee-select-temp';
+    select.style.cssText = 'margin-right: 5px; padding: 4px 8px; border-radius: 4px; border: 1px solid #5b6cf5;';
+    
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '-- Chọn nhân viên --';
+    select.appendChild(option);
+    
+    unassignedEmployees.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = emp.name;
+        select.appendChild(opt);
+    });
+    
+    container.insertBefore(select, button);
+    select.focus();
+    
+    select.addEventListener('change', function() {
+        if (this.value) {
+            const userId = parseInt(this.value);
+            const userName = this.options[this.selectedIndex].text;
+            
+            // Track addition in pending changes
+            if (!pendingChanges.additions[taskId]) {
+                pendingChanges.additions[taskId] = [];
+            }
+            pendingChanges.additions[taskId].push(userId);
+            
+            // Remove from removals if it was there
+            if (pendingChanges.removals[taskId]) {
+                const index = pendingChanges.removals[taskId].indexOf(userId);
+                if (index > -1) {
+                    pendingChanges.removals[taskId].splice(index, 1);
+                    if (pendingChanges.removals[taskId].length === 0) {
+                        delete pendingChanges.removals[taskId];
+                    }
+                }
+            }
+            
+            // Create tag with pending-change class
+            const tag = document.createElement('span');
+            tag.className = 'employee-tag pending-change';
+            tag.dataset.userId = userId;
+            tag.innerHTML = `${userName}<span class="remove-tag" onclick="event.stopPropagation(); removeEmployee(${taskId}, ${userId}, this)">×</span>`;
+            container.insertBefore(tag, button);
+            
+            // Update quantity
+            updateQuantity(taskId);
+            
+            // Show unsaved indicator
+            showUnsavedIndicator();
+            
+            showNotification('➕ Đã thêm nhân viên (chưa lưu)', 'warning');
+        }
+        this.remove();
+    });
+    
+    select.addEventListener('blur', function() {
+        setTimeout(() => this.remove(), 200);
+    });
+}
+
+// Remove employee from task
+function removeEmployee(taskId, userId, element) {
+    if (!confirm('Bạn có chắc muốn xóa nhân viên này khỏi công việc?')) {
+        return;
+    }
+    
+    const tag = element.parentElement;
+    
+    // Check if this is a pending addition (not yet saved)
+    if (tag.classList.contains('pending-change')) {
+        // Just remove from pending additions
+        if (pendingChanges.additions[taskId]) {
+            const index = pendingChanges.additions[taskId].indexOf(userId);
+            if (index > -1) {
+                pendingChanges.additions[taskId].splice(index, 1);
+                if (pendingChanges.additions[taskId].length === 0) {
+                    delete pendingChanges.additions[taskId];
+                }
+            }
+        }
+        
+        // Remove from UI
+        tag.style.transition = 'all 0.2s ease';
+        tag.style.opacity = '0';
+        setTimeout(() => {
+            tag.remove();
+            updateQuantity(taskId);
+            
+            // Hide unsaved indicator if no more changes
+            if (!hasUnsavedChanges()) {
+                hideUnsavedIndicator();
+            }
+        }, 200);
+        
+        showNotification('↩️ Đã hủy thêm nhân viên', 'warning');
+    } else {
+        // Track removal in pending changes
+        if (!pendingChanges.removals[taskId]) {
+            pendingChanges.removals[taskId] = [];
+        }
+        pendingChanges.removals[taskId].push(userId);
+        
+        // Remove from additions if it was there
+        if (pendingChanges.additions[taskId]) {
+            const index = pendingChanges.additions[taskId].indexOf(userId);
+            if (index > -1) {
+                pendingChanges.additions[taskId].splice(index, 1);
+                if (pendingChanges.additions[taskId].length === 0) {
+                    delete pendingChanges.additions[taskId];
+                }
+            }
+        }
+        
+        // Mark as pending removal
+        tag.classList.add('pending-removal');
+        tag.style.opacity = '0.5';
+        tag.style.textDecoration = 'line-through';
+        
+        // Update quantity
+        updateQuantity(taskId);
+        
+        // Show unsaved indicator
+        showUnsavedIndicator();
+        
+        showNotification('➖ Đã đánh dấu xóa (chưa lưu)', 'warning');
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    const bgColor = type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#f39c12';
+    
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 2000;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const addModal = document.getElementById('addTaskModal');
+    const detailModal = document.getElementById('taskDetailModal');
+    
+    if (event.target === addModal) {
+        closeAddTaskModal();
+    }
+    if (event.target === detailModal) {
+        closeTaskDetailModal();
+    }
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
+// Warn user before leaving page with unsaved changes
+window.addEventListener('beforeunload', function(e) {
+    if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = 'Bạn có thay đổi chưa lưu. Bạn có chắc muốn rời khỏi trang này?';
+        return e.returnValue;
+    }
+});
+
+// Initialize: Set "Tổng công việc" as active on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.stat-card[data-status="all"]').classList.add('active');
+});
+</script>
 {% endblock %}

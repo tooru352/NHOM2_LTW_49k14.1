@@ -194,7 +194,41 @@ class Interaction(models.Model):
 
 
 # ============================================
-# 7. TASK MODEL
+# 7. TASK TEMPLATE (Template for daily tasks)
+# ============================================
+class TaskTemplate(models.Model):
+    SHIFT_CHOICES = (
+        ('Sáng', 'Ca Sáng'),
+        ('Chiều', 'Ca Chiều'),
+        ('Tối', 'Ca Tối'),
+        ('Cả ngày', 'Cả ngày'),
+    )
+    DEPARTMENT_CHOICES = (
+        ('F&B', 'Food & Beverage'),
+        ('HK', 'Housekeeping'),
+        ('FO', 'Front Office'),
+    )
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    department = models.CharField(max_length=10, choices=DEPARTMENT_CHOICES)
+    shift = models.CharField(max_length=20, choices=SHIFT_CHOICES, default='Sáng')
+    start_time = models.TimeField(blank=True, null=True)
+    end_time = models.TimeField(blank=True, null=True)
+    order = models.IntegerField(default=0)  # For ordering templates
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        db_table = 'TaskTemplates'
+        ordering = ['department', 'order', 'shift']
+    
+    def __str__(self):
+        return f"{self.department} - {self.title}"
+
+
+# ============================================
+# 7.5. TASK MODEL
 # ============================================
 class Task(models.Model):
     STATUS_CHOICES = (
@@ -203,19 +237,62 @@ class Task(models.Model):
         ('Done', 'Done'),
         ('Cancelled', 'Cancelled'),
     )
+    SHIFT_CHOICES = (
+        ('Sáng', 'Ca Sáng'),
+        ('Chiều', 'Ca Chiều'),
+        ('Tối', 'Ca Tối'),
+        ('Cả ngày', 'Cả ngày'),
+    )
+    DEPARTMENT_CHOICES = (
+        ('F&B', 'Food & Beverage'),
+        ('HK', 'Housekeeping'),
+        ('FO', 'Front Office'),
+    )
+    
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_tasks')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Todo')
+    shift = models.CharField(max_length=20, choices=SHIFT_CHOICES, default='Sáng')
+    department = models.CharField(max_length=10, choices=DEPARTMENT_CHOICES, blank=True, null=True)
+    start_time = models.TimeField(blank=True, null=True)
+    end_time = models.TimeField(blank=True, null=True)
+    work_date = models.DateField(default=timezone.now)  # Ngày làm việc
     created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:
         db_table = 'Tasks'
-        ordering = ['-created_at']
+        ordering = ['-work_date', '-created_at']
     
     def __str__(self):
         return f"{self.title} - {self.get_status_display()}"
+    
+    def get_department_display_name(self):
+        """Get full department name"""
+        dept_map = {
+            'F&B': 'Food & Beverage',
+            'HK': 'Housekeeping',
+            'FO': 'Front Office',
+        }
+        return dept_map.get(self.department, self.department or 'Chưa xác định')
+
+
+# ============================================
+# 7.5. TASK ASSIGNMENT (Many-to-Many relationship for multiple employees per task)
+
+class TaskAssignment(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='assignments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_assignments')
+    assigned_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        db_table = 'TaskAssignments'
+        unique_together = ('task', 'user')
+        ordering = ['assigned_at']
+    
+    def __str__(self):
+        return f"{self.task.title} - {self.user.get_full_name() or self.user.username}"
 
 
 # ============================================
@@ -242,9 +319,20 @@ class TaskResponse(models.Model):
 # ============================================
 class Meeting(models.Model):
     title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    location = models.CharField(max_length=200, blank=True, null=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_meetings')
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    group = models.ForeignKey('Group', on_delete=models.SET_NULL, null=True, blank=True, related_name='meetings')
+    
+    STATUS_CHOICES = [
+        ('Upcoming', 'Sắp diễn ra'),
+        ('Completed', 'Hoàn thành'),
+        ('Cancelled', 'Đã hủy'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Upcoming')
     
     class Meta:
         db_table = 'Meetings'
@@ -252,6 +340,14 @@ class Meeting(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.start_time.strftime('%d/%m/%Y %H:%M')}"
+    
+    def get_status_display_name(self):
+        status_map = {
+            'Upcoming': 'Sắp diễn ra',
+            'Completed': 'Hoàn thành',
+            'Cancelled': 'Đã hủy',
+        }
+        return status_map.get(self.status, self.status)
 
 
 # ============================================
