@@ -43,6 +43,7 @@
           <button class="edit-bar-close" id="editBarClose">✕</button>
         </div>
         <div class="chat-input-area">
+          {% csrf_token %}
           <div class="chat-input-row">
             <div class="input-icon-btns">
               <button class="input-icon-btn" title="Đính kèm">
@@ -126,7 +127,6 @@
       <span class="new-conv-search-icon">🔍</span>
       <input type="text" id="newConvSearch" placeholder="Tìm theo tên hoặc bộ phận...">
     </div>
-    <div class="create-group-btn"><span>👥</span> Tạo nhóm trò chuyện mới <span style="margin-left:auto;">›</span></div>
     <div class="contact-section-label">GỢI Ý & GẦN ĐÂY</div>
     <div id="contactList"></div>
     <div class="contact-hint">Không tìm thấy người bạn cần? Hãy thử tìm theo tên bộ phận hoặc nhân viên.</div>
@@ -163,5 +163,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/messaging.js' %}?v=4"></script>
+<script src="{% static 'js/messaging.js' %}?v=10"></script>
 {% endblock %}

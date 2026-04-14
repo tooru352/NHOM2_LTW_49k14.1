@@ -278,6 +278,7 @@ class Conversation(models.Model):
         ('private', 'Private'),
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='private')
+    name = models.CharField(max_length=200, blank=True, null=True)  # Tên tùy chỉnh cho nhóm
     created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:

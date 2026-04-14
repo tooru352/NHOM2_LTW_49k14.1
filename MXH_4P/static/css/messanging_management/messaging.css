@@ -62,7 +62,12 @@
 .chat-header { padding: 14px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .chat-header-user { display: flex; align-items: center; gap: 12px; }
 .chat-header-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; position: relative; }
-.chat-header-info h3 { font-size: 15px; color: #1a1a2e; font-weight: 600; }
+.chat-header-info { position: relative; }
+.chat-header-info h3 { font-size: 15px; color: #1a1a2e; font-weight: 600; display: inline-block; margin-right: 8px; }
+.chat-header-info h3.editable-group-name { cursor: pointer; transition: color 0.2s; }
+.chat-header-info h3.editable-group-name:hover { color: #667eea; }
+.rename-group-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 4px; opacity: 0.6; transition: all 0.2s; }
+.rename-group-btn:hover { opacity: 1; background: #f0f0f0; }
 .chat-header-status { font-size: 12px; color: #2ecc71; display: flex; align-items: center; gap: 4px; }
 .status-dot { width: 7px; height: 7px; background: #2ecc71; border-radius: 50%; }
 .call-btn { padding: 7px 14px; border: none; background: #f5f6fa; border-radius: 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; color: #555; }

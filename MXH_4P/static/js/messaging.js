@@ -1,95 +1,24 @@
-// ===== DATA =====
-const ME = { id: 'me', name: 'Nguyễn Long', initials: 'NL', avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)' };
+// ===== CSRF HELPER =====
+function getCsrfToken() {
+  // Đọc từ hidden input do {% csrf_token %} tạo ra
+  const el = document.querySelector('[name=csrfmiddlewaretoken]');
+  if (el) return el.value;
+  // Fallback: đọc từ cookie
+  const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+  return cookie ? cookie.trim().split('=')[1] : '';
+}
 
-const conversations = [
-  {
-    id: 1, name: 'Mai Phương', initials: 'MP',
-    avatar: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
-    online: true, unread: 3, time: '10:30',
-    preview: 'Chào anh, em đã hoàn thành báo cáo...',
-    messages: [
-      { id: 1, from: 'them', text: 'Chào anh Long! Chúc anh buổi sáng tốt lành ạ 😊', time: '08:00', ts: Date.now() - 3600000 * 3 },
-      { id: 2, from: 'me', text: 'Chào em Mai Phương! Có việc gì cần anh hỗ trợ không em?', time: '08:02', ts: Date.now() - 3600000 * 2.9 },
-      { id: 3, from: 'them', text: 'Dạ em đã hoàn thành báo cáo check-in của các khách hàng hôm qua rồi ạ.', time: '08:05', ts: Date.now() - 3600000 * 2.8 },
-      { id: 4, from: 'them', text: 'Tổng cộng có 28 khách check-in, 15 khách check-out. Có 2 phòng VIP đặt trước cho tuần sau ạ.', time: '08:05', ts: Date.now() - 3600000 * 2.8 },
-      { id: 5, from: 'me', text: 'Tốt lắm! Em làm việc rất tận tâm. Anh sẽ ghi nhận vào báo cáo tháng này.', time: '08:10', ts: Date.now() - 3600000 * 2.7 },
-      { id: 6, from: 'me', text: 'Về 2 phòng VIP đặt trước, em nhớ phối hợp với bộ phận buồng phòng chuẩn bị kỹ càng nhé!', time: '08:11', ts: Date.now() - 3600000 * 2.6 },
-      { id: 7, from: 'them', text: 'Dạ em đã gửi thông tin cho chị Mai bên buồng phòng rồi ạ. Cảm ơn anh nhiều! 🙏', time: '08:15', ts: Date.now() - 3600000 * 2.5 },
-      { id: 8, from: 'me', text: 'Được rồi. Nếu có vấn đề gì cứ liên hệ anh nhé!', time: '08:20', ts: Date.now() - 3600000 * 2.4 },
-    ]
-  },
-  {
-    id: 2, name: 'Trần Văn Hùng', initials: 'TH',
-    avatar: 'linear-gradient(135deg,#fa709a 0%,#fee140 100%)',
-    online: true, unread: 2, time: '09:15',
-    preview: 'Thực đơn hôm nay đã được duyệt chưa anh?',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh ơi, thực đơn hôm nay đã được duyệt chưa ạ?', time: '09:10', ts: Date.now() - 3600000 * 2 },
-      { id: 2, from: 'them', text: 'Bếp đang chờ để chuẩn bị nguyên liệu ạ.', time: '09:12', ts: Date.now() - 3600000 * 1.9 },
-      { id: 3, from: 'me', text: 'Anh đang xem lại, 15 phút nữa anh phản hồi nhé.', time: '09:15', ts: Date.now() - 3600000 * 1.8 },
-    ]
-  },
-  {
-    id: 3, name: 'Lê Thị Mai', initials: 'LM',
-    avatar: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-    online: true, unread: 0, time: 'Hôm qua',
-    preview: 'Đã dọn dẹp xong tất cả các phòng rồi ạ!',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh ơi em đã dọn dẹp xong tất cả các phòng rồi ạ!', time: 'Hôm qua', ts: Date.now() - 86400000 },
-      { id: 2, from: 'me', text: 'Tốt lắm em, cảm ơn em nhé!', time: 'Hôm qua', ts: Date.now() - 86400000 + 60000 },
-    ]
-  },
-  {
-    id: 4, name: 'Phạm Minh Tuấn', initials: 'MT',
-    avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)',
-    online: false, unread: 1, time: 'Hôm qua',
-    preview: 'Hệ thống điều hòa phòng 302 cần kiểm tra',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh Long ơi, hệ thống điều hòa phòng 302 cần kiểm tra gấp ạ.', time: 'Hôm qua', ts: Date.now() - 86400000 * 1.2 },
-    ]
-  },
-  {
-    id: 5, name: 'Nguyễn Thị Hà', initials: 'NH',
-    avatar: 'linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)',
-    online: false, unread: 0, time: '2 ngày trước',
-    preview: 'Cảm ơn anh đã hỗ trợ!',
-    messages: [
-      { id: 1, from: 'them', text: 'Cảm ơn anh đã hỗ trợ em ạ!', time: '2 ngày trước', ts: Date.now() - 86400000 * 2 },
-      { id: 2, from: 'me', text: 'Không có gì em, cứ liên hệ anh khi cần nhé!', time: '2 ngày trước', ts: Date.now() - 86400000 * 2 + 60000 },
-    ]
-  },
-  {
-    id: 6, name: 'Sếp Kiên Bùi', initials: 'KB',
-    avatar: 'linear-gradient(135deg,#fa709a 0%,#fee140 100%)',
-    online: true, unread: 0, time: '3 ngày trước',
-    preview: 'JA tuần sau đã có chưa anh?',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh ơi JA tuần sau đã có chưa ạ?', time: '3 ngày trước', ts: Date.now() - 86400000 * 3 },
-    ]
-  },
-  {
-    id: 7, name: 'Ban Giám Đốc', initials: 'BGĐ',
-    avatar: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
-    online: false, unread: 2, time: '5 ngày trước',
-    preview: 'Thông báo họp ban quản lý ngày 15/02',
-    messages: [
-      { id: 1, from: 'them', text: 'Thông báo họp ban quản lý ngày 15/02 lúc 9:00 sáng tại phòng họp A.', time: '5 ngày trước', ts: Date.now() - 86400000 * 5 },
-      { id: 2, from: 'them', text: 'Đề nghị tất cả trưởng bộ phận tham dự đầy đủ.', time: '5 ngày trước', ts: Date.now() - 86400000 * 5 + 60000 },
-    ]
-  },
-];
+// ===== DATA =====
+const ME = { id: 'me', name: '', initials: '', avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)' };
+
+// conversations được load từ DB, không hardcode nữa
+let conversations = [];
 
 // Suggested contacts for new conversation modal
-const suggestedContacts = [
-  { initials: 'AT', name: 'Anh Thư', role: 'Quản lý Front Desk', avatar: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)' },
-  { initials: 'NH', name: 'Nhật Hạ', role: 'Trưởng bộ phận Housekeeping', avatar: 'linear-gradient(135deg,#fa709a 0%,#fee140 100%)' },
-  { initials: 'XTo', name: 'Xuân Toàn', role: 'Kỹ thuật & Maintenance', avatar: 'linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)' },
-  { initials: 'XTh', name: 'Xuân Thương', role: 'Tiếp tân sảnh (Front Desk)', avatar: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' },
-  { initials: 'KH', name: 'Kim Hoa', role: 'Bộ phận F&B', avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)' },
-];
+const suggestedContacts = [];
 
 // ===== STATE =====
-let activeConvId = 1;
+let activeConvId = null;
 let deleteTarget = null;
 let editingTarget = null; // { msgId, convId, row, oldText }
 let msgIdCounter = 100;
@@ -145,21 +74,38 @@ function renderConvList(filter = '') {
 function selectConv(id) {
   activeConvId = id;
   const conv = getConv(id);
+  if (!conv) return;
   conv.unread = 0;
   renderConvList(document.getElementById('convSearchInput').value);
   renderChatHeader(conv);
-  renderMessages(conv);
+
+  // Load messages từ DB
+  fetch(`/api/conversations/${id}/messages/`)
+    .then(r => r.json())
+    .then(data => {
+      conv.messages = data.messages || [];
+      renderMessages(conv);
+    })
+    .catch(() => {
+      conv.messages = conv.messages || [];
+      renderMessages(conv);
+    });
 }
 
 // ===== RENDER CHAT HEADER =====
 function renderChatHeader(conv) {
+  const isGroup = conv.status === 'group';
+  const nameHtml = isGroup 
+    ? `<h3 id="chatHeaderName" class="editable-group-name" title="Click để đổi tên nhóm">${conv.name} ✏️</h3>`
+    : `<h3 id="chatHeaderName">${conv.name}</h3>`;
+    
   document.getElementById('chatHeaderUser').innerHTML = `
     <div class="chat-header-avatar" style="background:${conv.avatar};position:relative;">
       ${conv.initials}
       <span class="online-dot ${conv.online ? '' : 'offline'}" style="position:absolute;bottom:1px;right:1px;"></span>
     </div>
     <div class="chat-header-info">
-      <h3>${conv.name}</h3>
+      ${nameHtml}
       <div class="chat-header-status">
         <span class="status-dot" style="background:${conv.online ? '#2ecc71' : '#95a5a6'}"></span>
         ${conv.online ? 'Đang hoạt động' : 'Ngoại tuyến'}
@@ -168,6 +114,15 @@ function renderChatHeader(conv) {
   `;
   // Update call button with current conv info
   document.getElementById('callBtn').onclick = () => openCallModal(conv);
+  
+  // Add click handler for group name to rename
+  if (isGroup) {
+    const nameEl = document.getElementById('chatHeaderName');
+    if (nameEl) {
+      nameEl.style.cursor = 'pointer';
+      nameEl.onclick = () => showRenameModal(conv);
+    }
+  }
 }
 
 // ===== RENDER MESSAGES =====
@@ -373,7 +328,7 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  // Edit mode
+  // Edit mode (vẫn local, chưa có API edit)
   if (document.getElementById('sendBtn').dataset.mode === 'edit' && editingTarget) {
     const msg = getMsg(editingTarget.convId, editingTarget.msgId);
     if (msg) {
@@ -386,16 +341,53 @@ function sendMessage() {
     return;
   }
 
-  // Normal send
+  // Normal send — POST lên DB
   const conv = getConv(activeConvId);
-  const msg = { id: ++msgIdCounter, from: 'me', text, time: nowTime(), ts: Date.now() };
-  conv.messages.push(msg);
-  conv.preview = text;
-  conv.time = nowTime();
+  if (!conv) return;
+
   input.value = '';
   input.style.height = 'auto';
-  renderMessages(conv);
-  renderConvList(document.getElementById('convSearchInput').value);
+
+  fetch(`/api/conversations/${activeConvId}/send/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({ content: text }),
+  })
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      if (data.id) {
+        conv.messages.push(data);
+        conv.preview = text;
+        conv.time = data.time;  // Cập nhật giờ từ server
+        renderMessages(conv);
+        
+        // Đưa conversation này lên đầu danh sách
+        const idx = conversations.findIndex(c => c.id === activeConvId);
+        if (idx > 0) {
+          const [movedConv] = conversations.splice(idx, 1);
+          movedConv.time = data.time;  // Cập nhật giờ hiển thị
+          movedConv.preview = text;     // Cập nhật preview
+          conversations.unshift(movedConv);
+        } else if (idx === 0) {
+          // Đã ở đầu rồi, chỉ cần cập nhật time
+          conversations[0].time = data.time;
+          conversations[0].preview = text;
+        }
+        renderConvList(document.getElementById('convSearchInput').value);
+      } else {
+        showToast('❌', data.error || 'Gửi thất bại');
+      }
+    })
+    .catch(err => {
+      console.error('Send message error:', err);
+      showToast('❌', 'Lỗi kết nối: ' + err.message);
+    });
 }
 
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
@@ -424,20 +416,37 @@ document.querySelectorAll('.conv-tab').forEach(tab => {
 
 // ===== NEW CONVERSATION MODAL =====
 document.getElementById('newConvBtn').addEventListener('click', () => {
-  renderContactList('');
-  showModal('newConvModal');
+  loadUsers('');
 });
+
 document.getElementById('newConvClose').addEventListener('click', () => hideModal('newConvModal'));
+
 document.getElementById('newConvSearch').addEventListener('input', function () {
-  renderContactList(this.value);
+  loadUsers(this.value);
 });
+
+function loadUsers(search) {
+  const url = search ? `/api/users/?q=${encodeURIComponent(search)}` : '/api/users/';
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      suggestedContacts.length = 0;
+      suggestedContacts.push(...data.users);
+      renderContactList('');
+      if (!document.getElementById('newConvModal').classList.contains('show')) {
+        showModal('newConvModal');
+      }
+    })
+    .catch(() => {
+      showToast('❌', 'Không thể tải danh sách người dùng');
+    });
+}
 
 function renderContactList(filter) {
   const list = document.getElementById('contactList');
   list.innerHTML = '';
+  
   suggestedContacts.forEach(contact => {
-    if (filter && !contact.name.toLowerCase().includes(filter.toLowerCase()) &&
-        !contact.role.toLowerCase().includes(filter.toLowerCase())) return;
     const item = document.createElement('div');
     item.className = 'contact-item';
     item.innerHTML = `
@@ -446,34 +455,92 @@ function renderContactList(filter) {
         <div class="contact-name">${contact.name}</div>
         <div class="contact-role">${contact.role}</div>
       </div>
-      <input type="checkbox" class="contact-check">
+      <input type="checkbox" class="contact-check" data-user-id="${contact.id}">
     `;
-    item.addEventListener('click', () => {
-      hideModal('newConvModal');
-      // Check if conversation already exists
-      const existing = conversations.find(c => c.name === contact.name);
-      if (existing) {
-        selectConv(existing.id);
-        return;
-      }
-      // Create new conversation
-      const newConv = {
-        id: conversations.length + 1,
-        name: contact.name,
-        initials: contact.initials,
-        avatar: contact.avatar,
-        online: true,
-        unread: 0,
-        time: nowTime(),
-        preview: 'Bắt đầu cuộc trò chuyện...',
-        messages: [],
-      };
-      conversations.unshift(newConv);
-      renderConvList('');
-      selectConv(newConv.id);
+    
+    const checkbox = item.querySelector('.contact-check');
+    checkbox.addEventListener('change', updateCreateGroupButton);
+    
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('contact-check')) return;
+      checkbox.checked = !checkbox.checked;
+      updateCreateGroupButton();
     });
+    
     list.appendChild(item);
   });
+}
+
+function updateCreateGroupButton() {
+  const checked = document.querySelectorAll('.contact-check:checked');
+  let createGroupBtn = document.querySelector('.create-group-btn-dynamic');
+  
+  if (!createGroupBtn) {
+    // Tạo nút nếu chưa có
+    const btn = document.createElement('button');
+    btn.className = 'create-group-btn-dynamic';
+    btn.style.cssText = 'width:100%;padding:12px;background:#5b7ce6;color:white;border:none;border-radius:8px;font-weight:600;margin-top:16px;cursor:pointer;display:none;';
+    btn.textContent = 'Tạo cuộc trò chuyện';
+    btn.addEventListener('click', createConversation);
+    // Thêm sau contactList
+    const contactList = document.getElementById('contactList');
+    contactList.parentElement.insertBefore(btn, contactList.nextSibling);
+    createGroupBtn = btn;
+  }
+  
+  if (checked.length > 0) {
+    createGroupBtn.style.display = 'block';
+    createGroupBtn.textContent = checked.length === 1 
+      ? 'Bắt đầu trò chuyện' 
+      : `Tạo nhóm (${checked.length} người)`;
+  } else {
+    createGroupBtn.style.display = 'none';
+  }
+}
+
+function createConversation() {
+  const checked = Array.from(document.querySelectorAll('.contact-check:checked'));
+  const userIds = checked.map(cb => parseInt(cb.dataset.userId));
+  
+  if (userIds.length === 0) return;
+  
+  fetch('/api/conversations/create/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({ user_ids: userIds }),
+  })
+    .then(r => {
+      if (!r.ok) {
+        console.error('HTTP Error:', r.status, r.statusText);
+        return r.text().then(text => {
+          console.error('Response:', text);
+          throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        });
+      }
+      return r.json();
+    })
+    .then(data => {
+      if (data.conversation_id) {
+        hideModal('newConvModal');
+        // Reload conversations và chọn conversation mới
+        fetch('/api/conversations/')
+          .then(r => r.json())
+          .then(result => {
+            conversations = (result.conversations || []).map(c => ({ ...c, messages: [], online: false }));
+            renderConvList();
+            selectConv(data.conversation_id);
+          });
+      } else {
+        showToast('❌', data.error || 'Tạo thất bại');
+      }
+    })
+    .catch(err => {
+      console.error('Create conversation error:', err);
+      showToast('❌', 'Lỗi kết nối: ' + err.message);
+    });
 }
 
 // ===== CALL SOUND (Web Audio API) =====
@@ -586,5 +653,66 @@ document.getElementById('callSpeakerBtn').addEventListener('click', function () 
 });
 
 // ===== INIT =====
-renderConvList();
-selectConv(1);
+fetch('/api/conversations/')
+  .then(r => r.json())
+  .then(data => {
+    conversations = (data.conversations || []).map(c => ({ ...c, messages: [], online: false }));
+    renderConvList();
+    if (conversations.length > 0) {
+      selectConv(conversations[0].id);
+    } else {
+      document.getElementById('messagesArea').innerHTML =
+        '<div style="text-align:center;color:#aaa;margin-top:40px;">Chưa có cuộc trò chuyện nào</div>';
+    }
+  })
+  .catch(() => {
+    renderConvList();
+  });
+
+// ===== RENAME GROUP =====
+function showRenameModal(conv) {
+  const newName = prompt('Nhập tên mới cho nhóm:', conv.name);
+  if (newName && newName.trim() && newName.trim() !== conv.name) {
+    renameGroup(conv.id, newName.trim());
+  }
+}
+
+function renameGroup(convId, newName) {
+  fetch(`/api/conversations/${convId}/rename/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({ name: newName }),
+  })
+    .then(r => {
+      if (!r.ok) {
+        return r.json().then(data => {
+          throw new Error(data.error || `HTTP ${r.status}`);
+        });
+      }
+      return r.json();
+    })
+    .then(data => {
+      if (data.success) {
+        // Cập nhật tên trong conversations array
+        const conv = getConv(convId);
+        if (conv) {
+          conv.name = newName;
+          renderConvList(document.getElementById('convSearchInput').value);
+          // Cập nhật header nếu đang xem conversation này
+          if (activeConvId === convId) {
+            document.getElementById('chatHeaderName').textContent = newName;
+          }
+        }
+        showToast('✅', 'Đã đổi tên nhóm thành công');
+      } else {
+        showToast('❌', data.error || 'Đổi tên thất bại');
+      }
+    })
+    .catch(err => {
+      console.error('Rename group error:', err);
+      showToast('❌', 'Lỗi: ' + err.message);
+    });
+}

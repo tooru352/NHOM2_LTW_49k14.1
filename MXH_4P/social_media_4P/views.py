@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.db.models import Q, Max
+from django.utils import timezone
 import json
 
 from .forms import (
@@ -18,7 +19,7 @@ from .forms import (
 from .models import (
     User, Post, Interaction, InteractionType,
     Group, GroupMember, Task, TaskResponse,
-    Meeting, MeetingParticipant, Message, Conversation,
+    Meeting, MeetingParticipant, Message, Conversation, ConversationMember,
     WorkShift, WorkSchedule
 )
 
@@ -361,41 +362,274 @@ def create_comment(request, post_id):
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 @login_required
+@login_required
 def messaging(request):
     """Messaging page"""
-    # Get conversations where user is a member
-    conversations = Conversation.objects.filter(
-        members__user=request.user
-    ).prefetch_related('members__user', 'messages').distinct().order_by('-created_at')
+    return render(request, 'messanging_management/messaging.html')
+
+
+@login_required
+def api_get_conversations(request):
+    """API: Lấy danh sách cuộc trò chuyện của user hiện tại"""
+    from .models import ConversationMember
+    from django.utils import timezone as tz
     
-    return render(request, 'messanging_management/messaging.html', {
-        'conversations': conversations
-    })
+    convs = Conversation.objects.filter(
+        members__user=request.user
+    ).prefetch_related('members__user').distinct().order_by('-created_at')
+
+    data = []
+    for conv in convs:
+        # Lấy tin nhắn cuối
+        last_msg = conv.messages.order_by('-created_at').first()
+        # Lấy thành viên còn lại (không phải mình)
+        other_members = [m.user for m in conv.members.all() if m.user != request.user]
+        
+        # Xử lý tên và avatar dựa trên loại conversation
+        if conv.status == 'group':
+            # Nhóm chat: ưu tiên tên tùy chỉnh, nếu không có thì hiển thị tên tất cả thành viên
+            if conv.name:
+                name = conv.name
+            elif other_members:
+                names = [u.get_full_name() or u.username for u in other_members]
+                name = ', '.join(names)
+            else:
+                name = f'Nhóm {conv.id}'
+            
+            # Nhóm chat dùng emoji nhóm
+            initials = '👥'
+            avatar = 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)'
+        else:
+            # Chat 1-1: hiển thị tên người kia
+            if other_members:
+                other = other_members[0]
+                name = other.get_full_name() or other.username
+                initials = (other.avatar_initials or other.get_initials()).upper()
+                avatar = other.avatar_gradient or 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)'
+            else:
+                name = f'Conversation {conv.id}'
+                initials = 'CO'
+                avatar = 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)'
+
+        time_str = ''
+        if last_msg:
+            # Django tự động convert sang TIME_ZONE trong settings khi USE_TZ=True
+            local_time = tz.localtime(last_msg.created_at)
+            time_str = local_time.strftime('%H:%M')
+
+        data.append({
+            'id': conv.id,
+            'name': name,
+            'initials': initials,
+            'avatar': avatar,
+            'preview': last_msg.content[:50] if last_msg else '',
+            'time': time_str,
+            'unread': 0,
+            'status': conv.status,  # Thêm status để frontend biết đây là group hay private
+        })
+
+    return JsonResponse({'conversations': data})
+
+
+@login_required
+def api_get_users(request):
+    """API: Lấy danh sách users để tạo conversation mới (giới hạn 10)"""
+    search = request.GET.get('q', '').strip()
+    users = User.objects.exclude(id=request.user.id)
+    
+    if search:
+        # Tìm kiếm theo tên hoặc username
+        users = users.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(username__icontains=search)
+        )
+    
+    users = users.order_by('first_name', 'last_name')[:5]
+    
+    data = []
+    for u in users:
+        name = u.get_full_name() or u.username
+        initials = (u.avatar_initials or name[:2]).upper()
+        avatar = u.avatar_gradient or 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)'
+        role = getattr(u, 'role', '') or 'Nhân viên'
+        
+        data.append({
+            'id': u.id,
+            'name': name,
+            'initials': initials,
+            'avatar': avatar,
+            'role': role,
+            'username': u.username,
+        })
+    
+    return JsonResponse({'users': data})
+
+
+@login_required
+def api_create_conversation(request):
+    """API: Tạo conversation mới (private hoặc group)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        body = json.loads(request.body)
+        user_ids = body.get('user_ids', [])
+    except (json.JSONDecodeError, AttributeError) as e:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    
+    if not user_ids:
+        return JsonResponse({'error': 'Cần chọn ít nhất 1 người'}, status=400)
+    
+    # Kiểm tra users tồn tại
+    users = User.objects.filter(id__in=user_ids)
+    if users.count() != len(user_ids):
+        return JsonResponse({'error': 'Một số user không tồn tại'}, status=400)
+    
+    # Nếu chỉ 1 người → private, nếu nhiều người → group
+    status = 'private' if len(user_ids) == 1 else 'group'
+    
+    # Kiểm tra conversation đã tồn tại chưa (chỉ với private)
+    if status == 'private':
+        existing = Conversation.objects.filter(
+            status='private',
+            members__user=request.user
+        ).filter(
+            members__user=users.first()
+        ).first()
+        
+        if existing:
+            return JsonResponse({'conversation_id': existing.id})
+    
+    try:
+        # Tạo conversation mới
+        conv = Conversation.objects.create(status=status)
+        ConversationMember.objects.create(conversation=conv, user=request.user)
+        for u in users:
+            ConversationMember.objects.create(conversation=conv, user=u)
+        
+        return JsonResponse({'conversation_id': conv.id})
+    except Exception as e:
+        return JsonResponse({'error': f'Lỗi tạo conversation: {str(e)}'}, status=500)
+
+
+@login_required
+def api_get_messages(request, conversation_id):
+    """API: Lấy tin nhắn của một cuộc trò chuyện"""
+    from .models import ConversationMember
+    from django.utils import timezone as tz
+    
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+
+    # Kiểm tra quyền
+    if not conversation.members.filter(user=request.user).exists():
+        return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+
+    msgs = conversation.messages.select_related('sender').order_by('created_at')
+    
+    data = []
+    for m in msgs:
+        local_time = tz.localtime(m.created_at)
+        data.append({
+            'id': m.id,
+            'from': 'me' if m.sender == request.user else 'them',
+            'text': m.content,
+            'time': local_time.strftime('%H:%M'),
+            'ts': int(m.created_at.timestamp() * 1000),
+            'sender_name': m.sender.get_full_name() or m.sender.username,
+        })
+
+    return JsonResponse({'messages': data})
+
 
 @login_required
 def send_message(request, conversation_id):
-    """Send message in conversation"""
-    conversation = get_object_or_404(Conversation, id=conversation_id)
+    """API: Gửi tin nhắn và lưu vào DB"""
+    try:
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+
+        # Kiểm tra quyền bằng ConversationMember
+        if not conversation.members.filter(user=request.user).exists():
+            return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+
+        if request.method == 'POST':
+            try:
+                body = json.loads(request.body)
+                content = body.get('content', '').strip()
+            except (json.JSONDecodeError, AttributeError):
+                content = request.POST.get('content', '').strip()
+
+            if not content:
+                return JsonResponse({'error': 'Nội dung không được trống'}, status=400)
+
+            msg = Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                content=content,
+            )
+            # Cập nhật created_at để conversation nhảy lên đầu
+            conversation.created_at = timezone.now()
+            conversation.save()
+
+            # Convert sang timezone local
+            from django.utils import timezone as tz
+            local_time = tz.localtime(msg.created_at)
+
+            return JsonResponse({
+                'id': msg.id,
+                'from': 'me',
+                'text': msg.content,
+                'time': local_time.strftime('%H:%M'),
+                'ts': int(msg.created_at.timestamp() * 1000),
+                'sender_name': request.user.get_full_name() or request.user.username,
+            })
+
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Lỗi server: {str(e)}'}, status=500)
+
+
+@login_required
+def api_rename_conversation(request, conversation_id):
+    """API: Đổi tên nhóm chat"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    # Check if user is part of conversation
-    if conversation.user1 != request.user and conversation.user2 != request.user:
-        messages.error(request, 'Bạn không có quyền truy cập cuộc trò chuyện này!')
-        return redirect('messaging')
-    
-    if request.method == 'POST':
-        form = MessageForm(request.POST)
-        if form.is_valid():
-            message = form.save(commit=False)
-            message.sender = request.user
-            message.conversation = conversation
-            message.save()
-            
-            # Update conversation timestamp
-            conversation.save()  # This will update updated_at
-            
-            return redirect('messaging')
-    
-    return redirect('messaging')
+    try:
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+        
+        # Kiểm tra quyền
+        if not conversation.members.filter(user=request.user).exists():
+            return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+        
+        # Chỉ cho phép đổi tên nhóm chat, không phải chat 1-1
+        if conversation.status != 'group':
+            return JsonResponse({'error': 'Chỉ có thể đổi tên nhóm chat'}, status=400)
+        
+        body = json.loads(request.body)
+        new_name = body.get('name', '').strip()
+        
+        if not new_name:
+            return JsonResponse({'error': 'Tên không được để trống'}, status=400)
+        
+        if len(new_name) > 200:
+            return JsonResponse({'error': 'Tên quá dài (tối đa 200 ký tự)'}, status=400)
+        
+        conversation.name = new_name
+        conversation.save()
+        
+        return JsonResponse({
+            'success': True,
+            'name': new_name,
+            'message': 'Đã đổi tên nhóm thành công'
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Lỗi server: {str(e)}'}, status=500)
+
 
 @login_required
 def work_management(request):

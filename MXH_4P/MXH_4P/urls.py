@@ -51,7 +51,12 @@ urlpatterns = [
     
     # Messaging
     path('messaging/', views.messaging, name='messaging'),
-    path('messaging/<int:conversation_id>/send/', views.send_message, name='send_message'),
+    path('api/conversations/', views.api_get_conversations, name='api_get_conversations'),
+    path('api/conversations/create/', views.api_create_conversation, name='api_create_conversation'),
+    path('api/conversations/<int:conversation_id>/messages/', views.api_get_messages, name='api_get_messages'),
+    path('api/conversations/<int:conversation_id>/send/', views.send_message, name='send_message'),
+    path('api/conversations/<int:conversation_id>/rename/', views.api_rename_conversation, name='api_rename_conversation'),
+    path('api/users/', views.api_get_users, name='api_get_users'),
     
     # Work Management
     path('work-management/', views.work_management, name='work_management'),
