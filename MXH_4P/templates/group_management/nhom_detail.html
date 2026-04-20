@@ -1,162 +1,701 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 {% block menu_nhom %}active{% endblock %}
 {% block main_class %}full-width{% endblock %}
+
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/posts_management/posts.css' %}?v=4">
 <link rel="stylesheet" href="{% static 'css/group_management/nhom.css' %}?v=7">
 <style>
-.nd-page{padding:20px;background:#f5f7fa}
-.nd-banner{border-radius:14px;padding:28px;color:#fff;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);background:linear-gradient(135deg,#667eea,#764ba2)}
-.nd-back{color:#fff;background:rgba(0,0,0,.25);padding:6px 14px;border-radius:20px;text-decoration:none;font-size:13px;display:inline-block;margin-bottom:14px;font-weight:600;transition:all 0.2s}
-.nd-back:hover{background:rgba(0,0,0,.4);transform:translateX(-2px)}
-.nd-banner-body{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
-.nd-banner-body h1{font-size:24px;margin-bottom:6px}
-.nd-banner-body p{font-size:13px;opacity:.85;margin-bottom:10px}
-.nd-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
-.loai-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(255,255,255,.3)}
-.nd-btn-edit{background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.6);padding:9px 18px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}
-.nd-tabs{display:flex;gap:4px;background:#fff;padding:8px 16px 0;border-bottom:2px solid #e4e6eb;margin-bottom:20px;border-radius:12px 12px 0 0;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-.nd-tab{padding:10px 20px;border:none;background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:#65676b;border-bottom:3px solid transparent;margin-bottom:-2px}
-.nd-tab.active{color:#667eea;border-bottom-color:#667eea}
-.nd-tab-content{display:none}
-.nd-tab-content.active{display:block}
-.tv-row{background:#fff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:10px}
-.nd-tv-av2{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,#667eea,#764ba2)}
-.badge-admin{background:#fff3cd;color:#856404;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
-.badge-tv{background:#f0f2f5;color:#65676b;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
-.admin-note{font-size:13px;color:#667eea;font-weight:600;background:#f0f0ff;padding:4px 12px;border-radius:12px}
+/* ===== GROUP DETAIL PAGE ===== */
+.gd-page { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+/* Banner */
+.gd-banner {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 20px 24px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.gd-banner-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.gd-back {
+  color: #fff; background: rgba(0,0,0,.25); padding: 6px 14px;
+  border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: 600;
+  transition: background .2s;
+}
+.gd-back:hover { background: rgba(0,0,0,.4); }
+.gd-banner-body { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+.gd-banner-body h1 { font-size: 22px; margin-bottom: 4px; }
+.gd-banner-body p { font-size: 13px; opacity: .85; margin-bottom: 8px; }
+.gd-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.gd-badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,.3); }
+.gd-btn-edit {
+  background: rgba(255,255,255,.2); color: #fff;
+  border: 1.5px solid rgba(255,255,255,.6); padding: 8px 16px;
+  border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+
+/* Tabs */
+.gd-tabs {
+  display: flex; gap: 4px; background: #fff; padding: 8px 20px 0;
+  border-bottom: 2px solid #e4e6eb; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.gd-tab {
+  padding: 10px 20px; border: none; background: transparent; cursor: pointer;
+  font-size: 14px; font-weight: 600; color: #65676b;
+  border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .2s;
+}
+.gd-tab.active { color: #667eea; border-bottom-color: #667eea; }
+
+/* Tab content */
+.gd-tab-body { flex: 1; overflow: hidden; }
+.gd-tab-content { display: none; height: 100%; overflow-y: auto; padding: 20px 24px; }
+.gd-tab-content.active { display: block; }
+
+/* Feed layout — 2 cột tràn màn hình */
+.gd-feed-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  width: 100%;
+}
+.gd-feed {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gd-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+}
+.gd-sidebar-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.gd-sidebar-card h4 {
+  font-size: 14px; font-weight: 700; color: #1a1a2e;
+  margin-bottom: 12px; padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.gd-sidebar-member {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid #f8f9fa;
+}
+.gd-sidebar-member:last-child { border-bottom: none; }
+.gd-sidebar-av {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .gd-sidebar { display: none; }
+}
+
+/* Create post box */
+.gd-create-box {
+  background: #fff; border-radius: 12px; padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.gd-create-box textarea {
+  width: 100%; padding: 12px; border: 1.5px solid #e4e6eb; border-radius: 10px;
+  font-size: 14px; resize: none; font-family: inherit; line-height: 1.5; outline: none;
+  transition: border-color .2s;
+}
+.gd-create-box textarea:focus { border-color: #667eea; }
+
+/* Image preview */
+.img-preview-grid { display: grid; gap: 8px; margin-top: 12px; }
+.img-preview-item { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; }
+.img-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-preview-remove {
+  position: absolute; top: 6px; right: 6px; width: 26px; height: 26px;
+  border-radius: 50%; background: rgba(0,0,0,.65); color: #fff; border: none;
+  cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+}
+.img-preview-remove:hover { background: rgba(220,53,69,.9); }
+
+/* Post card */
+.post-card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.post-header { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+.post-avatar {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.post-author { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 2px; }
+.post-author-badge {
+  display: inline-block; font-size: 9px; padding: 2px 6px;
+  border-radius: 8px; margin-left: 6px; font-weight: 600; color: #fff;
+}
+.post-time { font-size: 11px; color: #999; }
+.post-content { font-size: 14px; color: #333; line-height: 1.6; margin-bottom: 14px; white-space: pre-wrap; }
+.post-actions { display: flex; gap: 8px; }
+.post-action-btn {
+  flex: 1; padding: 8px; border: none; background: #f8f9fa; border-radius: 8px;
+  font-size: 13px; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 6px; transition: background .2s; color: #555; font-weight: 500;
+}
+.post-action-btn:hover { background: #e8e9ef; }
+.post-action-btn.liked { color: #e74c3c; }
+
+/* Member list */
+.gd-member-row {
+  background: #fff; border-radius: 12px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 10px;
+}
+.gd-member-av {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+.badge-admin { background: #fff3cd; color: #856404; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-tv { background: #f0f2f5; color: #65676b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+
+/* Toast */
+.gd-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #1a1a2e; color: #fff; padding: 12px 24px; border-radius: 10px;
+  font-size: 14px; font-weight: 500; z-index: 9999; transition: transform .3s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2); pointer-events: none;
+}
+.gd-toast.show { transform: translateX(-50%) translateY(0); }
+.gd-toast.error { background: #e74c3c; }
 </style>
 {% endblock %}
+
 {% block content %}
-<div class="nd-page">
-  <div class="nd-banner">
-    <a href="/nhom/" class="nd-back">&#8592; Quay lại</a>
-    <div class="nd-banner-body">
+<div class="gd-page">
+
+  <!-- ===== BANNER ===== -->
+  <div class="gd-banner">
+    <div class="gd-banner-top">
+      <a href="/nhom/" class="gd-back">&#8592; Quay lại</a>
+    </div>
+    <div class="gd-banner-body">
       <div>
         <h1>{{ nhom.name }}</h1>
         <p>{{ nhom.description|default:"Chưa có mô tả" }}</p>
-        <div class="nd-meta">
-          <span class="loai-badge">{{ nhom.get_status_display }}</span>
+        <div class="gd-meta">
+          <span class="gd-badge">{{ nhom.get_status_display }}</span>
           <span>&#128101; {{ members.count }} thành viên</span>
           <span>&#128221; {{ posts.count }} bài viết</span>
         </div>
       </div>
       {% if is_admin %}
-      <a href="/nhom/{{ nhom.id }}/sua/" class="nd-btn-edit">&#9998; Chỉnh sửa nhóm</a>
+      <a href="/nhom/{{ nhom.id }}/sua/" class="gd-btn-edit">&#9998; Chỉnh sửa nhóm</a>
       {% endif %}
     </div>
   </div>
-  
-  <div class="nd-tabs">
-    <button class="nd-tab active" onclick="switchTab('tab-bv',this)">&#128221; Bài viết</button>
-    <button class="nd-tab" onclick="switchTab('tab-tv',this)">&#128101; Thành viên ({{ members.count }})</button>
+
+  <!-- ===== TABS ===== -->
+  <div class="gd-tabs">
+    <button class="gd-tab active" onclick="switchTab('tab-posts', this)">&#128221; Bài viết</button>
+    <button class="gd-tab" onclick="switchTab('tab-members', this)">&#128101; Thành viên ({{ members.count }})</button>
   </div>
-  
-  <div id="tab-bv" class="nd-tab-content active">
-    {% if is_member %}
-    <!-- Form đăng bài -->
-    <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
-      <form method="post">
-        {% csrf_token %}
-        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
-          <div style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#667eea,#764ba2);flex-shrink:0">
-            {{ user.get_initials }}
-          </div>
-          <textarea name="content" rows="3" placeholder="Chia sẻ điều gì đó với nhóm..." required style="flex:1;padding:12px;border:1.5px solid #e4e6eb;border-radius:10px;font-size:14px;outline:none;resize:none;font-family:inherit;line-height:1.5"></textarea>
+
+  <!-- ===== TAB BODY ===== -->
+  <div class="gd-tab-body">
+
+    <!-- TAB: BÀI VIẾT -->
+    <div id="tab-posts" class="gd-tab-content active">
+      <div class="gd-feed-layout">
+
+        <!-- CỘT TRÁI: FEED BÀI VIẾT -->
+        <div class="gd-feed">
+
+        <!-- ===== FORM ĐĂNG BÀI ===== -->
+        <div class="gd-create-box">
+          <form method="post" enctype="multipart/form-data" id="postForm">
+            {% csrf_token %}
+            <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
+              <div class="post-avatar" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+                {{ user.get_initials }}
+              </div>
+              <textarea name="content" id="postContent" rows="3"
+                placeholder="Chia sẻ điều gì đó với nhóm {{ nhom.name }}..."
+                required></textarea>
+            </div>
+
+            <!-- Image preview -->
+            <div id="imgPreviewWrap" style="display:none;margin-bottom:12px">
+              <div id="imgPreviewGrid" class="img-preview-grid"></div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <label style="padding:8px 14px;background:#f0f2f5;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#555;transition:background .2s"
+                     onmouseover="this.style.background='#e4e6eb'" onmouseout="this.style.background='#f0f2f5'">
+                &#128247; Thêm ảnh
+                <input type="file" name="images" id="imgInput" accept="image/*" multiple
+                       style="display:none" onchange="handleImgSelect(this)">
+              </label>
+              <button type="submit" id="postSubmitBtn"
+                style="padding:10px 24px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;transition:opacity .2s">
+                &#128221; Đăng bài
+              </button>
+            </div>
+          </form>
         </div>
-        <div style="display:flex;justify-content:flex-end">
-          <button type="submit" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s">
-            📝 Đăng bài
-          </button>
-        </div>
-      </form>
-    </div>
-    {% endif %}
-    
-    {% if posts %}
-    <div style="display:flex;flex-direction:column;gap:14px">
-      {% for post in posts %}
-      <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
-        <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
-          <div style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#667eea,#764ba2)">
-            {{ post.user.get_initials }}
+
+        <!-- ===== DANH SÁCH BÀI VIẾT ===== -->
+        {% if posts %}
+          {% for post in posts %}
+          <div class="post-card" id="post-{{ post.id }}">
+            <div class="post-header">
+              <div class="post-avatar" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+                {{ post.user.get_initials }}
+              </div>
+              <div style="flex:1">
+                <div class="post-author">
+                  {{ post.user.first_name }} {{ post.user.last_name }}
+                  <span class="post-author-badge" style="background:{% if post.user.is_manager %}#e74c3c{% else %}#3498db{% endif %}">
+                    {% if post.user.is_manager %}QUẢN LÝ{% else %}NHÂN VIÊN{% endif %}
+                  </span>
+                </div>
+                <div class="post-time">{{ post.created_at|timesince }} trước</div>
+              </div>
+              {% if post.user == user or is_admin %}
+              <div style="position:relative">
+                <button onclick="toggleMenu({{ post.id }})"
+                  style="background:none;border:none;color:#999;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:6px"
+                  onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='none'">&#8942;</button>
+                <div id="menu-{{ post.id }}"
+                  style="display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid #e4e6eb;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;z-index:100;overflow:hidden">
+                  <button onclick="deletePost({{ post.id }})"
+                    style="width:100%;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;font-size:13px;color:#e74c3c;display:flex;align-items:center;gap:8px"
+                    onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='none'">
+                    &#128465; Xóa bài
+                  </button>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="post-content">{{ post.content }}</div>
+
+            <!-- Images -->
+            {% if post.images.exists %}
+            <div style="margin-bottom:14px">
+              {% with cnt=post.images.count %}
+              {% if cnt == 1 %}
+                <div style="border-radius:10px;overflow:hidden">
+                  <img src="{{ post.images.first.image.url }}" style="width:100%;display:block">
+                </div>
+              {% elif cnt == 2 %}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:10px;overflow:hidden">
+                  {% for img in post.images.all %}<img src="{{ img.image.url }}" style="width:100%;height:280px;object-fit:cover">{% endfor %}
+                </div>
+              {% elif cnt == 3 %}
+                <div style="display:grid;grid-template-columns:2fr 1fr;gap:4px;border-radius:10px;overflow:hidden">
+                  <img src="{{ post.images.all.0.image.url }}" style="width:100%;height:360px;object-fit:cover">
+                  <div style="display:grid;grid-template-rows:1fr 1fr;gap:4px">
+                    <img src="{{ post.images.all.1.image.url }}" style="width:100%;height:178px;object-fit:cover">
+                    <img src="{{ post.images.all.2.image.url }}" style="width:100%;height:178px;object-fit:cover">
+                  </div>
+                </div>
+              {% else %}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:10px;overflow:hidden">
+                  {% for img in post.images.all|slice:":4" %}
+                    {% if forloop.counter == 4 and cnt > 4 %}
+                    <div style="position:relative">
+                      <img src="{{ img.image.url }}" style="width:100%;height:240px;object-fit:cover;display:block">
+                      <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700">
+                        +{{ cnt|add:"-4" }}
+                      </div>
+                    </div>
+                    {% else %}
+                    <img src="{{ img.image.url }}" style="width:100%;height:240px;object-fit:cover;display:block">
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% endwith %}
+            </div>
+            {% endif %}
+
+            <!-- Reaction count -->
+            <div id="reactions-{{ post.id }}" style="display:flex;gap:4px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;min-height:22px">
+              {% if post.reaction_count > 0 %}
+              <span style="font-size:16px">&#10084;&#65039;</span>
+              <span style="font-size:12px;color:#666;margin-left:4px">{{ post.reaction_count }} người</span>
+              {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="post-actions">
+              <button class="post-action-btn {% if post.user_reacted %}liked{% endif %}"
+                      id="like-btn-{{ post.id }}" onclick="toggleLike({{ post.id }}, this)">
+                <span>{% if post.user_reacted %}&#10084;&#65039;{% else %}&#128077;{% endif %}</span>
+                <span id="like-label-{{ post.id }}">{% if post.user_reacted %}Đã thích{% else %}Thích{% endif %}</span>
+              </button>
+              <button class="post-action-btn" onclick="toggleComments({{ post.id }})">
+                <span>&#128172;</span>
+                <span id="cmt-count-{{ post.id }}">Bình luận ({{ post.comment_count }})</span>
+              </button>
+            </div>
+
+            <!-- Comments -->
+            <div id="comments-{{ post.id }}" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #e4e6eb">
+              <!-- Comment form -->
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <div class="post-avatar" style="width:34px;height:34px;font-size:11px;background:linear-gradient(135deg,#667eea,#764ba2)">
+                  {{ user.get_initials }}
+                </div>
+                <form onsubmit="submitComment(event, {{ post.id }})" style="flex:1;display:flex;gap:8px">
+                  {% csrf_token %}
+                  <input type="text" name="comment" placeholder="Viết bình luận..."
+                    style="flex:1;padding:8px 14px;border:1.5px solid #e4e6eb;border-radius:20px;font-size:13px;outline:none"
+                    onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e4e6eb'">
+                  <button type="submit"
+                    style="padding:8px 16px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:20px;font-size:13px;cursor:pointer;font-weight:600">
+                    Gửi
+                  </button>
+                </form>
+              </div>
+              <!-- Comments list -->
+              <div id="cmt-list-{{ post.id }}">
+                {% for comment in post.comments %}
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                  <div class="post-avatar" style="width:34px;height:34px;font-size:11px;background:linear-gradient(135deg,#4facfe,#00f2fe)">
+                    {{ comment.user.get_initials }}
+                  </div>
+                  <div style="flex:1">
+                    <div style="background:#f0f2f5;padding:8px 12px;border-radius:12px">
+                      <div style="font-weight:700;font-size:13px;margin-bottom:2px">
+                        {{ comment.user.first_name }} {{ comment.user.last_name }}
+                      </div>
+                      <div style="font-size:13px;color:#333">{{ comment.content }}</div>
+                    </div>
+                    <div style="font-size:11px;color:#aaa;margin-top:3px;margin-left:10px">
+                      {{ comment.created_at|timesince }} trước
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
           </div>
-          <div style="flex:1">
-            <strong style="display:block;font-size:14px;font-weight:700;color:#1a1a2e">
-              {{ post.user.first_name }} {{ post.user.last_name }}
-            </strong>
-            <span style="font-size:11px;color:#999">{{ post.created_at|timesince }} trước</span>
-          </div>
-          {% if post.user == user or is_admin %}
-          <a href="#" style="color:#888;font-size:20px;text-decoration:none" title="Xóa bài">🗑️</a>
-          {% endif %}
-        </div>
-        <p style="font-size:13px;line-height:1.6;color:#555;margin-bottom:14px;white-space:pre-wrap">{{ post.content }}</p>
-        {% if post.image %}
-        <img src="{{ post.image.url }}" alt="Post image" style="max-width:100%;border-radius:8px;margin-bottom:12px">
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div style="text-align:center;padding:60px 20px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
-      <p style="font-size:48px;margin-bottom:16px;">📝</p>
-      <h3 style="margin-bottom:8px;color:#555;">Chưa có bài viết nào</h3>
-      <p style="color:#888;">
-        {% if is_member %}
-        Hãy là người đầu tiên đăng bài trong nhóm này
+          {% endfor %}
+
         {% else %}
-        Tham gia nhóm để xem và đăng bài viết
+        <div class="post-card" style="text-align:center;padding:60px 20px">
+          <p style="font-size:48px;margin-bottom:16px">&#128221;</p>
+          <h3 style="margin-bottom:8px;color:#555">Chưa có bài viết nào</h3>
+          <p style="color:#888">Hãy là người đầu tiên đăng bài trong nhóm này!</p>
+        </div>
         {% endif %}
-      </p>
-    </div>
-    {% endif %}
-  </div>
-  
-  <div id="tab-tv" class="nd-tab-content">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="font-size:16px">Thành viên ({{ members.count }})</h3>
-      {% if is_admin %}
-      <span class="admin-note">&#128081; Bạn là Quản trị viên</span>
-      <a href="/nhom/{{ nhom.id }}/add-member/" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">+ Thêm thành viên</a>
-      {% endif %}
-    </div>
-    
-    {% if members %}
-    <div style="display:flex;flex-direction:column;gap:10px">
-      {% for member in members %}
-      <div class="tv-row">
-        <div class="nd-tv-av2">{{ member.user.get_initials }}</div>
-        <div style="flex:1;display:flex;align-items:center;gap:10px">
-          <strong style="font-size:14px">{{ member.user.first_name }} {{ member.user.last_name }}</strong>
-          {% if member.user == nhom.created_by %}
-          <span class="badge-admin">&#128081; Quản trị viên</span>
-          {% else %}
-          <span class="badge-tv">Thành viên</span>
+
+      </div><!-- /gd-feed -->
+
+        <!-- CỘT PHẢI: SIDEBAR -->
+        <aside class="gd-sidebar">
+          <!-- Thông tin nhóm -->
+          <div class="gd-sidebar-card">
+            <h4>&#128101; Thành viên ({{ members.count }})</h4>
+            {% for member in members|slice:":8" %}
+            <div class="gd-sidebar-member">
+              <div class="gd-sidebar-av">{{ member.user.get_initials }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  {{ member.user.first_name }} {{ member.user.last_name }}
+                </div>
+                <div style="font-size:11px;color:#aaa">
+                  {% if member.user == nhom.created_by %}&#128081; Quản trị viên{% else %}Thành viên{% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+            {% if members.count > 8 %}
+            <div style="text-align:center;margin-top:10px">
+              <button onclick="switchTab('tab-members', document.querySelectorAll('.gd-tab')[1])"
+                style="background:none;border:none;color:#667eea;font-size:13px;font-weight:600;cursor:pointer">
+                Xem tất cả {{ members.count }} thành viên &#8594;
+              </button>
+            </div>
+            {% endif %}
+            {% if is_admin %}
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0">
+              <a href="/nhom/{{ nhom.id }}/add-member/"
+                style="display:block;text-align:center;padding:8px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">
+                + Thêm thành viên
+              </a>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Thông tin nhóm -->
+          <div class="gd-sidebar-card">
+            <h4>&#8505;&#65039; Về nhóm này</h4>
+            <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:10px">
+              {{ nhom.description|default:"Chưa có mô tả" }}
+            </div>
+            <div style="font-size:12px;color:#aaa;display:flex;flex-direction:column;gap:6px">
+              <span>&#128197; Tạo ngày {{ nhom.created_at|date:"d/m/Y" }}</span>
+              <span>&#128100; Tạo bởi {{ nhom.created_by.get_full_name }}</span>
+              <span>&#128274; {{ nhom.get_status_display }}</span>
+            </div>
+          </div>
+        </aside>
+
+      </div><!-- /gd-feed-layout -->
+    </div><!-- /tab-posts -->
+
+    <!-- TAB: THÀNH VIÊN -->
+    <div id="tab-members" class="gd-tab-content">
+      <div style="max-width:680px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:16px;color:#1a1a2e">Thành viên ({{ members.count }})</h3>
+          {% if is_admin %}
+          <a href="/nhom/{{ nhom.id }}/add-member/"
+            style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">
+            + Thêm thành viên
+          </a>
           {% endif %}
         </div>
-        <span style="font-size:12px;color:#888;">{{ member.joined_at|date:"d/m/Y" }}</span>
+
+        {% for member in members %}
+        <div class="gd-member-row">
+          <div class="gd-member-av">{{ member.user.get_initials }}</div>
+          <div style="flex:1;display:flex;align-items:center;gap:10px">
+            <strong style="font-size:14px;color:#1a1a2e">
+              {{ member.user.first_name }} {{ member.user.last_name }}
+            </strong>
+            {% if member.user == nhom.created_by %}
+            <span class="badge-admin">&#128081; Quản trị viên</span>
+            {% else %}
+            <span class="badge-tv">Thành viên</span>
+            {% endif %}
+          </div>
+          <span style="font-size:12px;color:#aaa">{{ member.joined_at|date:"d/m/Y" }}</span>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:40px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <p style="font-size:40px;margin-bottom:12px">&#128101;</p>
+          <p style="color:#888">Chưa có thành viên nào</p>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div style="text-align:center;padding:40px 20px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
-      <p style="font-size:48px;margin-bottom:16px;">👥</p>
-      <h3 style="margin-bottom:8px;color:#555;">Chưa có thành viên nào</h3>
-      <p style="color:#888;">Thêm thành viên để bắt đầu làm việc cùng nhau</p>
-    </div>
-    {% endif %}
-  </div>
-</div>
+    </div><!-- /tab-members -->
+
+  </div><!-- /gd-tab-body -->
+</div><!-- /gd-page -->
+
+<!-- Toast -->
+<div id="gdToast" class="gd-toast"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function switchTab(id,btn){
-  document.querySelectorAll(".nd-tab-content").forEach(function(t){t.classList.remove("active");});
-  document.querySelectorAll(".nd-tab").forEach(function(b){b.classList.remove("active");});
-  document.getElementById(id).classList.add("active");
-  btn.classList.add("active");
+const CSRF = '{{ csrf_token }}';
+const GROUP_ID = {{ nhom.id }};
+const CURRENT_USER_INITIALS = '{{ user.get_initials }}';
+const CURRENT_USER_NAME = '{{ user.first_name }} {{ user.last_name }}';
+
+// ===== TABS =====
+function switchTab(id, btn) {
+  document.querySelectorAll('.gd-tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.gd-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== TOAST =====
+function showToast(msg, type) {
+  const t = document.getElementById('gdToast');
+  t.textContent = msg;
+  t.className = 'gd-toast' + (type === 'error' ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== IMAGE PREVIEW =====
+let selectedFiles = [];
+
+function handleImgSelect(input) {
+  selectedFiles = Array.from(input.files);
+  renderPreviews();
+}
+
+function renderPreviews() {
+  const wrap = document.getElementById('imgPreviewWrap');
+  const grid = document.getElementById('imgPreviewGrid');
+  if (!selectedFiles.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  const cols = selectedFiles.length === 1 ? '1fr' : selectedFiles.length === 2 ? '1fr 1fr' : 'repeat(3,1fr)';
+  grid.style.gridTemplateColumns = cols;
+  grid.innerHTML = '';
+  selectedFiles.forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'img-preview-item';
+      div.innerHTML = `<img src="${e.target.result}"><button type="button" class="img-preview-remove" onclick="removeImg(${i})">&#10005;</button>`;
+      grid.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeImg(idx) {
+  selectedFiles.splice(idx, 1);
+  const input = document.getElementById('imgInput');
+  const dt = new DataTransfer();
+  selectedFiles.forEach(f => dt.items.add(f));
+  input.files = dt.files;
+  renderPreviews();
+}
+
+// ===== SUBMIT POST (AJAX) =====
+document.getElementById('postForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const content = document.getElementById('postContent').value.trim();
+  if (!content) { showToast('Vui lòng nhập nội dung bài viết!', 'error'); return; }
+
+  const btn = document.getElementById('postSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Đang đăng...';
+
+  const fd = new FormData(this);
+  // Đảm bảo gắn đúng nhóm
+  fd.set('scope', 'groups');
+
+  fetch(window.location.pathname, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF },
+    body: fd
+  })
+  .then(r => {
+    if (r.redirected || r.ok) {
+      showToast('✓ Đã đăng bài thành công!');
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+      btn.disabled = false;
+      btn.textContent = '📝 Đăng bài';
+    }
+  })
+  .catch(() => {
+    showToast('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+    btn.disabled = false;
+    btn.textContent = '📝 Đăng bài';
+  });
+});
+
+// ===== POST MENU =====
+function toggleMenu(postId) {
+  document.querySelectorAll('[id^="menu-"]').forEach(m => {
+    if (m.id !== `menu-${postId}`) m.style.display = 'none';
+  });
+  const menu = document.getElementById(`menu-${postId}`);
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('[onclick^="toggleMenu"]') && !e.target.closest('[id^="menu-"]')) {
+    document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
+  }
+});
+
+// ===== DELETE POST =====
+function deletePost(postId) {
+  if (!confirm('Bạn có chắc muốn xóa bài viết này?')) return;
+  fetch(`/post/${postId}/delete/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById(`post-${postId}`)?.remove();
+      showToast('✓ Đã xóa bài viết!');
+    } else {
+      showToast(data.error || 'Không thể xóa!', 'error');
+    }
+  })
+  .catch(() => showToast('Có lỗi xảy ra!', 'error'));
+}
+
+// ===== LIKE =====
+function toggleLike(postId, btn) {
+  fetch(`/post/${postId}/like/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) return;
+    const label = document.getElementById(`like-label-${postId}`);
+    const reactBox = document.getElementById(`reactions-${postId}`);
+    if (data.liked) {
+      btn.classList.add('liked');
+      btn.querySelector('span').textContent = '❤️';
+      label.textContent = 'Đã thích';
+    } else {
+      btn.classList.remove('liked');
+      btn.querySelector('span').textContent = '👍';
+      label.textContent = 'Thích';
+    }
+    reactBox.innerHTML = data.count > 0
+      ? `<span style="font-size:16px">❤️</span><span style="font-size:12px;color:#666;margin-left:4px">${data.count} người</span>`
+      : '';
+  })
+  .catch(() => showToast('Có lỗi xảy ra!', 'error'));
+}
+
+// ===== COMMENTS =====
+function toggleComments(postId) {
+  const box = document.getElementById(`comments-${postId}`);
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitComment(e, postId) {
+  e.preventDefault();
+  const input = e.target.querySelector('input[name="comment"]');
+  const content = input.value.trim();
+  if (!content) return;
+
+  fetch(`/post/${postId}/comment/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) return;
+    const list = document.getElementById(`cmt-list-${postId}`);
+    list.insertAdjacentHTML('beforeend', `
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="post-avatar" style="width:34px;height:34px;font-size:11px;background:linear-gradient(135deg,#4facfe,#00f2fe)">
+          ${CURRENT_USER_INITIALS}
+        </div>
+        <div style="flex:1">
+          <div style="background:#f0f2f5;padding:8px 12px;border-radius:12px">
+            <div style="font-weight:700;font-size:13px;margin-bottom:2px">${CURRENT_USER_NAME}</div>
+            <div style="font-size:13px;color:#333">${content}</div>
+          </div>
+          <div style="font-size:11px;color:#aaa;margin-top:3px;margin-left:10px">Vừa xong</div>
+        </div>
+      </div>
+    `);
+    input.value = '';
+    // Update count
+    const countEl = document.getElementById(`cmt-count-${postId}`);
+    const match = countEl.textContent.match(/\d+/);
+    const n = match ? parseInt(match[0]) + 1 : 1;
+    countEl.textContent = `Bình luận (${n})`;
+  })
+  .catch(() => showToast('Có lỗi xảy ra!', 'error'));
 }
 </script>
 {% endblock %}

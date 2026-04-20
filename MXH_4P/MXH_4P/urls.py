@@ -101,6 +101,7 @@ urlpatterns = [
     path('nhom/new/sua/', views.nhom_new_edit, name='nhom_new_edit'),
     path('nhom/<int:nhom_id>/', views.nhom_detail, name='nhom_detail'),
     path('nhom/<int:nhom_id>/sua/', views.nhom_edit, name='nhom_edit'),
+    path('nhom/<int:nhom_id>/xoa/', views.nhom_delete, name='nhom_delete'),
     path('nhom/<int:group_id>/add-member/', views.add_group_member, name='add_group_member'),
     
     # Reports
