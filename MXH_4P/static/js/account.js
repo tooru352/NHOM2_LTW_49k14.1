@@ -31,18 +31,73 @@ document.getElementById('avatarEditBtn').addEventListener('click', () => {
 document.getElementById('avatarInput').addEventListener('change', function () {
   const file = this.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { showToast('Ảnh vượt quá 2MB.', true); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    const circle = document.getElementById('avatarCircle');
-    circle.querySelector('span') && (circle.querySelector('span').style.display = 'none');
-    let img = circle.querySelector('img');
-    if (!img) { img = document.createElement('img'); circle.insertBefore(img, circle.firstChild); }
-    img.src = e.target.result;
-    showToast('Ảnh đại diện đã được cập nhật.');
-  };
-  reader.readAsDataURL(file);
+  
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) { 
+    showToast('Ảnh vượt quá 5MB.', true); 
+    return; 
+  }
+  
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showToast('Vui lòng chọn file ảnh', true);
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('avatar', file);
+  
+  console.log('Uploading avatar...', file.name);
+  
+  // Upload avatar
+  fetch('/api/upload_avatar/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: formData
+  })
+  .then(response => {
+    console.log('Response status:', response.status);
+    return response.json();
+  })
+  .then(data => {
+    console.log('Response data:', data);
+    if (data.success) {
+      // Update avatar display
+      const circle = document.getElementById('avatarCircle');
+      circle.style.backgroundImage = `url('${data.avatar_url}')`;
+      circle.style.backgroundSize = 'cover';
+      circle.style.backgroundPosition = 'center';
+      const span = circle.querySelector('#avatarText');
+      if (span) span.style.display = 'none';
+      
+      showToast('Đã cập nhật ảnh đại diện!');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast('Có lỗi xảy ra: ' + (data.error || 'Unknown error'), true);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showToast('Có lỗi xảy ra khi tải ảnh lên', true);
+  });
 });
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
 
 // --- Save profile ---
 document.getElementById('btnSaveProfile').addEventListener('click', async () => {

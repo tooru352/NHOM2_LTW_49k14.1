@@ -22,78 +22,85 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
     <h2 class="bc-title" style="margin:0">Xếp hạng thành tích nhân viên</h2>
     <div style="display:flex;gap:10px">
-      <button class="bc-btn-export">&#128200; Xuất báo cáo</button>
-      <button class="bc-btn-view" onclick="location.reload()">&#8635; Làm mới dữ liệu</button>
+      <a href="/baocao/congviec/" class="bc-btn-view" style="text-decoration:none">&#8592; Quay lại báo cáo</a>
+      <button class="bc-btn-export" onclick="exportReport()">&#128200; Xuất báo cáo</button>
     </div>
   </div>
+  
+  {% if top_user %}
   <div class="xh-top">
     <div class="xh-star-card">
       <div class="xh-star-badge">&#11088; NGÔI SAO CỦA THÁNG</div>
-      <div class="xh-star-name">Lê Hoàng Anh</div>
-      <div class="xh-star-dept">Phòng Buồng phòng • Hiệu suất 98.4%</div>
+      <div class="xh-star-name">{{ top_user.username }}</div>
+      <div class="xh-star-dept">{{ top_user.get_full_name|default:"Nhân viên" }} • Hoàn thành {{ top_user.completed_tasks }} nhiệm vụ</div>
       <div class="xh-star-rank">#1 <span>Xếp hạng toàn hệ thống</span></div>
     </div>
-    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#2ecc71">+12.5%</div><div class="xh-stat-label">Nhiệm vụ hoàn thành</div><div class="xh-stat-val">1,284</div></div>
-    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#e74c3c">-2.1%</div><div class="xh-stat-label">Tỷ lệ hài lòng khách</div><div class="xh-stat-val">92.4%</div></div>
+    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#2ecc71">Top 1</div><div class="xh-stat-label">Nhiệm vụ hoàn thành</div><div class="xh-stat-val">{{ top_user.completed_tasks }}</div></div>
+    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#2ecc71">{{ top_user.post_count }}</div><div class="xh-stat-label">Bài viết đã đăng</div><div class="xh-stat-val">{{ user_rankings|length }}</div></div>
   </div>
+  {% endif %}
+  
   <div class="xh-filter">
-    <input type="text" placeholder="&#128100; Tìm tên nhân viên hoặc ID..." oninput="filterXH(this.value)">
-    <select id="filterBP" onchange="filterXH()">
-      <option>Tất cả bộ phận</option>
-      <option>Buồng phòng</option><option>Lễ tân</option><option>Nhà hàng (F&B)</option><option>Kỹ thuật</option>
+    <input type="text" placeholder="&#128100; Tìm tên nhân viên..." oninput="filterXH(this.value)">
+    <select id="filterBP" onchange="filterByDept()">
+      <option value="">Tất cả bộ phận</option>
+      <option value="FO">Front Office</option>
+      <option value="F&B">Food & Beverage</option>
+      <option value="HK">Housekeeping</option>
     </select>
-    <input type="month" value="2023-10">
   </div>
+  
   <div class="xh-table-wrap">
     <div class="xh-table-head">Báo cáo chi tiết theo nhân viên</div>
     <table class="xh-table" id="xhTable">
-      <thead><tr><th>Hạng</th><th>Nhân viên</th><th>Bộ phận</th><th>Nhiệm vụ</th><th>Tỷ lệ hoàn thành</th><th>Điểm số</th></tr></thead>
+      <thead><tr><th>Hạng</th><th>Nhân viên</th><th>Bộ phận</th><th>Nhiệm vụ hoàn thành</th><th>Bài viết</th><th>Đánh giá</th></tr></thead>
       <tbody>
-      <tr data-ten="Lê Hoàng Anh" data-bp="Buồng phòng">
-        <td><span class="xh-rank">01</span></td>
-        <td><div class="xh-nv"><div class="xh-av">L</div><div><strong>Lê Hoàng Anh</strong><br><small style="color:#65676b">ID: EMP-2121</small></div></div></td>
-        <td>Buồng phòng</td>
-        <td>142/145</td>
-        <td><div class="xh-bar-wrap"><div class="xh-bar" style="width:98.4%;background:#2ecc71"></div></div><small>98.4%</small></td>
-        <td><span class="xh-badge" style="background:#d5f5e3;color:#27ae60">XUẤT SẮC</span></td>
+      {% for user in user_rankings %}
+      <tr data-ten="{{ user.username }}" data-bp="{% if user.department == 'FO' %}Front Office{% elif user.department == 'F&B' %}Food & Beverage{% elif user.department == 'HK' %}Housekeeping{% else %}{{ user.department }}{% endif %}">
+        <td><span class="xh-rank">{{ forloop.counter|stringformat:"02d" }}</span></td>
+        <td>
+          <div class="xh-nv">
+            <div class="xh-av">{{ user.username.0|upper }}</div>
+            <div>
+              <strong>{{ user.username }}</strong><br>
+              <small style="color:#65676b">{{ user.get_full_name|default:"Nhân viên" }}</small>
+            </div>
+          </div>
+        </td>
+        <td>
+          {% if user.department == "FO" %}
+            Front Office
+          {% elif user.department == "F&B" %}
+            Food & Beverage
+          {% elif user.department == "HK" %}
+            Housekeeping
+          {% else %}
+            {{ user.department }}
+          {% endif %}
+        </td>
+        <td>{{ user.completed_tasks }}</td>
+        <td>{{ user.post_count }}</td>
+        <td>
+          {% if user.completed_tasks >= 50 %}
+            <span class="xh-badge" style="background:#d5f5e3;color:#27ae60">XUẤT SẮC</span>
+          {% elif user.completed_tasks >= 20 %}
+            <span class="xh-badge" style="background:#fef9e7;color:#f39c12">ĐẠT YÊU CẦU</span>
+          {% else %}
+            <span class="xh-badge" style="background:#fde8e8;color:#e74c3c">CẦN CẢI THIỆN</span>
+          {% endif %}
+        </td>
       </tr>
-      <tr data-ten="Nguyễn Thị Hoa" data-bp="Lễ tân">
-        <td><span class="xh-rank">02</span></td>
-        <td><div class="xh-nv"><div class="xh-av">N</div><div><strong>Nguyễn Thị Hoa</strong><br><small style="color:#65676b">ID: EMP-1872</small></div></div></td>
-        <td>Lễ tân</td>
-        <td>138/145</td>
-        <td><div class="xh-bar-wrap"><div class="xh-bar" style="width:95.2%;background:#2ecc71"></div></div><small>95.2%</small></td>
-        <td><span class="xh-badge" style="background:#d5f5e3;color:#27ae60">XUẤT SẮC</span></td>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="text-align:center;padding:40px;color:#95a5a6">
+          Chưa có dữ liệu xếp hạng
+        </td>
       </tr>
-      <tr data-ten="Trần Minh Tuấn" data-bp="Nhà hàng (F&B)">
-        <td><span class="xh-rank">03</span></td>
-        <td><div class="xh-nv"><div class="xh-av">T</div><div><strong>Trần Minh Tuấn</strong><br><small style="color:#65676b">ID: EMP-2922</small></div></div></td>
-        <td>Nhà hàng (F&B)</td>
-        <td>112/120</td>
-        <td><div class="xh-bar-wrap"><div class="xh-bar" style="width:93.3%;background:#2ecc71"></div></div><small>93.3%</small></td>
-        <td><span class="xh-badge" style="background:#fef9e7;color:#f39c12">ĐẠT YÊU CẦU</span></td>
-      </tr>
-      <tr data-ten="Phạm Diễm My" data-bp="Lễ tân">
-        <td><span class="xh-rank">04</span></td>
-        <td><div class="xh-nv"><div class="xh-av">P</div><div><strong>Phạm Diễm My</strong><br><small style="color:#65676b">ID: EMP-1042</small></div></div></td>
-        <td>Lễ tân</td>
-        <td>124/145</td>
-        <td><div class="xh-bar-wrap"><div class="xh-bar" style="width:85.5%;background:#f39c12"></div></div><small>85.5%</small></td>
-        <td><span class="xh-badge" style="background:#fef9e7;color:#f39c12">ĐẠT YÊU CẦU</span></td>
-      </tr>
-      <tr data-ten="Nguyễn Mạnh Cường" data-bp="Kỹ thuật">
-        <td><span class="xh-rank">05</span></td>
-        <td><div class="xh-nv"><div class="xh-av">N</div><div><strong>Nguyễn Mạnh Cường</strong><br><small style="color:#65676b">ID: EMP-5231</small></div></div></td>
-        <td>Kỹ thuật</td>
-        <td>42/60</td>
-        <td><div class="xh-bar-wrap"><div class="xh-bar" style="width:70.0%;background:#e74c3c"></div></div><small>70.0%</small></td>
-        <td><span class="xh-badge" style="background:#fde8e8;color:#e74c3c">CẦN CẢI THIỆN</span></td>
-      </tr>
+      {% endfor %}
       </tbody>
     </table>
     <div class="xh-pagination">
-      <span style="font-size:13px;color:#65676b">Hiển thị 5 của 124 nhân viên</span>
-      <div class="xh-pages"><button class="xh-pg active">1</button><button class="xh-pg">2</button><button class="xh-pg">3</button><span>...</span><button class="xh-pg">25</button></div>
+      <span style="font-size:13px;color:#65676b">Hiển thị {{ user_rankings|length }} nhân viên</span>
     </div>
   </div>
 </div>
@@ -103,10 +110,25 @@
 <script>
 function filterXH(q){
   q=(q||"").toLowerCase();
+  var dept = document.getElementById('filterBP').value;
+  
   document.querySelectorAll("#xhTable tbody tr").forEach(function(r){
     var ten=r.dataset.ten.toLowerCase();
-    r.style.display=ten.includes(q)?"":"none";
+    var bp=r.dataset.bp;
+    
+    var matchName = !q || ten.includes(q);
+    var matchDept = !dept || bp === dept;
+    
+    r.style.display = (matchName && matchDept) ? "" : "none";
   });
+}
+
+function filterByDept(){
+  filterXH(document.querySelector('input[placeholder*="Tìm tên"]').value);
+}
+
+function exportReport() {
+  alert('Chức năng xuất báo cáo đang được phát triển');
 }
 </script>
 {% endblock %}

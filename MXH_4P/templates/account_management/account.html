@@ -22,10 +22,17 @@
       <div class="acc-card-title">👤 Thông tin cá nhân</div>
       <div class="profile-section">
         <div class="profile-avatar-col">
-          <div class="profile-avatar" id="avatarCircle">
-            <span id="avatarText">PT</span>
+          {% if user.avatar %}
+          <div class="profile-avatar" id="avatarCircle" style="background-image: url('{{ user.avatar.url }}'); background-size: cover; background-position: center;">
+            <span id="avatarText" style="display:none;">{{ user.get_initials }}</span>
             <div class="avatar-edit-btn" id="avatarEditBtn" title="Đổi ảnh đại diện">✏️</div>
           </div>
+          {% else %}
+          <div class="profile-avatar" id="avatarCircle">
+            <span id="avatarText">{{ user.get_initials }}</span>
+            <div class="avatar-edit-btn" id="avatarEditBtn" title="Đổi ảnh đại diện">✏️</div>
+          </div>
+          {% endif %}
           <input type="file" id="avatarInput" accept="image/jpeg,image/png" style="display:none">
           <div class="avatar-hint">Định dạng JPG hoặc PNG. Tối đa 2MB</div>
         </div>
@@ -33,27 +40,37 @@
           <div class="form-row">
             <div class="form-group">
               <label>Họ và tên</label>
-              <input type="text" id="fullName" value="Phạm Xuân Thương">
+              <input type="text" id="fullName" name="full_name" value="{{ user.get_full_name|default:user.username }}">
             </div>
             <div class="form-group">
               <label>Email</label>
-              <input type="email" id="email" value="thuong.px@fourpoint.com">
+              <input type="email" id="email" name="email" value="{{ user.email|default:'' }}">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Số điện thoại</label>
-              <input type="tel" id="phone" value="+84 987 654 321">
+              <label>Tên đăng nhập</label>
+              <input type="text" id="username" value="{{ user.username }}" disabled>
             </div>
             <div class="form-group">
               <label>Bộ phận</label>
-              <input type="text" id="department" value="Quản lý Food & Beverage">
+              <input type="text" id="department" value="{{ department }}" disabled>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group full">
-              <label>Giới thiệu ngắn</label>
-              <textarea rows="3" id="bio">Chuyên gia quản lý vận hành F&B với hơn 5 năm kinh nghiệm trong ngành khách sạn cao cấp.</textarea>
+              <label>Vai trò</label>
+              <input type="text" value="{{ role }}" disabled>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tổng bài viết</label>
+              <input type="text" value="{{ total_posts }}" disabled>
+            </div>
+            <div class="form-group">
+              <label>Nhiệm vụ hoàn thành</label>
+              <input type="text" value="{{ completed_tasks }}/{{ total_tasks }}" disabled>
             </div>
           </div>
           <div class="form-footer">

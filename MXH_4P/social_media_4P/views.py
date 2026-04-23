@@ -3,9 +3,28 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, Http404
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Count
 from django.views.decorators.http import require_http_methods
 import json
+
+# Helper function to determine user department
+def get_user_department(user):
+    """Determine user's department from username or tasks"""
+    username = user.username
+    if username.startswith('fo'):
+        return 'FO'
+    elif username.startswith('fb'):
+        return 'F&B'
+    elif username.startswith('hk'):
+        return 'HK'
+    # Try to get from tasks
+    dept_task = user.assigned_tasks.values('department').annotate(
+        count=Count('id')
+    ).order_by('-count').first()
+    if dept_task and dept_task.get('department'):
+        return dept_task['department']
+    # Return placeholder
+    return 'Chưa phân bộ phận'
 
 from .forms import (
     LoginForm, UserRegistrationForm, UserProfileForm,
@@ -66,18 +85,40 @@ def register(request):
     return render(request, 'account_management/register.html', {'form': form})
 
 @login_required
+@login_required
 def account(request):
     """User profile management"""
+    
+    # Get user statistics
+    total_posts = request.user.posts.count()
+    total_tasks = request.user.assigned_tasks.count()
+    completed_tasks = request.user.assigned_tasks.filter(status='Done').count()
+    
+    # Get department using helper function
+    department = get_user_department(request.user)
+    
+    # Get role
+    role = 'Quản lý' if request.user.is_manager() else 'Nhân viên'
+    
     if request.method == 'POST':
-        form = UserProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
+        # Handle profile update
+        action = request.POST.get('action')
+        if action == 'update_profile':
+            request.user.first_name = request.POST.get('first_name', '')
+            request.user.last_name = request.POST.get('last_name', '')
+            request.user.email = request.POST.get('email', '')
+            request.user.save()
             messages.success(request, 'Đã cập nhật thông tin cá nhân!')
             return redirect('account')
-    else:
-        form = UserProfileForm(instance=request.user)
     
-    return render(request, 'account_management/account.html', {'form': form})
+    return render(request, 'account_management/account.html', {
+        'user': request.user,
+        'department': department,
+        'role': role,
+        'total_posts': total_posts,
+        'total_tasks': total_tasks,
+        'completed_tasks': completed_tasks,
+    })
 
 @login_required
 def home(request):
@@ -101,7 +142,13 @@ def home(request):
             post.reaction_count = post.interactions.filter(interaction_type=reaction_type).count()
             post.user_reacted = post.interactions.filter(user=request.user, interaction_type=reaction_type).exists()
             post.comment_count = post.interactions.filter(interaction_type=comment_type).count()
-            post.comments = post.interactions.filter(interaction_type=comment_type).select_related('user').order_by('created_at')
+            # Only get parent comments (no parent), and prefetch their replies
+            post.comments = post.interactions.filter(
+                interaction_type=comment_type,
+                parent__isnull=True
+            ).select_related('user').prefetch_related(
+                'replies__user'
+            ).order_by('created_at')
     except InteractionType.DoesNotExist:
         # If no interaction type exists, set defaults
         for post in posts:
@@ -329,6 +376,7 @@ def create_comment(request, post_id):
             import json
             data = json.loads(request.body)
             content = data.get('content', '').strip()
+            parent_id = data.get('parent_id')  # For replies
             
             if not content:
                 return JsonResponse({'success': False, 'error': 'Nội dung trống'})
@@ -339,15 +387,24 @@ def create_comment(request, post_id):
                 defaults={'description': 'Bình luận'}
             )
             
-            # Create comment
+            # Get parent comment if this is a reply
+            parent_comment = None
+            if parent_id:
+                try:
+                    parent_comment = Interaction.objects.get(id=parent_id, interaction_type=comment_type)
+                except Interaction.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': 'Comment cha không tồn tại'})
+            
+            # Create comment or reply
             comment = Interaction.objects.create(
                 user=request.user,
                 post=post,
                 interaction_type=comment_type,
-                content=content
+                content=content,
+                parent=parent_comment
             )
             
-            # Get updated comment count
+            # Get updated comment count (including replies)
             comment_count = post.interactions.filter(interaction_type=comment_type).count()
             
             return JsonResponse({
@@ -360,6 +417,43 @@ def create_comment(request, post_id):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+@require_http_methods(["POST"])
+def delete_comment(request, comment_id):
+    """Delete comment or reply"""
+    try:
+        # Get comment
+        comment = get_object_or_404(Interaction, id=comment_id)
+        
+        # Only comment owner can delete
+        if comment.user != request.user:
+            return JsonResponse({
+                'success': False,
+                'error': 'Bạn không có quyền xóa bình luận này!'
+            }, status=403)
+        
+        # Get post and comment type for count update
+        post = comment.post
+        comment_type = comment.interaction_type
+        
+        # Delete comment (this will also delete all replies due to CASCADE)
+        comment.delete()
+        
+        # Get updated comment count
+        comment_count = post.interactions.filter(interaction_type=comment_type).count()
+        
+        return JsonResponse({
+            'success': True,
+            'comment_count': comment_count,
+            'message': 'Đã xóa bình luận'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @login_required
 def messaging(request):
@@ -1809,9 +1903,75 @@ def employee_work_schedules(request):
 @login_required
 def profile(request):
     """User profile page"""
+    from django.db.models import Count
+    
+    # Get user's posts
+    user_posts = request.user.posts.select_related('user').prefetch_related(
+        'interactions__interaction_type'
+    ).order_by('-created_at')[:10]
+    
+    # Calculate interaction counts for each post
+    for post in user_posts:
+        post.reaction_count = post.interactions.filter(interaction_type__name='reaction').count()
+        post.comment_count = post.interactions.filter(interaction_type__name='comment').count()
+    
+    # Get user statistics
+    total_posts = request.user.posts.count()
+    total_tasks = request.user.assigned_tasks.count()
+    completed_tasks = request.user.assigned_tasks.filter(status='Done').count()
+    
+    # Get department using helper function
+    department = get_user_department(request.user)
+    role = 'Quản lý' if request.user.is_manager() else 'Nhân viên'
+    
     return render(request, 'profile_management/profile.html', {
-        'user': request.user
+        'user': request.user,
+        'user_posts': user_posts,
+        'department': department,
+        'role': role,
+        'total_posts': total_posts,
+        'total_tasks': total_tasks,
+        'completed_tasks': completed_tasks,
     })
+
+@login_required
+def update_profile_api(request):
+    """API endpoint to update user profile"""
+    import json
+    from django.http import JsonResponse
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            request.user.first_name = data.get('first_name', '')
+            request.user.last_name = data.get('last_name', '')
+            request.user.email = data.get('email', '')
+            request.user.save()
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def upload_avatar_api(request):
+    """API endpoint to upload user avatar"""
+    from django.http import JsonResponse
+    
+    if request.method == 'POST' and request.FILES.get('avatar'):
+        try:
+            request.user.avatar = request.FILES['avatar']
+            request.user.save()
+            
+            return JsonResponse({
+                'success': True,
+                'avatar_url': request.user.avatar.url
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'No file uploaded'})
 
 @login_required
 def edit_profile(request):
@@ -1985,21 +2145,50 @@ def baocao_tuongtac(request):
     """Interaction report - Báo cáo tương tác"""
     from django.db.models import Count, Q
     from django.utils import timezone
-    from datetime import timedelta
+    from datetime import timedelta, datetime
     
-    # Get date range (last 30 days)
+    # Get filter parameters
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    department = request.GET.get('department', '')
+    
+    # Get date range (default last 30 days)
     end_date = timezone.now()
     start_date = end_date - timedelta(days=30)
     
+    # Parse custom dates if provided
+    if start_date_str:
+        try:
+            start_date = timezone.make_aware(datetime.strptime(start_date_str, '%Y-%m-%d'))
+        except:
+            pass
+    if end_date_str:
+        try:
+            end_date = timezone.make_aware(datetime.strptime(end_date_str, '%Y-%m-%d'))
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+        except:
+            pass
+    
+    # Base querysets
+    posts_qs = Post.objects.all()
+    interactions_qs = Interaction.objects.all()
+    
+    # Filter by department if specified
+    if department:
+        # Get users in department
+        dept_users = User.objects.filter(username__startswith=department.lower())
+        posts_qs = posts_qs.filter(author__in=dept_users)
+        interactions_qs = interactions_qs.filter(user__in=dept_users)
+    
     # Total posts
-    total_posts = Post.objects.count()
-    posts_this_month = Post.objects.filter(created_at__gte=start_date).count()
+    total_posts = posts_qs.count()
+    posts_this_month = posts_qs.filter(created_at__gte=start_date).count()
     
     # Total interactions
-    total_reactions = Interaction.objects.filter(
+    total_reactions = interactions_qs.filter(
         interaction_type__name='reaction'
     ).count()
-    total_comments = Interaction.objects.filter(
+    total_comments = interactions_qs.filter(
         interaction_type__name='comment'
     ).count()
     
@@ -2009,13 +2198,13 @@ def baocao_tuongtac(request):
     ).filter(post_count__gt=0).order_by('-post_count')[:10]
     
     # Top engaged posts (by reactions + comments)
-    top_posts = Post.objects.annotate(
+    top_posts = posts_qs.annotate(
         reaction_count=Count('interactions', filter=Q(interactions__interaction_type__name='reaction')),
         comment_count=Count('interactions', filter=Q(interactions__interaction_type__name='comment'))
     ).order_by('-reaction_count', '-comment_count')[:10]
     
     # Posts by scope
-    posts_by_scope = Post.objects.values('scope').annotate(
+    posts_by_scope = posts_qs.values('scope').annotate(
         count=Count('id')
     ).order_by('-count')
     
@@ -2031,7 +2220,7 @@ def baocao_tuongtac(request):
         day = end_date - timedelta(days=i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
-        count = Post.objects.filter(
+        count = posts_qs.filter(
             created_at__gte=day_start,
             created_at__lt=day_end
         ).count()
@@ -2059,18 +2248,44 @@ def baocao_congviec(request):
     """Work report - Báo cáo công việc"""
     from django.db.models import Count, Q
     from django.utils import timezone
-    from datetime import timedelta
+    from datetime import timedelta, datetime
+    
+    # Get filter parameters
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    department = request.GET.get('department', '')
     
     # Get date range
     today = timezone.now().date()
     week_start = today - timedelta(days=today.weekday())
     month_start = today.replace(day=1)
     
+    # Base querysets
+    tasks_qs = Task.objects.all()
+    
+    # Filter by department if specified
+    if department:
+        tasks_qs = tasks_qs.filter(department=department)
+    
+    # Filter by date range if specified
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            tasks_qs = tasks_qs.filter(work_date__gte=start_date)
+        except:
+            pass
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            tasks_qs = tasks_qs.filter(work_date__lte=end_date)
+        except:
+            pass
+    
     # Task statistics
-    total_tasks = Task.objects.count()
-    tasks_todo = Task.objects.filter(status='Todo').count()
-    tasks_in_progress = Task.objects.filter(status='InProgress').count()
-    tasks_done = Task.objects.filter(status='Done').count()
+    total_tasks = tasks_qs.count()
+    tasks_todo = tasks_qs.filter(status='Todo').count()
+    tasks_in_progress = tasks_qs.filter(status='InProgress').count()
+    tasks_done = tasks_qs.filter(status='Done').count()
     
     # Tasks this week
     tasks_this_week = Task.objects.filter(work_date__gte=week_start).count()
@@ -2117,7 +2332,7 @@ def baocao_congviec(request):
     daily_completions = []
     for i in range(7):
         day = today - timedelta(days=i)
-        count = Task.objects.filter(
+        count = tasks_qs.filter(
             work_date=day,
             status='Done'
         ).count()
@@ -2154,16 +2369,59 @@ def baocao_congviec(request):
 @login_required
 def baocao_xephang(request):
     """Ranking report"""
-    from django.db.models import Count
+    from django.db.models import Count, Q
     
-    # Get user rankings by post count
-    user_rankings = User.objects.annotate(
-        post_count=Count('post')
-    ).order_by('-post_count')[:10]
+    # Determine manager's department from username
+    def get_user_department(username):
+        if username.startswith('fo'):
+            return 'FO'
+        elif username.startswith('fb'):
+            return 'F&B'
+        elif username.startswith('hk'):
+            return 'HK'
+        return None
+    
+    # Get current user's department
+    current_user_dept = get_user_department(request.user.username)
+    
+    # Get all users (not just those with tasks)
+    users_qs = User.objects.annotate(
+        completed_tasks=Count('assigned_tasks', filter=Q(assigned_tasks__status='Done')),
+        total_tasks=Count('assigned_tasks'),
+        post_count=Count('posts')
+    ).exclude(is_superuser=True)
+    
+    # Filter by department if user is a manager
+    if current_user_dept:
+        # Filter users by username prefix OR by their task department
+        users_qs = users_qs.filter(
+            Q(username__startswith=current_user_dept.lower()) |
+            Q(assigned_tasks__department=current_user_dept)
+        ).distinct()
+    
+    user_rankings = users_qs.order_by('-completed_tasks', '-total_tasks', '-post_count')[:50]
+    
+    # Add department info to each user
+    for user in user_rankings:
+        # First try to get from tasks
+        dept_query = user.assigned_tasks.values('department').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        if dept_query.exists():
+            user.department = dept_query.first()['department']
+        else:
+            # Fallback to username-based detection
+            user.department = get_user_department(user.username) or 'Chưa xác định'
+    
+    # Get top user
+    top_user = user_rankings.first() if user_rankings else None
     
     return render(request, 'report_management/baocao_xephang.html', {
         'user': request.user,
-        'user_rankings': user_rankings
+        'user_rankings': user_rankings,
+        'top_user': top_user,
+        'current_department': current_user_dept,
     })
 
 # Additional Helper Views

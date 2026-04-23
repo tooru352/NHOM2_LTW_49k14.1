@@ -23,26 +23,34 @@
   <div class="bc-filter">
     <div class="bc-filter-head">&#128202; Tiêu chí báo cáo</div>
     <div class="bc-filter-row">
-      <div class="bc-fg"><label>Từ ngày</label><input type="date" value="2024-01-01"></div>
-      <div class="bc-fg"><label>Đến ngày</label><input type="date" value="2026-06-02"></div>
-      <div class="bc-fg"><label>Bộ phận / Phòng ban</label><select><option>Toàn khách sạn</option><option>Lễ tân</option><option>F&B</option><option>Marketing</option></select></div>
+      <div class="bc-fg"><label>Từ ngày</label><input type="date" id="start_date" value="2024-01-01"></div>
+      <div class="bc-fg"><label>Đến ngày</label><input type="date" id="end_date" value="2026-06-02"></div>
+      <div class="bc-fg">
+        <label>Bộ phận / Phòng ban</label>
+        <select id="department">
+          <option value="">Toàn khách sạn</option>
+          <option value="FO">Front Office</option>
+          <option value="F&B">Food & Beverage</option>
+          <option value="HK">Housekeeping</option>
+        </select>
+      </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px">
-      <button class="bc-btn-view">Xem báo cáo</button>
-      <button class="bc-btn-export">Xuất báo cáo</button>
+      <button class="bc-btn-view" onclick="filterReport()">Xem báo cáo</button>
+      <button class="bc-btn-export" onclick="exportReport()">Xuất báo cáo</button>
       <a href="/baocao/xephang/" class="bc-btn-rank">Xếp hạng thành tích</a>
     </div>
   </div>
   <div class="bc-stats" style="grid-template-columns:repeat(5,1fr)">
-    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#667eea">&#128221;</div><div class="bc-stat-pct" style="color:#2ecc71;background:#e8f8f0">+8%</div><div class="bc-stat-label">Tổng công việc được giao</div><div class="bc-stat-val">2,847</div></div>
-    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#2ecc71">&#9989;</div><div class="bc-stat-pct" style="color:#2ecc71;background:#e8f8f0">+12%</div><div class="bc-stat-label">Công việc đã hoàn thành</div><div class="bc-stat-val">2,456</div></div>
-    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#f39c12">&#9203;</div><div class="bc-stat-pct" style="color:#e74c3c;background:#fde8e8">-5%</div><div class="bc-stat-label">Công việc đang xử lý</div><div class="bc-stat-val">312</div></div>
-    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#e74c3c">&#9888;</div><div class="bc-stat-pct" style="color:#e74c3c;background:#fde8e8">-15%</div><div class="bc-stat-label">Công việc quá hạn</div><div class="bc-stat-val">79</div></div>
-    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#9b59b6">&#128200;</div><div class="bc-stat-pct" style="color:#2ecc71;background:#e8f8f0">+6%</div><div class="bc-stat-label">Tỷ lệ hoàn thành TB</div><div class="bc-stat-val">86.3%</div></div>
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#667eea">&#128221;</div><div class="bc-stat-pct" style="color:#2ecc71;background:#e8f8f0">Tuần: {{ tasks_this_week }}</div><div class="bc-stat-label">Tổng công việc được giao</div><div class="bc-stat-val">{{ total_tasks }}</div></div>
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#2ecc71">&#9989;</div><div class="bc-stat-pct" style="color:#2ecc71;background:#e8f8f0">{% widthratio tasks_done total_tasks 100 %}%</div><div class="bc-stat-label">Công việc đã hoàn thành</div><div class="bc-stat-val">{{ tasks_done }}</div></div>
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#f39c12">&#9203;</div><div class="bc-stat-pct" style="color:#f39c12;background:#fff8e8">{% widthratio tasks_in_progress total_tasks 100 %}%</div><div class="bc-stat-label">Công việc đang xử lý</div><div class="bc-stat-val">{{ tasks_in_progress }}</div></div>
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#3498db">&#128337;</div><div class="bc-stat-pct" style="color:#3498db;background:#e8f4f8">{% widthratio tasks_todo total_tasks 100 %}%</div><div class="bc-stat-label">Công việc chưa làm</div><div class="bc-stat-val">{{ tasks_todo }}</div></div>
+    <div class="bc-stat-card"><div class="bc-stat-icon" style="background:#9b59b6">&#128200;</div><div class="bc-stat-pct" style="color:#2ecc71;background:#e8f8f0">Cuộc họp: {{ total_meetings }}</div><div class="bc-stat-label">Lịch làm việc</div><div class="bc-stat-val">{{ total_schedules }}</div></div>
   </div>
   <div class="bc-charts">
     <div class="bc-chart-card">
-      <h3>&#128202; Tiến độ công việc theo thời gian</h3>
+      <h3>&#128202; Tiến độ công việc theo thời gian (7 ngày qua)</h3>
       <canvas id="chartLine2" height="200"></canvas>
     </div>
     <div class="bc-chart-card">
@@ -56,16 +64,33 @@
 
 {% block extra_js %}
 <script>
+var labels=[{% for day in daily_completions %}"{{ day.date }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+var dailyData=[{% for day in daily_completions %}{{ day.count }}{% if not forloop.last %},{% endif %}{% endfor %}];
 new Chart(document.getElementById("chartLine2"),{type:"line",data:{
-  labels:["Tuần 1","Tuần 2","Tuần 3","Tuần 4","Tuần 5"],
+  labels:labels,
   datasets:[
-    {label:"Hoàn thành",data:[80,83,85,88,90],borderColor:"#2ecc71",backgroundColor:"rgba(46,204,113,.1)",tension:.4,fill:true},
-    {label:"Đang xử lý",data:[15,12,10,8,7],borderColor:"#f39c12",tension:.4,fill:false},
-    {label:"Quá hạn",data:[5,5,5,4,3],borderColor:"#e74c3c",tension:.4,fill:false}
-  ]},options:{responsive:true,scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+"%"}}}},plugins:{legend:{position:"bottom"}}}});
+    {label:"Hoàn thành",data:dailyData,borderColor:"#2ecc71",backgroundColor:"rgba(46,204,113,.1)",tension:.4,fill:true}
+  ]},options:{responsive:true,plugins:{legend:{position:"bottom"}}}});
 new Chart(document.getElementById("chartDoughnut2"),{type:"doughnut",data:{
-  labels:["Hoàn thành","Đang xử lý","Quá hạn"],
-  datasets:[{data:[2456,312,79],backgroundColor:["#2ecc71","#f39c12","#e74c3c"]}]
+  labels:["Hoàn thành","Đang xử lý","Chưa làm"],
+  datasets:[{data:[{{ tasks_done }},{{ tasks_in_progress }},{{ tasks_todo }}],backgroundColor:["#2ecc71","#f39c12","#3498db"]}]
 },options:{responsive:true,plugins:{legend:{position:"bottom"}},cutout:"65%"}});
+
+function filterReport() {
+  const startDate = document.getElementById('start_date').value;
+  const endDate = document.getElementById('end_date').value;
+  const department = document.getElementById('department').value;
+  
+  let url = '/baocao/congviec/?';
+  if (startDate) url += 'start_date=' + startDate + '&';
+  if (endDate) url += 'end_date=' + endDate + '&';
+  if (department) url += 'department=' + department;
+  
+  window.location.href = url;
+}
+
+function exportReport() {
+  alert('Chức năng xuất báo cáo đang được phát triển');
+}
 </script>
 {% endblock %}

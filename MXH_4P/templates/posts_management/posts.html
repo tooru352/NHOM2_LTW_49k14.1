@@ -32,9 +32,14 @@
       <form method="post" action="{% url 'create_post' %}" enctype="multipart/form-data" id="createPostForm">
         {% csrf_token %}
         <div style="display:flex;gap:12px;margin-bottom:12px">
+          {% if user.avatar %}
+          <div class="post-avatar" style="background-image: url('{{ user.avatar.url }}'); background-size: cover; background-position: center;">
+          </div>
+          {% else %}
           <div class="post-avatar" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)">
             {{ user.get_initials }}
           </div>
+          {% endif %}
           <textarea name="content" rows="3" placeholder="Bạn đang nghĩ gì?" required style="flex:1;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:none"></textarea>
         </div>
         
@@ -90,9 +95,14 @@
       {% for post in posts %}
       <div class="post-card" data-post-id="{{ post.id }}">
         <div class="post-header">
+          {% if post.user.avatar %}
+          <div class="post-avatar" style="background-image: url('{{ post.user.avatar.url }}'); background-size: cover; background-position: center;">
+          </div>
+          {% else %}
           <div class="post-avatar" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)">
             {{ post.user.get_initials }}
           </div>
+          {% endif %}
           <div class="post-info">
             <div class="post-author">
               {{ post.user.first_name }} {{ post.user.last_name }}
@@ -177,15 +187,13 @@
         <div class="post-reactions">
           {% if post.reaction_count > 0 %}
           <div class="reaction-item" style="background:#e74c3c">❤️</div>
-          <div class="reaction-item" style="background:#3498db">👍</div>
           <span class="reaction-count">{{ post.reaction_count }} người</span>
           {% endif %}
         </div>
         
         <div class="post-actions">
-          <button class="post-action-btn {% if post.user_reacted %}liked{% endif %}" onclick="toggleLike({{ post.id }}, this)">
-            <span>{% if post.user_reacted %}❤️{% else %}👍{% endif %}</span> 
-            {% if post.user_reacted %}Đã thích{% else %}Thích{% endif %}
+          <button class="post-action-btn {% if post.user_reacted %}liked{% endif %}" onclick="toggleLike({{ post.id }}, this)" title="{% if post.user_reacted %}Bỏ thích{% else %}Thích{% endif %}">
+            <span class="like-icon">{% if post.user_reacted %}❤️{% else %}🤍{% endif %}</span>
           </button>
           <button class="post-action-btn" onclick="toggleComments({{ post.id }})">
             <span>💬</span> Bình luận ({{ post.comment_count }})
@@ -196,9 +204,14 @@
         <div id="comments-{{ post.id }}" class="comments-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #e4e6eb">
           <!-- Comment Form -->
           <div style="display:flex;gap:8px;margin-bottom:12px">
+            {% if user.avatar %}
+            <div class="post-avatar" style="width:32px;height:32px;font-size:11px;background-image: url('{{ user.avatar.url }}'); background-size: cover; background-position: center;">
+            </div>
+            {% else %}
             <div class="post-avatar" style="width:32px;height:32px;font-size:11px;background:linear-gradient(135deg,#667eea,#764ba2)">
               {{ user.get_initials }}
             </div>
+            {% endif %}
             <form onsubmit="submitComment(event, {{ post.id }})" style="flex:1;display:flex;gap:8px">
               <input type="text" name="comment" placeholder="Viết bình luận..." required style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:20px;font-size:13px">
               <button type="submit" style="padding:8px 16px;background:#667eea;color:#fff;border:none;border-radius:20px;font-size:13px;cursor:pointer">Gửi</button>
@@ -208,10 +221,15 @@
           <!-- Comments List -->
           <div id="comments-list-{{ post.id }}">
             {% for comment in post.comments %}
-            <div class="comment-item" style="display:flex;gap:8px;margin-bottom:12px">
+            <div class="comment-item" style="display:flex;gap:8px;margin-bottom:12px" data-comment-id="{{ comment.id }}">
+              {% if comment.user.avatar %}
+              <div class="post-avatar" style="width:32px;height:32px;font-size:11px;background-image: url('{{ comment.user.avatar.url }}'); background-size: cover; background-position: center;">
+              </div>
+              {% else %}
               <div class="post-avatar" style="width:32px;height:32px;font-size:11px;background:linear-gradient(135deg,#4facfe,#00f2fe)">
                 {{ comment.user.get_initials }}
               </div>
+              {% endif %}
               <div style="flex:1">
                 <div style="background:#f0f2f5;padding:8px 12px;border-radius:12px">
                   <div style="font-weight:600;font-size:13px;margin-bottom:2px">
@@ -219,8 +237,63 @@
                   </div>
                   <div style="font-size:13px">{{ comment.content }}</div>
                 </div>
-                <div style="font-size:11px;color:#999;margin-top:4px;margin-left:12px">
-                  {{ comment.created_at|timesince }} trước
+                <div style="font-size:11px;color:#999;margin-top:4px;margin-left:12px;display:flex;gap:12px;align-items:center">
+                  <span>{{ comment.created_at|timesince }} trước</span>
+                  <button onclick="showReplyForm({{ post.id }}, {{ comment.id }}, '{{ comment.user.first_name }}')" style="background:none;border:none;color:#667eea;cursor:pointer;font-weight:600;padding:0">Trả lời</button>
+                  {% if comment.user == user %}
+                  <button onclick="deleteComment({{ post.id }}, {{ comment.id }})" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-weight:600;padding:0">Xóa</button>
+                  {% endif %}
+                </div>
+                
+                <!-- Replies -->
+                {% if comment.replies.all %}
+                <div style="margin-top:12px;margin-left:20px">
+                  {% for reply in comment.replies.all %}
+                  <div style="display:flex;gap:8px;margin-bottom:8px">
+                    {% if reply.user.avatar %}
+                    <div class="post-avatar" style="width:28px;height:28px;font-size:10px;background-image: url('{{ reply.user.avatar.url }}'); background-size: cover; background-position: center;">
+                    </div>
+                    {% else %}
+                    <div class="post-avatar" style="width:28px;height:28px;font-size:10px;background:linear-gradient(135deg,#43e97b,#38f9d7)">
+                      {{ reply.user.get_initials }}
+                    </div>
+                    {% endif %}
+                    <div style="flex:1">
+                      <div style="background:#f0f2f5;padding:6px 10px;border-radius:10px">
+                        <div style="font-weight:600;font-size:12px;margin-bottom:2px">
+                          {{ reply.user.first_name }} {{ reply.user.last_name }}
+                        </div>
+                        <div style="font-size:12px">{{ reply.content }}</div>
+                      </div>
+                      <div style="font-size:10px;color:#999;margin-top:2px;margin-left:10px;display:flex;gap:8px;align-items:center">
+                        <span>{{ reply.created_at|timesince }} trước</span>
+                        {% if reply.user == user %}
+                        <button onclick="deleteComment({{ post.id }}, {{ reply.id }})" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-weight:600;padding:0;font-size:10px">Xóa</button>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Reply Form (hidden by default) -->
+                <div id="reply-form-{{ comment.id }}" style="display:none;margin-top:8px;margin-left:20px">
+                  <div style="display:flex;gap:8px">
+                    {% if user.avatar %}
+                    <div class="post-avatar" style="width:28px;height:28px;font-size:10px;background-image: url('{{ user.avatar.url }}'); background-size: cover; background-position: center;">
+                    </div>
+                    {% else %}
+                    <div class="post-avatar" style="width:28px;height:28px;font-size:10px;background:linear-gradient(135deg,#667eea,#764ba2)">
+                      {{ user.get_initials }}
+                    </div>
+                    {% endif %}
+                    <form onsubmit="submitReply(event, {{ post.id }}, {{ comment.id }})" style="flex:1;display:flex;gap:8px">
+                      <input type="text" name="reply" placeholder="Viết trả lời..." required style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:16px;font-size:12px">
+                      <button type="submit" style="padding:6px 12px;background:#667eea;color:#fff;border:none;border-radius:16px;font-size:12px;cursor:pointer">Gửi</button>
+                      <button type="button" onclick="hideReplyForm({{ comment.id }})" style="padding:6px 12px;background:#e4e6eb;color:#333;border:none;border-radius:16px;font-size:12px;cursor:pointer">Hủy</button>
+                    </form>
+                  </div>
                 </div>
               </div>
             </div>
@@ -397,6 +470,9 @@ function toggleGroupSelection(show) {
 }
 
 function toggleLike(postId, button) {
+  console.log('toggleLike called for post:', postId);
+  console.log('CSRF token:', csrftoken);
+  
   fetch(`/post/${postId}/like/`, {
     method: 'POST',
     headers: {
@@ -404,15 +480,21 @@ function toggleLike(postId, button) {
       'Content-Type': 'application/json'
     }
   })
-  .then(response => response.json())
+  .then(response => {
+    console.log('Response status:', response.status);
+    return response.json();
+  })
   .then(data => {
+    console.log('Response data:', data);
     if (data.success) {
       if (data.liked) {
         button.classList.add('liked');
-        button.innerHTML = '<span>❤️</span> Đã thích';
+        button.innerHTML = '<span class="like-icon">❤️</span>';
+        button.title = 'Bỏ thích';
       } else {
         button.classList.remove('liked');
-        button.innerHTML = '<span>👍</span> Thích';
+        button.innerHTML = '<span class="like-icon">🤍</span>';
+        button.title = 'Thích';
       }
       // Update reaction count
       const card = button.closest('.post-card');
@@ -420,12 +502,14 @@ function toggleLike(postId, button) {
       if (data.count > 0) {
         reactionsDiv.innerHTML = `
           <div class="reaction-item" style="background:#e74c3c">❤️</div>
-          <div class="reaction-item" style="background:#3498db">👍</div>
           <span class="reaction-count">${data.count} người</span>
         `;
       } else {
         reactionsDiv.innerHTML = '';
       }
+    } else {
+      console.error('Error from server:', data.error);
+      alert('Lỗi: ' + (data.error || 'Không thể thích bài viết'));
     }
   })
   .catch(error => {
@@ -485,6 +569,177 @@ function submitComment(event, postId) {
       const match = commentBtn.textContent.match(/\d+/);
       const count = match ? parseInt(match[0]) + 1 : 1;
       commentBtn.innerHTML = `<span>💬</span> Bình luận (${count})`;
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+  });
+}
+
+// Show reply form
+function showReplyForm(postId, commentId, userName) {
+  // Hide all other reply forms
+  document.querySelectorAll('[id^="reply-form-"]').forEach(form => {
+    form.style.display = 'none';
+  });
+  
+  // Show this reply form
+  const replyForm = document.getElementById(`reply-form-${commentId}`);
+  if (replyForm) {
+    replyForm.style.display = 'block';
+    const input = replyForm.querySelector('input[name="reply"]');
+    if (input) {
+      input.focus();
+      input.placeholder = `Trả lời ${userName}...`;
+    }
+  }
+}
+
+// Hide reply form
+function hideReplyForm(commentId) {
+  const replyForm = document.getElementById(`reply-form-${commentId}`);
+  if (replyForm) {
+    replyForm.style.display = 'none';
+    const input = replyForm.querySelector('input[name="reply"]');
+    if (input) {
+      input.value = '';
+    }
+  }
+}
+
+// Submit reply
+function submitReply(event, postId, parentCommentId) {
+  event.preventDefault();
+  const form = event.target;
+  const content = form.reply.value.trim();
+  
+  if (!content) return;
+  
+  fetch(`/post/${postId}/comment/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ 
+      content: content,
+      parent_id: parentCommentId
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Find the comment item
+      const commentItem = document.querySelector(`[data-comment-id="${parentCommentId}"]`);
+      if (commentItem) {
+        // Find the main content div (the one with flex:1)
+        const commentContent = commentItem.querySelector('div[style*="flex:1"]');
+        if (!commentContent) {
+          console.error('Comment content div not found');
+          return;
+        }
+        
+        // Find or create replies container
+        let repliesContainer = commentContent.querySelector('div[style*="margin-left:20px"]');
+        if (!repliesContainer) {
+          repliesContainer = document.createElement('div');
+          repliesContainer.style.cssText = 'margin-top:12px;margin-left:20px';
+          // Insert before reply form
+          const replyForm = commentContent.querySelector(`#reply-form-${parentCommentId}`);
+          if (replyForm) {
+            commentContent.insertBefore(repliesContainer, replyForm);
+          } else {
+            commentContent.appendChild(repliesContainer);
+          }
+        }
+        
+        // Add reply to list
+        const replyHTML = `
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <div class="post-avatar" style="width:28px;height:28px;font-size:10px;background:linear-gradient(135deg,#43e97b,#38f9d7)">
+              {{ user.get_initials }}
+            </div>
+            <div style="flex:1">
+              <div style="background:#f0f2f5;padding:6px 10px;border-radius:10px">
+                <div style="font-weight:600;font-size:12px;margin-bottom:2px">
+                  {{ user.first_name }} {{ user.last_name }}
+                </div>
+                <div style="font-size:12px">${content}</div>
+              </div>
+              <div style="font-size:10px;color:#999;margin-top:2px;margin-left:10px">
+                Vừa xong
+              </div>
+            </div>
+          </div>
+        `;
+        repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
+        
+        // Hide and reset form
+        hideReplyForm(parentCommentId);
+        
+        // Update comment count
+        const postCard = form.closest('.post-card');
+        if (postCard) {
+          const commentBtn = postCard.querySelector('.post-action-btn:nth-child(2)');
+          if (commentBtn) {
+            const match = commentBtn.textContent.match(/\d+/);
+            const count = match ? parseInt(match[0]) + 1 : 1;
+            commentBtn.innerHTML = `<span>💬</span> Bình luận (${count})`;
+          }
+        }
+      }
+    } else {
+      alert(data.error || 'Có lỗi xảy ra');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Có lỗi xảy ra. Vui lòng thử lại!');
+  });
+}
+
+// Delete comment
+function deleteComment(postId, commentId) {
+  if (!confirm('Bạn có chắc muốn xóa bình luận này?')) return;
+  
+  fetch(`/comment/${commentId}/delete/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Remove comment from DOM
+      const commentItem = document.querySelector(`[data-comment-id="${commentId}"]`);
+      if (commentItem) {
+        commentItem.remove();
+      } else {
+        // If it's a reply, find and remove it
+        const allComments = document.querySelectorAll('.comment-item');
+        allComments.forEach(comment => {
+          const replies = comment.querySelectorAll('div[style*="margin-left:20px"] > div');
+          replies.forEach(reply => {
+            if (reply.innerHTML.includes(`deleteComment(${postId}, ${commentId})`)) {
+              reply.remove();
+            }
+          });
+        });
+      }
+      
+      // Update comment count
+      const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+      if (postCard) {
+        const commentBtn = postCard.querySelector('.post-action-btn:nth-child(2)');
+        if (commentBtn) {
+          commentBtn.innerHTML = `<span>💬</span> Bình luận (${data.comment_count})`;
+        }
+      }
+    } else {
+      alert(data.error || 'Không thể xóa bình luận!');
     }
   })
   .catch(error => {

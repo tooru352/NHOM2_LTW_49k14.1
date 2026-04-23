@@ -15,13 +15,19 @@
     <div class="cover-bg"></div>
     <div class="profile-identity">
       <div class="profile-avatar-wrap">
-        <div class="profile-avatar">PT</div>
-        <button class="avatar-edit-btn" title="Đổi ảnh">📷</button>
+        {% if user.avatar %}
+        <div class="profile-avatar" style="background-image: url('{{ user.avatar.url }}'); background-size: cover; background-position: center;">
+        </div>
+        {% else %}
+        <div class="profile-avatar">{{ user.get_initials }}</div>
+        {% endif %}
+        <button class="avatar-edit-btn" title="Đổi ảnh" id="avatarEditBtn">📷</button>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none">
       </div>
       <div class="profile-name-wrap">
-        <h1 class="profile-name">Phạm Xuân Thương</h1>
-        <span class="profile-username">@xuanthuong</span>
-        <div class="profile-role-badge">Quản lý</div>
+        <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+        <span class="profile-username">@{{ user.username }}</span>
+        <div class="profile-role-badge">{{ role }}</div>
       </div>
       <div class="profile-actions">
         <button class="btn-edit-profile" id="editProfileBtn">✏️ Chỉnh sửa trang cá nhân</button>
@@ -50,12 +56,11 @@
             <button class="info-edit-btn" data-section="personal">✏️</button>
           </div>
           <div class="info-rows" id="personalInfo">
-            <div class="info-row"><span class="info-label">Họ và tên</span><span class="info-value">Phạm Xuân Thương</span></div>
-            <div class="info-row"><span class="info-label">Ngày sinh</span><span class="info-value">15/03/1990</span></div>
-            <div class="info-row"><span class="info-label">Giới tính</span><span class="info-value">Nam</span></div>
-            <div class="info-row"><span class="info-label">Số điện thoại</span><span class="info-value">0901 234 567</span></div>
-            <div class="info-row"><span class="info-label">Email</span><span class="info-value">xuanthuong@fourpoint.vn</span></div>
-            <div class="info-row"><span class="info-label">Địa chỉ</span><span class="info-value">123 Nguyễn Huệ, Q.1, TP.HCM</span></div>
+            <div class="info-row"><span class="info-label">Họ và tên</span><span class="info-value">{{ user.get_full_name|default:user.username }}</span></div>
+            <div class="info-row"><span class="info-label">Tên đăng nhập</span><span class="info-value">{{ user.username }}</span></div>
+            <div class="info-row"><span class="info-label">Email</span><span class="info-value">{{ user.email|default:"Chưa cập nhật" }}</span></div>
+            <div class="info-row"><span class="info-label">Bộ phận</span><span class="info-value">{{ department }}</span></div>
+            <div class="info-row"><span class="info-label">Vai trò</span><span class="info-value">{{ role }}</span></div>
           </div>
         </div>
 
@@ -66,10 +71,10 @@
             <button class="info-edit-btn" data-section="work">✏️</button>
           </div>
           <div class="info-rows" id="workInfo">
-            <div class="info-row"><span class="info-label">Chức vụ</span><span class="info-value">Quản lý</span></div>
-            <div class="info-row"><span class="info-label">Bộ phận</span><span class="info-value">Ban Quản lý</span></div>
-            <div class="info-row"><span class="info-label">Ngày vào làm</span><span class="info-value">01/06/2018</span></div>
-            <div class="info-row"><span class="info-label">Mã nhân viên</span><span class="info-value">FP-2018-001</span></div>
+            <div class="info-row"><span class="info-label">Chức vụ</span><span class="info-value">{{ role }}</span></div>
+            <div class="info-row"><span class="info-label">Bộ phận</span><span class="info-value">{{ department }}</span></div>
+            <div class="info-row"><span class="info-label">Tổng bài viết</span><span class="info-value">{{ total_posts }}</span></div>
+            <div class="info-row"><span class="info-label">Nhiệm vụ hoàn thành</span><span class="info-value">{{ completed_tasks }}/{{ total_tasks }}</span></div>
           </div>
         </div>
 
@@ -79,9 +84,17 @@
     <!-- TAB: BÀI VIẾT -->
     <div class="tab-panel" id="tab-posts">
       <!-- Ô đăng bài mới -->
-      <div class="create-post-box">
+      <div class="create-post-box" 
+           data-user-avatar="{% if user.avatar %}{{ user.avatar.url }}{% endif %}"
+           data-user-initials="{{ user.get_initials }}"
+           data-user-name="{{ user.get_full_name|default:user.username }}">
         <div class="create-post-top">
-          <div class="post-avatar">PT</div>
+          {% if user.avatar %}
+          <div class="post-avatar" style="background-image: url('{{ user.avatar.url }}'); background-size: cover; background-position: center;">
+          </div>
+          {% else %}
+          <div class="post-avatar">{{ user.get_initials }}</div>
+          {% endif %}
           <input type="text" class="create-post-input" id="newPostInput" placeholder="Hôm nay công việc của bạn thế nào?">
         </div>
         <!-- Preview ảnh/video/file -->
@@ -101,32 +114,32 @@
       </div>
 
       <div class="posts-list" id="profilePostsList">
+        {% for post in user_posts %}
         <div class="post-card-profile">
           <div class="post-card-header">
-            <div class="post-avatar">PT</div>
+            {% if post.user.avatar %}
+            <div class="post-avatar" style="background-image: url('{{ post.user.avatar.url }}'); background-size: cover; background-position: center;">
+            </div>
+            {% else %}
+            <div class="post-avatar">{{ post.user.get_initials }}</div>
+            {% endif %}
             <div>
-              <div class="post-author">Phạm Xuân Thương</div>
-              <div class="post-time-label">2 giờ trước</div>
+              <div class="post-author">{{ post.user.get_full_name|default:post.user.username }}</div>
+              <div class="post-time-label">{{ post.created_at|timesince }} trước</div>
             </div>
           </div>
-          <p class="post-text">Hôm nay khách sạn đón tiếp đoàn khách VIP từ Nhật Bản. Cả đội đã làm việc rất chuyên nghiệp! 🎌</p>
+          <p class="post-text">{{ post.content }}</p>
           <div class="post-card-footer">
-            <span>👍 12</span><span>💬 4</span><span>🔗 Chia sẻ</span>
+            <span>👍 {{ post.reaction_count }}</span>
+            <span>💬 {{ post.comment_count }}</span>
+            <span>🔗 Chia sẻ</span>
           </div>
         </div>
-        <div class="post-card-profile">
-          <div class="post-card-header">
-            <div class="post-avatar">PT</div>
-            <div>
-              <div class="post-author">Phạm Xuân Thương</div>
-              <div class="post-time-label">Hôm qua</div>
-            </div>
-          </div>
-          <p class="post-text">Thông báo: Họp toàn thể nhân viên vào thứ 6 tuần này lúc 15:00 tại hội trường tầng 3. Mọi người sắp xếp tham dự đầy đủ nhé! 📢</p>
-          <div class="post-card-footer">
-            <span>👍 34</span><span>💬 8</span><span>🔗 Chia sẻ</span>
-          </div>
+        {% empty %}
+        <div style="text-align:center;padding:40px;color:#95a5a6">
+          Chưa có bài viết nào
         </div>
+        {% endfor %}
       </div><!-- end posts-list -->
     </div><!-- end tab-posts -->
 
@@ -142,24 +155,28 @@
     </div>
     <div class="edit-form">
       <div class="edit-field">
-        <label>Họ và tên</label>
-        <input type="text" value="Phạm Xuân Thương">
+        <label>Họ</label>
+        <input type="text" id="editFirstName" value="{{ user.first_name }}">
       </div>
       <div class="edit-field">
-        <label>Số điện thoại</label>
-        <input type="text" value="0901 234 567">
+        <label>Tên</label>
+        <input type="text" id="editLastName" value="{{ user.last_name }}">
       </div>
       <div class="edit-field">
         <label>Email</label>
-        <input type="email" value="xuanthuong@fourpoint.vn">
+        <input type="email" id="editEmail" value="{{ user.email }}">
       </div>
       <div class="edit-field">
-        <label>Địa chỉ</label>
-        <input type="text" value="123 Nguyễn Huệ, Q.1, TP.HCM">
+        <label>Tên đăng nhập</label>
+        <input type="text" value="{{ user.username }}" disabled>
       </div>
       <div class="edit-field">
-        <label>Giới thiệu bản thân</label>
-        <textarea rows="3">Quản lý khách sạn với 6 năm kinh nghiệm tại FourPoint Hotel.</textarea>
+        <label>Bộ phận</label>
+        <input type="text" value="{{ department }}" disabled>
+      </div>
+      <div class="edit-field">
+        <label>Vai trò</label>
+        <input type="text" value="{{ role }}" disabled>
       </div>
     </div>
     <div class="edit-modal-footer">
@@ -171,5 +188,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/profile_management/profile.js' %}?v=5"></script>
+<script src="{% static 'js/profile_management/profile.js' %}?v=7"></script>
 {% endblock %}

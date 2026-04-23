@@ -46,6 +46,7 @@ urlpatterns = [
     path('posts/<int:post_id>/react/', views.react_to_post, name='react_to_post'),
     path('post/<int:post_id>/like/', views.react_to_post, name='like_post'),  # Alias for AJAX
     path('post/<int:post_id>/comment/', views.create_comment, name='comment_post'),  # Alias for AJAX
+    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),  # Delete comment
     path('post/<int:post_id>/delete/', views.delete_post, name='delete_post_ajax'),  # Alias for AJAX
     path('post/<int:post_id>/edit/', views.edit_post, name='edit_post_ajax'),  # Alias for AJAX
     path('post/<int:post_id>/data/', views.get_post_data, name='get_post_data'),  # Get post data for editing
@@ -92,6 +93,16 @@ urlpatterns = [
     path('api/update_schedule/<int:schedule_id>/', api_views.update_schedule, name='update_schedule'),
     path('api/delete_schedule/<int:schedule_id>/', api_views.delete_schedule, name='delete_schedule'),
     path('api/batch_update_schedules/', api_views.batch_update_schedules, name='batch_update_schedules'),
+    path('api/update_profile/', views.update_profile_api, name='update_profile_api'),
+    path('api/upload_avatar/', views.upload_avatar_api, name='upload_avatar_api'),
+    
+    # Messaging API endpoints
+    path('api/conversations/', api_views.get_conversations, name='get_conversations'),
+    path('api/conversations/<int:conversation_id>/messages/', api_views.get_conversation_messages, name='get_conversation_messages'),
+    path('api/conversations/<int:conversation_id>/send/', api_views.send_message_api, name='send_message_api'),
+    path('api/conversations/create/', api_views.create_conversation_api, name='create_conversation_api'),
+    path('api/conversations/<int:conversation_id>/rename/', api_views.rename_conversation_api, name='rename_conversation_api'),
+    path('api/users/', api_views.get_users_api, name='get_users_api'),
     
     # Group Management
     path('nhom/', views.nhom, name='nhom'),

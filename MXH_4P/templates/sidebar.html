@@ -7,7 +7,12 @@
   </div>
   
   <div class="sidebar-user" onclick="window.location.href='/profile/'" style="cursor: pointer;">
-    <div class="sidebar-avatar">{{ request.user.first_name.0|upper }}{{ request.user.last_name.0|upper }}</div>
+    {% if request.user.avatar %}
+    <div class="sidebar-avatar" style="background-image: url('{{ request.user.avatar.url }}'); background-size: cover; background-position: center;">
+    </div>
+    {% else %}
+    <div class="sidebar-avatar">{{ request.user.get_initials }}</div>
+    {% endif %}
     <div class="sidebar-user-info">
       <h4>{{ request.user.get_full_name }}</h4>
       <span class="sidebar-badge">{{ request.user.get_role_display|upper }}</span>
@@ -19,7 +24,10 @@
     <span class="nav-icon">🏠</span> Trang chủ
   </div>
   <div class="nav-item {% if 'messaging' in request.path %}active{% endif %}" onclick="window.location.href='/messaging/'">
-    <span class="nav-icon">💬</span> Tin nhắn <span class="nav-badge">8</span>
+    <span class="nav-icon">💬</span> Tin nhắn
+    {% if unread_messages_count > 0 %}
+    <span class="nav-badge">{{ unread_messages_count }}</span>
+    {% endif %}
   </div>
   
   <div class="nav-section-label">QUẢN LÝ CÔNG VIỆC</div>

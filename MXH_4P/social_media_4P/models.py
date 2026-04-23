@@ -6,6 +6,7 @@ from django.utils import timezone
 # 1. USER MODEL
 # ============================================
 class User(AbstractUser):
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     avatar_initials = models.CharField(max_length=5, blank=True)
     avatar_gradient = models.CharField(max_length=100, blank=True)
     
@@ -178,6 +179,7 @@ class Interaction(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interactions')
     interaction_type = models.ForeignKey(InteractionType, on_delete=models.CASCADE, related_name='interactions')
     content = models.TextField(blank=True, null=True)  # For comment content
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')  # For reply to comment
     created_at = models.DateTimeField(default=timezone.now)  # Timestamp for interaction
     
     class Meta:
@@ -374,6 +376,7 @@ class Conversation(models.Model):
         ('private', 'Private'),
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='private')
+    name = models.CharField(max_length=200, blank=True, null=True)  # Custom name for group chats
     created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:
