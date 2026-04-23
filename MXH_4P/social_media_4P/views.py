@@ -2039,25 +2039,25 @@ def nhom_detail(request, nhom_id):
             post.comment_count = 0
             post.comments = []
     
-    # Handle post creation
-    if request.method == 'POST' and is_member:
+    # Handle post creation — mọi user đã login đều có thể đăng bài trong nhóm
+    if request.method == 'POST':
         content = request.POST.get('content', '').strip()
         images = request.FILES.getlist('images')
         
         if content:
-            # Create post with group scope
-            post = Post.objects.create(
+            from .models import PostImage
+            # Tạo bài viết gắn với nhóm này
+            new_post = Post.objects.create(
                 user=request.user,
                 content=content,
                 scope='groups'
             )
-            post.groups.add(group)
+            new_post.groups.add(group)
             
-            # Save images
-            from .models import PostImage
+            # Lưu ảnh đính kèm
             for index, image in enumerate(images):
                 PostImage.objects.create(
-                    post=post,
+                    post=new_post,
                     image=image,
                     order=index
                 )
@@ -2098,6 +2098,7 @@ def nhom_new(request):
     return render(request, 'group_management/nhom_new.html', {'form': form})
 
 @login_required
+@login_required
 def nhom_edit(request, nhom_id):
     """Edit group"""
     group = get_object_or_404(Group, id=nhom_id)
@@ -2112,7 +2113,7 @@ def nhom_edit(request, nhom_id):
         form = GroupForm(request.POST, instance=group)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Đã cập nhật nhóm!')
+            messages.success(request, 'Đã cập nhật nhóm thành công!')
             return redirect('nhom_detail', nhom_id=nhom_id)
     else:
         form = GroupForm(instance=group)
@@ -2122,6 +2123,19 @@ def nhom_edit(request, nhom_id):
         'nhom': group,
         'user': request.user
     })
+
+
+@login_required
+@require_http_methods(["POST"])
+def nhom_delete(request, nhom_id):
+    """Delete group — chỉ admin nhóm mới được xóa"""
+    group = get_object_or_404(Group, id=nhom_id)
+    if group.created_by != request.user:
+        messages.error(request, 'Bạn không có quyền xóa nhóm này!')
+        return redirect('nhom_detail', nhom_id=nhom_id)
+    group.delete()
+    messages.success(request, f'Đã xóa nhóm "{group.name}" thành công!')
+    return redirect('nhom')
 
 @login_required
 def nhom_new_edit(request):

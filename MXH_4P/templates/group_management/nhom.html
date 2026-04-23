@@ -26,9 +26,9 @@
     <input type="text" id="searchInput" placeholder="Tìm kiếm nhóm..." oninput="filterNhom()">
     <select id="filterLoai" onchange="filterNhom()" class="filter-select">
       <option value="">Tất cả loại</option>
-      <option value="congkhai">Công khai</option>
-      <option value="phongban">Phòng ban</option>
-      <option value="riengtu">Riêng tư</option>
+      <option value="group">🌐 Công khai</option>
+      <option value="private">🔒 Riêng tư</option>
+      <option value="department">🏢 Phòng ban</option>
     </select>
   </div>
   <div class="nhom-grid" id="nhomGrid">
@@ -86,18 +86,25 @@
     <div class="form-g">
       <label>Chế độ riêng tư</label>
       <div class="priv-row">
-        <label class="priv-opt sel" id="priv-congkhai" onclick="chonPriv('congkhai')">
-          <input type="radio" name="priv" value="congkhai" checked>
+        <label class="priv-opt sel" id="priv-group" onclick="chonPriv('group')">
+          <input type="radio" name="priv" value="group" checked>
           <div>
             <strong>&#127760; Công khai</strong>
             <span>Mọi người đều xem và tham gia</span>
           </div>
         </label>
-        <label class="priv-opt" id="priv-riengtu" onclick="chonPriv('riengtu')">
-          <input type="radio" name="priv" value="riengtu">
+        <label class="priv-opt" id="priv-private" onclick="chonPriv('private')">
+          <input type="radio" name="priv" value="private">
           <div>
             <strong>&#128274; Riêng tư</strong>
-            <span>Chi thành viên moi xem duoc</span>
+            <span>Chỉ thành viên được mời mới xem được</span>
+          </div>
+        </label>
+        <label class="priv-opt" id="priv-department" onclick="chonPriv('department')">
+          <input type="radio" name="priv" value="department">
+          <div>
+            <strong>&#127970; Phòng ban</strong>
+            <span>Nhóm dành riêng cho một phòng ban</span>
           </div>
         </label>
       </div>
@@ -117,7 +124,7 @@
 
 {% block extra_js %}
 <script>
-var _selPriv = 'congkhai';
+var _selPriv = 'group';
 var _grads = [
   'linear-gradient(135deg,#667eea,#764ba2)',
   'linear-gradient(135deg,#f093fb,#f5576c)',
@@ -129,31 +136,31 @@ var _grads = [
 function moModalTao() {
   document.getElementById('inp-ten').value = '';
   document.getElementById('inp-mota').value = '';
-  chonPriv('congkhai');
+  chonPriv('group');
   document.getElementById('ovTao').classList.add('show');
 }
 function dongOverlay(id) { document.getElementById(id).classList.remove('show'); }
 
 function chonPriv(val) {
   _selPriv = val;
-  ['congkhai','riengtu'].forEach(function(v) {
-    document.getElementById('priv-' + v).classList.remove('sel');
+  ['group','private','department'].forEach(function(v) {
+    var el = document.getElementById('priv-' + v);
+    if (el) el.classList.remove('sel');
   });
-  document.getElementById('priv-' + val).classList.add('sel');
-  document.querySelector('#priv-' + val + ' input').checked = true;
+  var sel = document.getElementById('priv-' + val);
+  if (sel) {
+    sel.classList.add('sel');
+    sel.querySelector('input').checked = true;
+  }
 }
 
 function taoNhom() {
   var ten  = document.getElementById('inp-ten').value.trim();
   var mota = document.getElementById('inp-mota').value.trim();
   if (!ten) { showToast('Vui lòng nhập tên nhóm!', 'error'); return; }
-  var loai_label = _selPriv === 'congkhai' ? 'Công khai' : 'Riêng tư';
+  var labels = { group: 'Công khai', private: 'Riêng tư', department: 'Phòng ban' };
+  var loai_label = labels[_selPriv] || 'Công khai';
   var grad = _grads[Math.floor(Math.random() * _grads.length)];
-  var nhomMoi = {
-    ten: ten, mo_ta: mota || 'Chưa có mô tả',
-    loai: _selPriv, loai_label: loai_label, gradient: grad, so_tv: 1
-  };
-  // Them card moi vao grid ngay
   var card = document.createElement('a');
   card.className = 'nhom-card';
   card.href = '#';

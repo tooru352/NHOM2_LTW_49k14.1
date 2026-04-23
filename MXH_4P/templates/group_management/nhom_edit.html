@@ -2,269 +2,362 @@
 {% load static %}
 {% block menu_nhom %}active{% endblock %}
 {% block main_class %}full-width{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/group_management/nhom.css' %}?v=6">
+<style>
+/* ===== EDIT PAGE ===== */
+.ne-page { padding: 24px; background: #f5f7fa; min-height: calc(100vh - 60px); }
+
+.ne-breadcrumb { font-size: 13px; color: #888; margin-bottom: 16px; }
+.ne-breadcrumb a { color: #667eea; text-decoration: none; }
+.ne-breadcrumb a:hover { text-decoration: underline; }
+
+.ne-header { margin-bottom: 24px; }
+.ne-header h2 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+.ne-header p  { font-size: 14px; color: #888; }
+
+.ne-layout { display: flex; gap: 20px; align-items: flex-start; }
+.ne-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.ne-right { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 20px; }
+
+.ne-card {
+  background: #fff; border-radius: 14px; padding: 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.ne-card h3 { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+
+/* Form fields */
+.ne-fg { margin-bottom: 18px; }
+.ne-fg:last-child { margin-bottom: 0; }
+.ne-fg label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+.ne-fg .req { color: #e74c3c; }
+.ne-fg input[type="text"],
+.ne-fg textarea,
+.ne-fg select {
+  width: 100%; padding: 10px 14px; border: 1.5px solid #e4e6eb; border-radius: 10px;
+  font-size: 14px; font-family: inherit; outline: none; transition: border-color .2s;
+  background: #fff; color: #1a1a2e;
+}
+.ne-fg input[type="text"]:focus,
+.ne-fg textarea:focus,
+.ne-fg select:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1); }
+.ne-fg textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+.ne-fg small { display: block; font-size: 12px; color: #aaa; margin-top: 5px; }
+.ne-fg .error { color: #e74c3c; font-size: 12px; margin-top: 4px; }
+
+/* Privacy radio */
+.ne-privacy-row { display: flex; flex-direction: column; gap: 10px; }
+.ne-priv {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  border: 1.5px solid #e4e6eb; border-radius: 10px; cursor: pointer; transition: all .2s;
+}
+.ne-priv:hover { border-color: #667eea; background: #f8f8ff; }
+.ne-priv.sel { border-color: #667eea; background: #f0f0ff; }
+.ne-priv input[type="radio"] { accent-color: #667eea; width: 16px; height: 16px; flex-shrink: 0; }
+.ne-priv div strong { display: block; font-size: 14px; color: #1a1a2e; margin-bottom: 2px; }
+.ne-priv div span   { font-size: 12px; color: #888; }
+
+/* Member list */
+.ne-tv-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+.ne-tv-row:last-child { border-bottom: none; }
+.ne-tv-av {
+  width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+.ne-tv-info { flex: 1; min-width: 0; }
+.ne-tv-info strong { font-size: 14px; color: #1a1a2e; }
+.ne-tv-info span   { display: block; font-size: 11px; color: #aaa; }
+.ne-tv-badge-admin { background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+
+/* Sidebar info */
+.ne-si-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px;
+}
+.ne-si-row:last-child { border-bottom: none; }
+.ne-si-row span:first-child { color: #888; }
+.ne-si-row span:last-child  { font-weight: 600; color: #1a1a2e; }
+.loai-badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.loai-badge.group      { background: #d4edda; color: #155724; }
+.loai-badge.private    { background: #f8d7da; color: #721c24; }
+.loai-badge.department { background: #fff3cd; color: #856404; }
+
+/* Buttons */
+.ne-btn-save {
+  display: block; width: 100%; padding: 12px; text-align: center;
+  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
+  border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: opacity .2s;
+}
+.ne-btn-save:hover { opacity: .9; }
+.ne-btn-huy {
+  display: block; width: 100%; padding: 11px; text-align: center;
+  background: #f0f2f5; color: #555; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+  transition: background .2s;
+}
+.ne-btn-huy:hover { background: #e4e6eb; }
+.ne-btn-xoa {
+  display: block; width: 100%; padding: 11px; text-align: center;
+  background: #fff; color: #e74c3c; border: 1.5px solid #e74c3c;
+  border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.ne-btn-xoa:hover { background: #e74c3c; color: #fff; }
+
+/* Alert */
+.ne-alert {
+  padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.ne-alert.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.ne-alert.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+/* Modal overlay */
+.ne-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.ne-overlay.show { display: flex; }
+.ne-modal {
+  background: #fff; border-radius: 14px; padding: 28px; max-width: 420px; width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+.ne-modal h3 { font-size: 18px; margin-bottom: 12px; }
+.ne-modal p  { font-size: 14px; color: #555; margin-bottom: 24px; line-height: 1.6; }
+.ne-modal-actions { display: flex; gap: 10px; }
+</style>
 {% endblock %}
+
 {% block content %}
-{% if user.role != "quanly" %}
-<div style="text-align:center;padding:60px 20px">
-  <h2 style="color:#e74c3c">&#128683; Không có quyền truy cập</h2>
-  <p style="color:#65676b;margin:12px 0 24px">Chức năng này chỉ dành cho Quản lý.</p>
-  <a href="/nhom/" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Quay lại</a>
-</div>
-{% else %}
 <div class="ne-page">
+
+  <!-- Breadcrumb -->
   <div class="ne-breadcrumb">
-    <a href="/nhom/">Nhóm</a> › <a href="/nhom/{{ nhom.id }}/">{{ nhom.ten }}</a> › Sửa thông tin nhóm
+    <a href="/nhom/">Nhóm</a> ›
+    <a href="/nhom/{{ nhom.id }}/">{{ nhom.name }}</a> ›
+    Chỉnh sửa
   </div>
-  <h2 class="ne-title">Chi Tiết Nhóm</h2>
-  <p class="ne-sub">Chỉnh sửa thông tin và cài đặt của nhóm {{ nhom.ten }}</p>
 
-  <div class="ne-layout">
-    <!-- Cot trai -->
-    <div class="ne-left">
-      <div class="ne-card">
-        <h3>Thông tin cơ bản</h3>
-        <div class="ne-fg">
-          <label>Tên nhóm <span class="req">*</span></label>
-          <input type="text" id="inp-ten" value="{{ nhom.ten }}">
-          <small>Tên nhóm phải rõ ràng và dễ hiểu.</small>
-        </div>
-        <div class="ne-fg">
-          <label>Mô tả của nhóm</label>
-          <textarea id="inp-mota">{{ nhom.mo_ta }}</textarea>
-          <small>Mô tả giúp mọi người hiểu mục đích và hoạt động của nhóm.</small>
-        </div>
-      </div>
-
-      <div class="ne-card">
-        <h3>⚙ Cài đặt quyền riêng tư</h3>
-        <div class="ne-privacy-row">
-          <label class="ne-priv {% if nhom.loai == 'congkhai' %}sel{% endif %}" onclick="chonLoai('congkhai',this)">
-            <input type="radio" name="loai" value="congkhai" {% if nhom.loai == 'congkhai' %}checked{% endif %}>
-            <div><strong>🌐 Công khai</strong><span>Mọi người đều xem và tham gia.</span></div>
-          </label>
-          <label class="ne-priv {% if nhom.loai == 'riengtu' %}sel{% endif %}" onclick="chonLoai('riengtu',this)">
-            <input type="radio" name="loai" value="riengtu" {% if nhom.loai == 'riengtu' %}checked{% endif %}>
-            <div><strong>🔒 Riêng tư</strong><span>Chỉ thành viên mới xem được.</span></div>
-          </label>
-        </div>
-      </div>
-
-      <div class="ne-card">
-        <h3>Quản lý thành viên</h3>
-        <div class="ne-tv-top">
-          <input type="text" id="tvSearch" placeholder="Tìm kiếm thành viên..." oninput="onTVInput()" onkeydown="if(event.key==='Enter')themTV()">
-          <button class="ne-btn-add" onclick="themTV()">+ Thêm thành viên</button>
-        </div>
-        
-  <!-- Danh sach nhan vien co the them (goi y) -->
-  <div class="ne-suggest" id="suggestBox"></div>
-<p class="ne-tv-count">Thành viên hiện tại (<strong id="tvCount">{{ nhom.so_tv }}</strong>)</p>
-        <div id="tvList">
-        {% for tv in nhom.thanh_vien %}
-        <div class="ne-tv-row" data-ten="{{ tv.ten }}">
-          <div class="ne-tv-av" style="background:{{ tv.color }}">{{ tv.av }}</div>
-          <div class="ne-tv-info"><strong>{{ tv.ten }}</strong></div>
-          <button class="ne-tv-del" onclick="xoaTV(this)">✕</button>
-        </div>
-        {% endfor %}
-        </div>
-      </div>
-    </div>
-
-    <!-- Cot phai -->
-    <div class="ne-right">
-      <div class="ne-card ne-sidebar">
-        <h3>Thông tin nhóm</h3>
-        <div class="ne-si-row"><span>Trạng thái</span><span class="loai-badge {{ nhom.loai }}" id="badgeLoai">{{ nhom.loai_label }}</span></div>
-        <div class="ne-si-row"><span>Ngày tạo</span><span>01/01/2025</span></div>
-        <div class="ne-si-row"><span>Người tạo</span><span>Quản Trị Viên</span></div>
-        <div class="ne-si-row"><span>Thành viên</span><span id="siTV">{{ nhom.so_tv }} người</span></div>
-        <div class="ne-si-row"><span>Cập nhật lần cuối</span><span>25/03/2026</span></div>
-      </div>
-      <button class="ne-btn-save" onclick="luuThayDoi()">+ Lưu thay đổi</button>
-      <a href="/nhom/{{ nhom.id }}/" class="ne-btn-huy">↩ Hủy bỏ</a>
-      <button class="ne-btn-xoa" onclick="moXoa()">✕ Xóa nhóm</button>
-    </div>
+  <!-- Header -->
+  <div class="ne-header">
+    <h2>✏️ Chỉnh sửa nhóm</h2>
+    <p>Cập nhật thông tin và cài đặt của nhóm <strong>{{ nhom.name }}</strong></p>
   </div>
-</div>
 
-<!-- Modal xac nhan xoa -->
 
-<div class="overlay" id="ovXoaTV" onclick="dongXoaTV()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-head">
-      <h3 style="color:#e74c3c">Xóa thành viên</h3>
-      <button class="x-btn" onclick="dongXoaTV()">&#10005;</button>
-    </div>
-    <p style="color:#555;margin:8px 0 20px;font-size:14px">Bạn có chắc muốn xóa <strong id="xoaTVTen"></strong> khỏi nhóm?</p>
-    <div style="display:flex;gap:10px">
-      <button class="ne-btn-xoa" style="flex:1" onclick="xacNhanXoaTV()">Xác nhận xóa</button>
-      <button class="ne-btn-huy" style="flex:1;text-align:center" onclick="dongXoaTV()">Hủy</button>
-    </div>
-  </div>
-</div>
-<div class="overlay" id="ovXoa" onclick="dongXoa()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-head">
-      <h3 style="color:#e74c3c">⚠ Xóa nhóm</h3>
-      <button class="x-btn" onclick="dongXoa()">✕</button>
-    </div>
-    <p style="color:#555;margin:8px 0 20px;font-size:14px">Bạn có chắc muốn xóa nhóm <strong>{{ nhom.ten }}</strong>? Hành động này không thể hoàn tác.</p>
-    <div style="display:flex;gap:10px">
-      <button class="ne-btn-xoa" style="flex:1" onclick="xacNhanXoa()">Xác nhận xóa</button>
-      <button class="ne-btn-huy" style="flex:1;text-align:center" onclick="dongXoa()">Hủy</button>
+
+  <!-- FORM -->
+  <form method="post" id="editForm">
+    {% csrf_token %}
+
+    <div class="ne-layout">
+
+      <!-- CỘT TRÁI -->
+      <div class="ne-left">
+
+        <!-- Thông tin cơ bản -->
+        <div class="ne-card">
+          <h3>📝 Thông tin cơ bản</h3>
+
+          <div class="ne-fg">
+            <label for="id_name">Tên nhóm <span class="req">*</span></label>
+            <input type="text" id="id_name" name="name"
+                   value="{{ form.name.value|default:nhom.name }}"
+                   placeholder="Nhập tên nhóm..." maxlength="100">
+            {% if form.name.errors %}
+              <div class="error">{{ form.name.errors.0 }}</div>
+            {% endif %}
+            <small>Tên nhóm phải rõ ràng và dễ nhận biết.</small>
+          </div>
+
+          <div class="ne-fg">
+            <label for="id_description">Mô tả</label>
+            <textarea id="id_description" name="description"
+                      placeholder="Mô tả mục đích và hoạt động của nhóm...">{{ form.description.value|default:nhom.description }}</textarea>
+            {% if form.description.errors %}
+              <div class="error">{{ form.description.errors.0 }}</div>
+            {% endif %}
+            <small>Mô tả giúp mọi người hiểu nhóm này dùng để làm gì.</small>
+          </div>
+        </div>
+
+        <!-- Quyền riêng tư -->
+        <div class="ne-card">
+          <h3>⚙️ Cài đặt quyền riêng tư</h3>
+          <div class="ne-privacy-row">
+            <label class="ne-priv {% if nhom.status == 'group' %}sel{% endif %}"
+                   onclick="selectPrivacy('group', this)">
+              <input type="radio" name="status" value="group"
+                     {% if nhom.status == 'group' %}checked{% endif %}>
+              <div>
+                <strong>🌐 Công khai</strong>
+                <span>Mọi người đều có thể xem và tham gia nhóm.</span>
+              </div>
+            </label>
+            <label class="ne-priv {% if nhom.status == 'private' %}sel{% endif %}"
+                   onclick="selectPrivacy('private', this)">
+              <input type="radio" name="status" value="private"
+                     {% if nhom.status == 'private' %}checked{% endif %}>
+              <div>
+                <strong>🔒 Riêng tư</strong>
+                <span>Chỉ thành viên được mời mới xem được nội dung.</span>
+              </div>
+            </label>
+            <label class="ne-priv {% if nhom.status == 'department' %}sel{% endif %}"
+                   onclick="selectPrivacy('department', this)">
+              <input type="radio" name="status" value="department"
+                     {% if nhom.status == 'department' %}checked{% endif %}>
+              <div>
+                <strong>🏢 Phòng ban</strong>
+                <span>Nhóm dành riêng cho một phòng ban cụ thể.</span>
+              </div>
+            </label>
+          </div>
+          {% if form.status.errors %}
+            <div class="error" style="margin-top:8px">{{ form.status.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Danh sách thành viên (chỉ xem) -->
+        <div class="ne-card">
+          <h3>👥 Thành viên hiện tại ({{ nhom.members.count }})</h3>
+          {% for member in nhom.members.all %}
+          <div class="ne-tv-row">
+            <div class="ne-tv-av">{{ member.user.get_initials }}</div>
+            <div class="ne-tv-info">
+              <strong>{{ member.user.first_name }} {{ member.user.last_name }}</strong>
+              <span>@{{ member.user.username }}</span>
+            </div>
+            {% if member.user == nhom.created_by %}
+            <span class="ne-tv-badge-admin">👑 Admin</span>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0">Chưa có thành viên</p>
+          {% endfor %}
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0">
+            <a href="/nhom/{{ nhom.id }}/add-member/"
+               style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#667eea;text-decoration:none">
+              + Thêm thành viên mới
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /ne-left -->
+
+      <!-- CỘT PHẢI -->
+      <div class="ne-right">
+
+        <!-- Thông tin tóm tắt -->
+        <div class="ne-card">
+          <h3>ℹ️ Thông tin nhóm</h3>
+          <div class="ne-si-row">
+            <span>Trạng thái</span>
+            <span class="loai-badge {{ nhom.status }}" id="statusBadge">{{ nhom.get_status_display }}</span>
+          </div>
+          <div class="ne-si-row">
+            <span>Ngày tạo</span>
+            <span>{{ nhom.created_at|date:"d/m/Y" }}</span>
+          </div>
+          <div class="ne-si-row">
+            <span>Người tạo</span>
+            <span>{{ nhom.created_by.get_full_name }}</span>
+          </div>
+          <div class="ne-si-row">
+            <span>Thành viên</span>
+            <span>{{ nhom.members.count }} người</span>
+          </div>
+          <div class="ne-si-row">
+            <span>Bài viết</span>
+            <span>{{ nhom.group_posts.count }} bài</span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <button type="submit" class="ne-btn-save">💾 Lưu thay đổi</button>
+        <a href="/nhom/{{ nhom.id }}/" class="ne-btn-huy">↩ Hủy bỏ</a>
+        <button type="button" class="ne-btn-xoa" onclick="moModalXoa()">🗑️ Xóa nhóm</button>
+
+      </div><!-- /ne-right -->
+
+    </div><!-- /ne-layout -->
+  </form>
+
+</div><!-- /ne-page -->
+
+<!-- Modal xác nhận xóa nhóm -->
+<div class="ne-overlay" id="modalXoa">
+  <div class="ne-modal">
+    <h3 style="color:#e74c3c">⚠️ Xóa nhóm</h3>
+    <p>
+      Bạn có chắc muốn xóa nhóm <strong>{{ nhom.name }}</strong>?<br>
+      Tất cả bài viết và thành viên trong nhóm sẽ bị xóa. Hành động này <strong>không thể hoàn tác</strong>.
+    </p>
+    <div class="ne-modal-actions">
+      <button onclick="dongModalXoa()" class="ne-btn-huy" style="flex:1">Hủy</button>
+      <form method="post" action="/nhom/{{ nhom.id }}/xoa/" style="flex:1">
+        {% csrf_token %}
+        <button type="submit" class="ne-btn-xoa" style="width:100%">Xác nhận xóa</button>
+      </form>
     </div>
   </div>
 </div>
 
 <!-- Toast -->
-<div id="toast" class="toast"></div>
+<div id="neToast" style="
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:10px;
+  font-size:14px;font-weight:500;z-index:9999;transition:transform .3s;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none;
+"></div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-{% block extra_js %}
-<script>
-function chonLoai(loai, el){
-  document.querySelectorAll('.ne-priv').forEach(function(e){e.classList.remove('sel');});
+// Highlight radio khi chọn
+function selectPrivacy(val, el) {
+  document.querySelectorAll('.ne-priv').forEach(function(e) { e.classList.remove('sel'); });
   el.classList.add('sel');
-  var labels={congkhai:'Cong khai',riengtu:'Rieng tu',phongban:'Phong ban'};
-  var badge=document.getElementById('badgeLoai');
-  badge.textContent=labels[loai];
-  badge.className='loai-badge '+loai;
-}
-function filterTV(){
-  var q=document.getElementById('tvSearch').value.toLowerCase();
-  document.querySelectorAll('.ne-tv-row').forEach(function(r){
-    r.style.display=r.dataset.ten.toLowerCase().includes(q)?'':'none';
-  });
-}
-function xoaTV(btn){
-  if(!confirm('Xoa thanh vien nay khoi nhom?'))return;
-  btn.closest('.ne-tv-row').remove();
-  var cnt=document.getElementById('tvList').querySelectorAll('.ne-tv-row').length;
-  document.getElementById('tvCount').textContent=cnt;
-  document.getElementById('siTV').textContent=cnt+' nguoi';
-  showToast('Da xoa thanh vien!');
-}
-function themTV(){
-  var ten=document.getElementById('tvSearch').value.trim();
-  if(!ten){showToast('Nhap ten thanh vien!','error');return;}
-  var colors=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
-  var color=colors[Math.floor(Math.random()*colors.length)];
-  var av=ten.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
-  var row=document.createElement('div');
-  row.className='ne-tv-row';
-  row.dataset.ten=ten;
-  row.innerHTML='<div class="ne-tv-av" style="background:'+color+'">'+av+'</div><div class="ne-tv-info"><strong>'+ten+'</strong></div><button class="ne-tv-del" onclick="xoaTV(this)">&#10005;</button>';
-  var list = document.getElementById('tvList'); list.insertBefore(row, list.firstChild);
-  var cnt=document.getElementById('tvList').querySelectorAll('.ne-tv-row').length;
-  document.getElementById('tvCount').textContent=cnt;
-  document.getElementById('siTV').textContent=cnt+' nguoi';
-  document.getElementById('tvSearch').value='';
-  showToast('Da them thanh vien!');
-}
-function luuThayDoi(){
-  var ten=document.getElementById('inp-ten').value.trim();
-  if(!ten){showToast('Vui long nhap ten nhom!','error');return;}
-  showToast('Da luu thay doi thanh cong!');
-  setTimeout(function(){window.location='/nhom/';},1800);
-}
-function moXoa(){document.getElementById('ovXoa').classList.add('show');}
-function dongXoa(){document.getElementById('ovXoa').classList.remove('show');}
-function xacNhanXoa(){
-  showToast('Da xoa nhom!');
-  setTimeout(function(){window.location='/nhom/';},1500);
-}
-function showToast(msg,type){
-  var t=document.getElementById('toast');
-  var icon=type==='error'?'✕':'✓';
-  t.className='toast'+(type?' '+type:'');
-  t.innerHTML='<span class="t-icon">'+icon+'</span>'+msg+'<button class="t-close" onclick="this.parentElement.classList.remove(\'show\')">✕</button>';
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},3000);
-}
-
-// Danh sach nhan vien co the them
-var ALL_USERS = [
-  {ten:'Nguy\u1ec5n H\u1ea3i An',   av:'NA', color:'#e74c3c'},
-  {ten:'Tr\u1ea7n V\u0103n H\u00f9ng', av:'TH', color:'#2ecc71'},
-  {ten:'L\u00ea Minh Ch\u00e2u',    av:'LC', color:'#f39c12'},
-  {ten:'V\u0169 Th\u1ecb H\u00e0',   av:'VH', color:'#9b59b6'},
-  {ten:'Ho\u00e0ng V\u0103n Nam',   av:'HN', color:'#1abc9c'},
-  {ten:'L\u00ea Th\u1ecb H\u01b0\u1eddng', av:'LH', color:'#e67e22'},
-  {ten:'Nguy\u1ec5n V\u0103n Minh', av:'NM', color:'#3498db'},
-  {ten:'Tr\u1ea7n Th\u1ecb Mai',    av:'TM', color:'#16a085'},
-  {ten:'\u0110\u1ed7 Quang Minh',   av:'DM', color:'#8e44ad'},
-  {ten:'Ph\u1ea1m Th\u1ecb Lan',    av:'PL', color:'#c0392b'},
-  {ten:'B\u00f9i V\u0103n \u0110\u1ee9c', av:'BD', color:'#27ae60'},
-  {ten:'Nguy\u1ec5n Th\u1ecb H\u00f2a', av:'NH', color:'#d35400'},
-];
-
-function onTVInput() {
-  var q   = document.getElementById('tvSearch').value.trim().toLowerCase();
-  var box = document.getElementById('suggestBox');
-  if (!q) { box.classList.remove('show'); box.innerHTML=''; return; }
-
-  // Lay danh sach da co trong nhom
-  var daCo = [];
-  document.querySelectorAll('.ne-tv-row').forEach(function(r){ daCo.push(r.dataset.ten.toLowerCase()); });
-
-  var matches = ALL_USERS.filter(function(u){
-    return u.ten.toLowerCase().includes(q) && daCo.indexOf(u.ten.toLowerCase()) === -1;
-  });
-
-  if (!matches.length) { box.classList.remove('show'); box.innerHTML=''; return; }
-
-  box.innerHTML = matches.map(function(u){
-    return '<div class="ne-sug-item" onclick="chonTV(this)" data-ten="'+u.ten+'" data-av="'+u.av+'" data-color="'+u.color+'">'
-      + '<div class="ne-sug-av" style="background:'+u.color+'">'+u.av+'</div>'
-      + u.ten + '</div>';
-  }).join('');
-  box.classList.add('show');
-}
-
-function chonTV(el) {
-  document.getElementById('tvSearch').value = el.dataset.ten;
-  dongSuggest();
-}
-
-function themTV() {
-  var inp = document.getElementById('tvSearch');
-  var ten = inp.value.trim();
-  if (!ten) { showToast('Nhập tên thành viên!', 'error'); return; }
-  var exists = false;
-  document.querySelectorAll('.ne-tv-row').forEach(function(r) {
-    if (r.dataset.ten.toLowerCase() === ten.toLowerCase()) exists = true;
-  });
-  if (exists) { showToast('Thành viên này đã có trong nhóm!', 'error'); return; }
-  var found = ALL_USERS ? ALL_USERS.find(function(u) { return u.ten.toLowerCase() === ten.toLowerCase(); }) : null;
-  var av    = found ? found.av    : ten.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
-  var color = found ? found.color : ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6'][Math.floor(Math.random()*5)];
-  var row = document.createElement('div');
-  row.className = 'ne-tv-row'; row.dataset.ten = ten;
-  row.innerHTML = '<div class="ne-tv-av" style="background:'+color+'">'+av+'</div>'
-    + '<div class="ne-tv-info"><strong>'+ten+'</strong></div>'
-    + '<button class="ne-tv-del" onclick="xoaTV(this)" title="Xóa">&#10005;</button>';
-  var list = document.getElementById('tvList');
-  list.insertBefore(row, list.firstChild);
-  inp.value = ''; dongSuggest(); capNhatSoTV();
-  showToast('Đã thêm thành viên!');
-}
-
-
-// Dong suggest khi click ra ngoai
-document.addEventListener('click', function(e){
-  if (!e.target.closest('.ne-tv-top')) {
-    var box = document.getElementById('suggestBox');
-    if (box) { box.classList.remove('show'); box.innerHTML=''; }
+  // Cập nhật badge bên sidebar
+  var labels = { group: 'Công khai', private: 'Riêng tư', department: 'Phòng ban' };
+  var badge = document.getElementById('statusBadge');
+  if (badge) {
+    badge.textContent = labels[val];
+    badge.className = 'loai-badge ' + val;
   }
+}
+
+// Modal xóa nhóm
+function moModalXoa()  { document.getElementById('modalXoa').classList.add('show'); }
+function dongModalXoa(){ document.getElementById('modalXoa').classList.remove('show'); }
+document.getElementById('modalXoa').addEventListener('click', function(e) {
+  if (e.target === this) dongModalXoa();
 });
 
+// Toast
+function showToast(msg, type) {
+  var t = document.getElementById('neToast');
+  t.textContent = msg;
+  t.style.background = type === 'error' ? '#e74c3c' : '#1a1a2e';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(function() { t.style.transform = 'translateX(-50%) translateY(80px)'; }, 3000);
+}
+
+// Validate trước khi submit
+document.getElementById('editForm').addEventListener('submit', function(e) {
+  var name = document.getElementById('id_name').value.trim();
+  if (!name) {
+    e.preventDefault();
+    showToast('Vui lòng nhập tên nhóm!', 'error');
+    document.getElementById('id_name').focus();
+  }
+});
 </script>
-{% endblock %}
-{% endif %}
 {% endblock %}

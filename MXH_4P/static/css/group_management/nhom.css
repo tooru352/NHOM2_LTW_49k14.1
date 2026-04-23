@@ -160,9 +160,13 @@
   color: white;
 }
 
-.loai-badge.congkhai { background: rgba(46, 204, 113, 0.75); }
-.loai-badge.riengtu { background: rgba(0, 0, 0, 0.3); }
-.loai-badge.phongban { background: rgba(255, 255, 255, 0.3); }
+.loai-badge.congkhai  { background: rgba(46, 204, 113, 0.75); }
+.loai-badge.riengtu   { background: rgba(0, 0, 0, 0.3); }
+.loai-badge.phongban  { background: rgba(255, 255, 255, 0.3); }
+/* Giá trị mới khớp với model */
+.loai-badge.group      { background: rgba(46, 204, 113, 0.75); }
+.loai-badge.private    { background: rgba(0, 0, 0, 0.3); }
+.loai-badge.department { background: rgba(255, 193, 7, 0.8); color: #1a1a2e; }
 
 .card-inner h3 {
   font-size: 18px;

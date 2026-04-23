@@ -44,8 +44,9 @@ class User(AbstractUser):
 # ============================================
 class Group(models.Model):
     STATUS_CHOICES = (
-        ('group', 'Group'),
-        ('private', 'Private'),
+        ('group', 'Công khai'),
+        ('private', 'Riêng tư'),
+        ('department', 'Phòng ban'),
     )
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=255, blank=True, null=True)
