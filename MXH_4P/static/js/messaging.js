@@ -1,97 +1,24 @@
-// ===== DATA =====
-const ME = { id: 'me', name: 'Nguyễn Long', initials: 'NL', avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)' };
+﻿// ===== CSRF HELPER =====
+function getCsrfToken() {
+  const el = document.querySelector('[name=csrfmiddlewaretoken]');
+  if (el) return el.value;
+  const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+  return cookie ? cookie.trim().split('=')[1] : '';
+}
 
-const conversations = [
-  {
-    id: 1, name: 'Mai Phương', initials: 'MP',
-    avatar: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
-    online: true, unread: 3, time: '10:30',
-    preview: 'Chào anh, em đã hoàn thành báo cáo...',
-    messages: [
-      { id: 1, from: 'them', text: 'Chào anh Long! Chúc anh buổi sáng tốt lành ạ 😊', time: '08:00', ts: Date.now() - 3600000 * 3 },
-      { id: 2, from: 'me', text: 'Chào em Mai Phương! Có việc gì cần anh hỗ trợ không em?', time: '08:02', ts: Date.now() - 3600000 * 2.9 },
-      { id: 3, from: 'them', text: 'Dạ em đã hoàn thành báo cáo check-in của các khách hàng hôm qua rồi ạ.', time: '08:05', ts: Date.now() - 3600000 * 2.8 },
-      { id: 4, from: 'them', text: 'Tổng cộng có 28 khách check-in, 15 khách check-out. Có 2 phòng VIP đặt trước cho tuần sau ạ.', time: '08:05', ts: Date.now() - 3600000 * 2.8 },
-      { id: 5, from: 'me', text: 'Tốt lắm! Em làm việc rất tận tâm. Anh sẽ ghi nhận vào báo cáo tháng này.', time: '08:10', ts: Date.now() - 3600000 * 2.7 },
-      { id: 6, from: 'me', text: 'Về 2 phòng VIP đặt trước, em nhớ phối hợp với bộ phận buồng phòng chuẩn bị kỹ càng nhé!', time: '08:11', ts: Date.now() - 3600000 * 2.6 },
-      { id: 7, from: 'them', text: 'Dạ em đã gửi thông tin cho chị Mai bên buồng phòng rồi ạ. Cảm ơn anh nhiều! 🙏', time: '08:15', ts: Date.now() - 3600000 * 2.5 },
-      { id: 8, from: 'me', text: 'Được rồi. Nếu có vấn đề gì cứ liên hệ anh nhé!', time: '08:20', ts: Date.now() - 3600000 * 2.4 },
-    ]
-  },
-  {
-    id: 2, name: 'Trần Văn Hùng', initials: 'TH',
-    avatar: 'linear-gradient(135deg,#fa709a 0%,#fee140 100%)',
-    online: true, unread: 2, time: '09:15',
-    preview: 'Thực đơn hôm nay đã được duyệt chưa anh?',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh ơi, thực đơn hôm nay đã được duyệt chưa ạ?', time: '09:10', ts: Date.now() - 3600000 * 2 },
-      { id: 2, from: 'them', text: 'Bếp đang chờ để chuẩn bị nguyên liệu ạ.', time: '09:12', ts: Date.now() - 3600000 * 1.9 },
-      { id: 3, from: 'me', text: 'Anh đang xem lại, 15 phút nữa anh phản hồi nhé.', time: '09:15', ts: Date.now() - 3600000 * 1.8 },
-    ]
-  },
-  {
-    id: 3, name: 'Lê Thị Mai', initials: 'LM',
-    avatar: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-    online: true, unread: 0, time: 'Hôm qua',
-    preview: 'Đã dọn dẹp xong tất cả các phòng rồi ạ!',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh ơi em đã dọn dẹp xong tất cả các phòng rồi ạ!', time: 'Hôm qua', ts: Date.now() - 86400000 },
-      { id: 2, from: 'me', text: 'Tốt lắm em, cảm ơn em nhé!', time: 'Hôm qua', ts: Date.now() - 86400000 + 60000 },
-    ]
-  },
-  {
-    id: 4, name: 'Phạm Minh Tuấn', initials: 'MT',
-    avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)',
-    online: false, unread: 1, time: 'Hôm qua',
-    preview: 'Hệ thống điều hòa phòng 302 cần kiểm tra',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh Long ơi, hệ thống điều hòa phòng 302 cần kiểm tra gấp ạ.', time: 'Hôm qua', ts: Date.now() - 86400000 * 1.2 },
-    ]
-  },
-  {
-    id: 5, name: 'Nguyễn Thị Hà', initials: 'NH',
-    avatar: 'linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)',
-    online: false, unread: 0, time: '2 ngày trước',
-    preview: 'Cảm ơn anh đã hỗ trợ!',
-    messages: [
-      { id: 1, from: 'them', text: 'Cảm ơn anh đã hỗ trợ em ạ!', time: '2 ngày trước', ts: Date.now() - 86400000 * 2 },
-      { id: 2, from: 'me', text: 'Không có gì em, cứ liên hệ anh khi cần nhé!', time: '2 ngày trước', ts: Date.now() - 86400000 * 2 + 60000 },
-    ]
-  },
-  {
-    id: 6, name: 'Sếp Kiên Bùi', initials: 'KB',
-    avatar: 'linear-gradient(135deg,#fa709a 0%,#fee140 100%)',
-    online: true, unread: 0, time: '3 ngày trước',
-    preview: 'JA tuần sau đã có chưa anh?',
-    messages: [
-      { id: 1, from: 'them', text: 'Anh ơi JA tuần sau đã có chưa ạ?', time: '3 ngày trước', ts: Date.now() - 86400000 * 3 },
-    ]
-  },
-  {
-    id: 7, name: 'Ban Giám Đốc', initials: 'BGĐ',
-    avatar: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
-    online: false, unread: 2, time: '5 ngày trước',
-    preview: 'Thông báo họp ban quản lý ngày 15/02',
-    messages: [
-      { id: 1, from: 'them', text: 'Thông báo họp ban quản lý ngày 15/02 lúc 9:00 sáng tại phòng họp A.', time: '5 ngày trước', ts: Date.now() - 86400000 * 5 },
-      { id: 2, from: 'them', text: 'Đề nghị tất cả trưởng bộ phận tham dự đầy đủ.', time: '5 ngày trước', ts: Date.now() - 86400000 * 5 + 60000 },
-    ]
-  },
-];
+// ===== DATA =====
+const ME = { id: 'me', name: '', initials: '', avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)' };
+
+// conversations duoc load tu DB, khong hardcode nua
+let conversations = [];
 
 // Suggested contacts for new conversation modal
-const suggestedContacts = [
-  { initials: 'AT', name: 'Anh Thư', role: 'Quản lý Front Desk', avatar: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)' },
-  { initials: 'NH', name: 'Nhật Hạ', role: 'Trưởng bộ phận Housekeeping', avatar: 'linear-gradient(135deg,#fa709a 0%,#fee140 100%)' },
-  { initials: 'XTo', name: 'Xuân Toàn', role: 'Kỹ thuật & Maintenance', avatar: 'linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)' },
-  { initials: 'XTh', name: 'Xuân Thương', role: 'Tiếp tân sảnh (Front Desk)', avatar: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' },
-  { initials: 'KH', name: 'Kim Hoa', role: 'Bộ phận F&B', avatar: 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)' },
-];
+const suggestedContacts = [];
 
 // ===== STATE =====
-let activeConvId = 1;
+let activeConvId = null;
 let deleteTarget = null;
-let editingTarget = null; // { msgId, convId, row, oldText }
+let editingTarget = null;
 let msgIdCounter = 100;
 
 // ===== HELPERS =====
@@ -145,29 +72,53 @@ function renderConvList(filter = '') {
 function selectConv(id) {
   activeConvId = id;
   const conv = getConv(id);
+  if (!conv) return;
   conv.unread = 0;
   renderConvList(document.getElementById('convSearchInput').value);
   renderChatHeader(conv);
-  renderMessages(conv);
+
+  // Load messages tu DB
+  fetch(`/api/conversations/${id}/messages/`)
+    .then(r => r.json())
+    .then(data => {
+      conv.messages = data.messages || [];
+      renderMessages(conv);
+    })
+    .catch(() => {
+      conv.messages = conv.messages || [];
+      renderMessages(conv);
+    });
 }
 
 // ===== RENDER CHAT HEADER =====
 function renderChatHeader(conv) {
+  const isGroup = conv.status === 'group';
+  const nameHtml = isGroup
+    ? `<h3 id="chatHeaderName" class="editable-group-name" title="Click de doi ten nhom">${conv.name} &#9999;&#65039;</h3>`
+    : `<h3 id="chatHeaderName">${conv.name}</h3>`;
+
   document.getElementById('chatHeaderUser').innerHTML = `
     <div class="chat-header-avatar" style="background:${conv.avatar};position:relative;">
       ${conv.initials}
       <span class="online-dot ${conv.online ? '' : 'offline'}" style="position:absolute;bottom:1px;right:1px;"></span>
     </div>
     <div class="chat-header-info">
-      <h3>${conv.name}</h3>
+      ${nameHtml}
       <div class="chat-header-status">
         <span class="status-dot" style="background:${conv.online ? '#2ecc71' : '#95a5a6'}"></span>
-        ${conv.online ? 'Đang hoạt động' : 'Ngoại tuyến'}
+        ${conv.online ? 'Dang hoat dong' : 'Ngoai tuyen'}
       </div>
     </div>
   `;
-  // Update call button with current conv info
   document.getElementById('callBtn').onclick = () => openCallModal(conv);
+
+  if (isGroup) {
+    const nameEl = document.getElementById('chatHeaderName');
+    if (nameEl) {
+      nameEl.style.cursor = 'pointer';
+      nameEl.onclick = () => showRenameModal(conv);
+    }
+  }
 }
 
 // ===== RENDER MESSAGES =====
@@ -177,7 +128,7 @@ function renderMessages(conv) {
 
   const dateDiv = document.createElement('div');
   dateDiv.className = 'msg-date-divider';
-  dateDiv.textContent = 'HÔM NAY, 05/02/2026';
+  dateDiv.textContent = 'HOM NAY, 05/02/2026';
   area.appendChild(dateDiv);
 
   conv.messages.forEach(msg => {
@@ -185,39 +136,38 @@ function renderMessages(conv) {
     area.appendChild(createMsgEl(msg, conv));
   });
 
-  if (conv.id === 1) {
-    const typing = document.createElement('div');
-    typing.className = 'typing-row';
-    typing.innerHTML = `
-      <div class="msg-avatar" style="background:${conv.avatar}">${conv.initials}</div>
-      <div class="typing-bubble">
-        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
-      </div>
-    `;
-    area.appendChild(typing);
-  }
-
   area.scrollTop = area.scrollHeight;
 }
 
 // ===== CREATE MESSAGE ELEMENT =====
 function createMsgEl(msg, conv) {
   const isSent = msg.from === 'me';
+  const isGroup = conv.status === 'group';
   const row = document.createElement('div');
   row.className = 'msg-row' + (isSent ? ' sent' : '');
   row.dataset.msgId = msg.id;
 
-  const avatarBg = isSent ? ME.avatar : conv.avatar;
-  const avatarText = isSent ? ME.initials : conv.initials;
+  // Trong nhóm: avatar riêng từng người, ngoài nhóm: dùng avatar conv
+  const avatarBg = isSent ? ME.avatar : (isGroup ? getAvatarForSender(msg) : conv.avatar);
+  const avatarText = isSent ? ME.initials : (isGroup ? getInitialsForSender(msg) : conv.initials);
 
   const bubbleHtml = msg.deleted
-    ? `<div class="msg-bubble deleted">🚫 Tin nhắn đã bị xóa</div>`
-    : `<div class="msg-bubble">${escapeHtml(msg.text)}</div>`;
+    ? `<div class="msg-bubble deleted">🚫 Tin nhắn đã bị thu hồi</div>`
+    : msg.message_type === 'call'
+      ? `<div class="msg-bubble msg-bubble-call">${escapeHtml(msg.text)}</div>`
+      : msg.image_url
+      ? `<div class="msg-bubble msg-bubble-img"><img src="${msg.image_url}" alt="ảnh" style="max-width:240px;max-height:200px;border-radius:8px;cursor:pointer;" onclick="window.open('${msg.image_url}','_blank')"></div>`
+      : msg.file_url
+        ? `<div class="msg-bubble msg-bubble-file">📎 <a href="${msg.file_url}" target="_blank" style="color:inherit;">${escapeHtml(msg.file_name || 'Tệp đính kèm')}</a></div>`
+        : `<div class="msg-bubble">${escapeHtml(msg.text)}</div>`;
 
   const editedLabel = (!msg.deleted && msg.edited)
-    ? `<span class="msg-edited">Đã chỉnh sửa.</span>` : '';
+    ? `<span class="msg-edited">Đã chỉnh sửa</span>` : '';
 
-  // Context menu: edit only if sent + within 10 min, copy always (if not deleted), delete always
+  // Hiện tên người gửi trong nhóm (chỉ tin nhắn của người khác)
+  const senderName = (!isSent && isGroup && msg.sender_name)
+    ? `<div class="msg-sender-name">${escapeHtml(msg.sender_name)}</div>` : '';
+
   const canEdit = isSent && !msg.deleted && isWithin10Min(msg.ts);
   const ctxEdit = canEdit
     ? `<div class="ctx-item ctx-edit-btn"><span class="ctx-icon">✏️</span> Chỉnh sửa</div>` : '';
@@ -227,6 +177,7 @@ function createMsgEl(msg, conv) {
   row.innerHTML = `
     <div class="msg-avatar" style="background:${avatarBg}">${avatarText}</div>
     <div class="msg-content">
+      ${senderName}
       ${bubbleHtml}
       <div class="msg-meta">
         ${editedLabel}
@@ -261,6 +212,21 @@ function createMsgEl(msg, conv) {
   return row;
 }
 
+// Cache avatar/initials cho từng sender trong group
+const senderCache = {};
+function getAvatarForSender(msg) {
+  if (msg.sender_avatar) return msg.sender_avatar;
+  return senderCache[msg.sender_name]?.avatar || 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)';
+}
+function getInitialsForSender(msg) {
+  if (msg.sender_initials) return msg.sender_initials;
+  if (msg.sender_name) {
+    const parts = msg.sender_name.trim().split(' ');
+    return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : msg.sender_name.slice(0,2).toUpperCase();
+  }
+  return '??';
+}
+
 // ===== CONTEXT MENU =====
 function hideAllContextMenus() {
   document.querySelectorAll('.msg-context-menu.show').forEach(m => m.classList.remove('show'));
@@ -278,15 +244,13 @@ function copyMessage(text) {
 
 // ===== INLINE EDIT =====
 function startInlineEdit(msg, conv, row) {
-  if (!isWithin10Min(msg.ts)) return; // double-check
+  if (!isWithin10Min(msg.ts)) return;
 
-  // Show edit bar above input
   const editBar = document.getElementById('editBar');
   const editBarText = document.getElementById('editBarText');
   editBar.style.display = 'flex';
   editBarText.textContent = msg.text;
 
-  // Put text into input
   const input = document.getElementById('msgInput');
   input.value = msg.text;
   input.focus();
@@ -294,8 +258,6 @@ function startInlineEdit(msg, conv, row) {
   input.style.height = input.scrollHeight + 'px';
 
   editingTarget = { msgId: msg.id, convId: conv.id, row, oldText: msg.text };
-
-  // Change send button to confirm edit
   document.getElementById('sendBtn').dataset.mode = 'edit';
 }
 
@@ -339,15 +301,42 @@ function doDeleteForMe() {
   const msg = getMsg(deleteTarget.convId, deleteTarget.msgId);
   if (msg) msg.hidden = true;
   renderMessages(getConv(deleteTarget.convId));
-  showToast('✅', 'Xóa thành công');
+  showToast('✅', 'Đã xóa tin nhắn');
   deleteTarget = null;
 }
 function doDeleteForAll() {
   if (!deleteTarget) return;
-  const msg = getMsg(deleteTarget.convId, deleteTarget.msgId);
-  if (msg) { msg.deleted = true; msg.text = ''; }
-  renderMessages(getConv(deleteTarget.convId));
-  showToast('✅', 'Xóa thành công');
+  const msgId = deleteTarget.msgId;
+  const convId = deleteTarget.convId;
+
+  // Gọi API xóa thật sự trong DB
+  fetch(`/api/messages/${msgId}/delete/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+    body: JSON.stringify({}),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        const msg = getMsg(convId, msgId);
+        if (msg) { msg.deleted = true; msg.text = ''; }
+        const conv = getConv(convId);
+        // Nếu tin nhắn bị xóa là tin cuối → cập nhật preview
+        if (conv && conv.messages.length > 0) {
+          const lastMsg = conv.messages[conv.messages.length - 1];
+          if (lastMsg.id === msgId) {
+            conv.preview = 'Tin nhắn đã bị thu hồi';
+          }
+        }
+        renderMessages(getConv(convId));
+        renderConvList(document.getElementById('convSearchInput').value);
+        showToast('✅', 'Thu hồi thành công');
+      } else {
+        showToast('❌', data.error || 'Thu hồi thất bại');
+      }
+    })
+    .catch(() => showToast('❌', 'Lỗi kết nối'));
+
   deleteTarget = null;
 }
 
@@ -364,7 +353,7 @@ function showToast(icon, msg) {
   document.getElementById('toastMsg').textContent = msg;
   toast.querySelector('.toast-icon').textContent = icon;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
 // ===== SEND / CONFIRM EDIT =====
@@ -373,29 +362,76 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  // Edit mode
+  // Edit mode — POST lên DB
   if (document.getElementById('sendBtn').dataset.mode === 'edit' && editingTarget) {
-    const msg = getMsg(editingTarget.convId, editingTarget.msgId);
-    if (msg) {
-      msg.text = text;
-      msg.edited = true;
-    }
-    cancelEdit();
-    renderMessages(getConv(activeConvId));
-    showToast('✅', 'Đã chỉnh sửa tin nhắn');
+    const { msgId, convId } = editingTarget;
+    fetch(`/api/messages/${msgId}/edit/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+      body: JSON.stringify({ content: text }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          const msg = getMsg(convId, msgId);
+          if (msg) { msg.text = data.text; msg.edited = true; }
+          cancelEdit();
+          renderMessages(getConv(activeConvId));
+          showToast('✅', 'Đã chỉnh sửa tin nhắn');
+        } else {
+          showToast('❌', data.error || 'Chỉnh sửa thất bại');
+        }
+      })
+      .catch(() => showToast('❌', 'Lỗi kết nối'));
     return;
   }
 
-  // Normal send
+  // Normal send - POST len DB
   const conv = getConv(activeConvId);
-  const msg = { id: ++msgIdCounter, from: 'me', text, time: nowTime(), ts: Date.now() };
-  conv.messages.push(msg);
-  conv.preview = text;
-  conv.time = nowTime();
+  if (!conv) return;
+
   input.value = '';
   input.style.height = 'auto';
-  renderMessages(conv);
-  renderConvList(document.getElementById('convSearchInput').value);
+
+  fetch(`/api/conversations/${activeConvId}/send/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({ content: text }),
+  })
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      if (data.id) {
+        conv.messages.push(data);
+        conv.preview = text;
+        conv.time = data.time;
+        renderMessages(conv);
+
+        // Dua conversation len dau danh sach
+        const idx = conversations.findIndex(c => c.id === activeConvId);
+        if (idx > 0) {
+          const [movedConv] = conversations.splice(idx, 1);
+          movedConv.time = data.time;
+          movedConv.preview = text;
+          conversations.unshift(movedConv);
+        } else if (idx === 0) {
+          conversations[0].time = data.time;
+          conversations[0].preview = text;
+        }
+        renderConvList(document.getElementById('convSearchInput').value);
+      } else {
+        showToast('❌', data.error || 'Gửi thất bại');
+      }
+    })
+    .catch(err => {
+      console.error('Send message error:', err);
+      showToast('❌', 'Lỗi kết nối: ' + err.message);
+    });
 }
 
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
@@ -407,6 +443,116 @@ document.getElementById('msgInput').addEventListener('input', function () {
   this.style.height = 'auto';
   this.style.height = this.scrollHeight + 'px';
 });
+
+// ===== NÚT ĐÍNH KÈM FILE =====
+function sendMediaMessage(file, type) {
+  const conv = getConv(activeConvId);
+  if (!conv) return;
+
+  const formData = new FormData();
+  formData.append('content', '');
+  formData.append(type, file);
+
+  fetch(`/api/conversations/${activeConvId}/send/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrfToken() },
+    body: formData,
+  })
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(data => {
+      if (data.id) {
+        conv.messages.push(data);
+        conv.preview = type === 'image' ? '🖼️ Hình ảnh' : `📎 ${data.file_name || 'Tệp đính kèm'}`;
+        conv.time = data.time;
+        renderMessages(conv);
+        const idx = conversations.findIndex(c => c.id === activeConvId);
+        if (idx > 0) { const [m] = conversations.splice(idx, 1); m.time = data.time; conversations.unshift(m); }
+        renderConvList(document.getElementById('convSearchInput').value);
+      }
+    })
+    .catch(err => showToast('❌', 'Lỗi gửi: ' + err.message));
+}
+
+// Nút đính kèm file
+const attachBtn = document.querySelector('.input-icon-btn[title="Đính kèm"]');
+if (attachBtn) {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '*/*';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+  attachBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) { sendMediaMessage(fileInput.files[0], 'file'); fileInput.value = ''; }
+  });
+}
+
+// Nút gửi ảnh
+const imageBtn = document.querySelector('.input-icon-btn[title="Hình ảnh"]');
+if (imageBtn) {
+  const imgInput = document.createElement('input');
+  imgInput.type = 'file';
+  imgInput.accept = 'image/*';
+  imgInput.style.display = 'none';
+  document.body.appendChild(imgInput);
+  imageBtn.addEventListener('click', () => imgInput.click());
+  imgInput.addEventListener('change', () => {
+    if (imgInput.files[0]) { sendMediaMessage(imgInput.files[0], 'image'); imgInput.value = ''; }
+  });
+}
+
+// ===== EMOJI PICKER =====
+const EMOJIS = ['😊','😂','❤️','👍','🙏','😍','🥰','😘','😭','😅','🤣','😁','🎉','✅','🔥','💪','👏','🤔','😢','😎',
+  '🥳','😴','🤗','😡','😱','🤩','😏','🙄','😤','🥺','💯','🎊','👋','✨','💬','📞','🏨','⭐','🌟','💼'];
+
+let emojiPickerVisible = false;
+let emojiPicker = null;
+
+const emojiBtn = document.querySelector('.input-icon-btn[title="Emoji"]');
+if (emojiBtn) {
+  emojiPicker = document.createElement('div');
+  emojiPicker.id = 'emojiPicker';
+  emojiPicker.style.cssText = `
+    position:absolute; bottom:70px; left:60px; background:white; border-radius:12px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.15); padding:12px; display:none;
+    width:280px; z-index:1000; display:none;
+    display:grid; grid-template-columns:repeat(8,1fr); gap:4px;
+  `;
+  emojiPicker.style.display = 'none';
+  EMOJIS.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.style.cssText = 'background:none;border:none;font-size:20px;cursor:pointer;padding:4px;border-radius:6px;';
+    btn.addEventListener('mouseenter', () => btn.style.background = '#f0f4ff');
+    btn.addEventListener('mouseleave', () => btn.style.background = 'none');
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('msgInput');
+      const pos = input.selectionStart;
+      input.value = input.value.slice(0, pos) + emoji + input.value.slice(pos);
+      input.focus();
+      input.selectionStart = input.selectionEnd = pos + emoji.length;
+      emojiPicker.style.display = 'none';
+      emojiPickerVisible = false;
+    });
+    emojiPicker.appendChild(btn);
+  });
+
+  document.querySelector('.chat-input-area').style.position = 'relative';
+  document.querySelector('.chat-input-area').appendChild(emojiPicker);
+
+  emojiBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    emojiPickerVisible = !emojiPickerVisible;
+    emojiPicker.style.display = emojiPickerVisible ? 'grid' : 'none';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (emojiPickerVisible && !emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+      emojiPicker.style.display = 'none';
+      emojiPickerVisible = false;
+    }
+  });
+}
 
 // ===== CONV SEARCH =====
 document.getElementById('convSearchInput').addEventListener('input', function () {
@@ -424,20 +570,37 @@ document.querySelectorAll('.conv-tab').forEach(tab => {
 
 // ===== NEW CONVERSATION MODAL =====
 document.getElementById('newConvBtn').addEventListener('click', () => {
-  renderContactList('');
-  showModal('newConvModal');
+  loadUsers('');
 });
+
 document.getElementById('newConvClose').addEventListener('click', () => hideModal('newConvModal'));
+
 document.getElementById('newConvSearch').addEventListener('input', function () {
-  renderContactList(this.value);
+  loadUsers(this.value);
 });
+
+function loadUsers(search) {
+  const url = search ? `/api/users/?q=${encodeURIComponent(search)}` : '/api/users/';
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      suggestedContacts.length = 0;
+      suggestedContacts.push(...data.users);
+      renderContactList('');
+      if (!document.getElementById('newConvModal').classList.contains('show')) {
+        showModal('newConvModal');
+      }
+    })
+    .catch(() => {
+      showToast('❌', 'Không thể tải danh sách người dùng');
+    });
+}
 
 function renderContactList(filter) {
   const list = document.getElementById('contactList');
   list.innerHTML = '';
+
   suggestedContacts.forEach(contact => {
-    if (filter && !contact.name.toLowerCase().includes(filter.toLowerCase()) &&
-        !contact.role.toLowerCase().includes(filter.toLowerCase())) return;
     const item = document.createElement('div');
     item.className = 'contact-item';
     item.innerHTML = `
@@ -446,34 +609,87 @@ function renderContactList(filter) {
         <div class="contact-name">${contact.name}</div>
         <div class="contact-role">${contact.role}</div>
       </div>
-      <input type="checkbox" class="contact-check">
+      <input type="checkbox" class="contact-check" data-user-id="${contact.id}">
     `;
-    item.addEventListener('click', () => {
-      hideModal('newConvModal');
-      // Check if conversation already exists
-      const existing = conversations.find(c => c.name === contact.name);
-      if (existing) {
-        selectConv(existing.id);
-        return;
-      }
-      // Create new conversation
-      const newConv = {
-        id: conversations.length + 1,
-        name: contact.name,
-        initials: contact.initials,
-        avatar: contact.avatar,
-        online: true,
-        unread: 0,
-        time: nowTime(),
-        preview: 'Bắt đầu cuộc trò chuyện...',
-        messages: [],
-      };
-      conversations.unshift(newConv);
-      renderConvList('');
-      selectConv(newConv.id);
+
+    const checkbox = item.querySelector('.contact-check');
+    checkbox.addEventListener('change', updateCreateGroupButton);
+
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('contact-check')) return;
+      checkbox.checked = !checkbox.checked;
+      updateCreateGroupButton();
     });
+
     list.appendChild(item);
   });
+}
+
+function updateCreateGroupButton() {
+  const checked = document.querySelectorAll('.contact-check:checked');
+  let createGroupBtn = document.querySelector('.create-group-btn-dynamic');
+
+  if (!createGroupBtn) {
+    const btn = document.createElement('button');
+    btn.className = 'create-group-btn-dynamic';
+    btn.style.cssText = 'width:100%;padding:12px;background:#5b7ce6;color:white;border:none;border-radius:8px;font-weight:600;margin-top:16px;cursor:pointer;display:none;';
+    btn.textContent = 'Tao cuoc tro chuyen';
+    btn.addEventListener('click', createConversation);
+    const contactList = document.getElementById('contactList');
+    contactList.parentElement.insertBefore(btn, contactList.nextSibling);
+    createGroupBtn = btn;
+  }
+
+  if (checked.length > 0) {
+    createGroupBtn.style.display = 'block';
+    createGroupBtn.textContent = checked.length === 1 
+      ? 'Bắt đầu trò chuyện' 
+      : `Tạo nhóm (${checked.length} người)`;
+  } else {
+    createGroupBtn.style.display = 'none';
+  }
+}
+
+function createConversation() {
+  const checked = Array.from(document.querySelectorAll('.contact-check:checked'));
+  const userIds = checked.map(cb => parseInt(cb.dataset.userId));
+
+  if (userIds.length === 0) return;
+
+  fetch('/api/conversations/create/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({ user_ids: userIds }),
+  })
+    .then(r => {
+      if (!r.ok) {
+        return r.text().then(text => {
+          throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        });
+      }
+      return r.json();
+    })
+    .then(data => {
+      if (data.conversation_id) {
+        hideModal('newConvModal');
+        fetch('/api/conversations/')
+          .then(r => r.json())
+          .then(result => {
+            conversations = (result.conversations || []).map(c => ({ ...c, messages: [], online: false }));
+            renderConvList();
+            selectConv(data.conversation_id);
+          });
+      } else {
+        showToast('❌', data.error || 'Tạo thất bại');
+      }
+    })
+    .catch(err => {
+      console.error('Create conversation error:', err);
+      showToast('❌', 'Lỗi kết nối: ' + err.message);
+    });
 }
 
 // ===== CALL SOUND (Web Audio API) =====
@@ -491,12 +707,11 @@ function getRingAudioCtx() {
 
 function playRingTone() {
   stopRingTone();
-  // Play a ring pattern: beep-beep ... pause ... repeat
   function ring() {
     const ctx = getRingAudioCtx();
     const pattern = [
-      { freq: 480, start: 0,    dur: 0.4 },
-      { freq: 480, start: 0.5,  dur: 0.4 },
+      { freq: 480, start: 0,   dur: 0.4 },
+      { freq: 480, start: 0.5, dur: 0.4 },
     ];
     pattern.forEach(({ freq, start, dur }) => {
       const osc = ctx.createOscillator();
@@ -539,17 +754,90 @@ function playEndTone() {
 }
 
 // ===== CALL MODAL =====
+let activeCallIds = [];  // IDs của call requests đang gọi
+let activeCallIdForEnd = null;  // ID để end call sau khi accepted
+let callConvId = null;
+let callStartTime = null;
+
 function openCallModal(conv) {
   const modal = document.getElementById('callModal');
   document.getElementById('callAvatar').style.background = conv.avatar;
   document.getElementById('callAvatarText').textContent = conv.initials;
   document.getElementById('callName').textContent = conv.name;
-  document.getElementById('callStatus').textContent = `••• Đang gọi cho ${conv.name}...`;
-  // Move to body to escape any parent stacking context
+  document.getElementById('callStatus').textContent = `Đang gọi cho ${conv.name}...`;
   document.body.appendChild(modal);
   showModal('callModal');
   playRingTone();
   startCallTimer();
+  callConvId = conv.id;
+  callStartTime = Date.now();
+
+  // POST lên server để tạo call request
+  fetch(`/api/conversations/${conv.id}/call/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+    body: JSON.stringify({}),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.call_ids) {
+        activeCallIds = data.call_ids;
+        startPollCallStatus();  // Bắt đầu poll trạng thái
+      }
+    })
+    .catch(err => console.error('Call error:', err));
+}
+
+let callStatusPollInterval = null;
+
+function startPollCallStatus() {
+  clearInterval(callStatusPollInterval);
+  console.log('Start polling call status for IDs:', activeCallIds);
+  callStatusPollInterval = setInterval(() => {
+    if (activeCallIds.length === 0) {
+      clearInterval(callStatusPollInterval);
+      return;
+    }
+    fetch(`/api/calls/${activeCallIds[0]}/status/`)
+      .then(r => r.json())
+      .then(data => {
+        console.log('Call status:', data.status);
+        if (data.status === 'rejected') {
+          clearInterval(callStatusPollInterval);
+          clearInterval(callTimerInterval);
+          stopRingTone();
+          playEndTone();
+          hideModal('callModal');
+          showToast('📵', 'Cuộc gọi bị từ chối');
+          saveCallLog('rejected');
+          activeCallIds = [];
+        } else if (data.status === 'accepted') {
+          clearInterval(callStatusPollInterval);
+          // Lưu call ID để dùng khi end
+          activeCallIdForEnd = activeCallIds[0];
+          // Bắt đầu đếm giây bên người gọi
+          callStartTime = Date.now();
+          stopRingTone();
+          let sec = 0;
+          clearInterval(callTimerInterval);
+          callTimerInterval = setInterval(() => {
+            sec++;
+            const m = String(Math.floor(sec / 60)).padStart(2, '0');
+            const s = String(sec % 60).padStart(2, '0');
+            document.getElementById('callStatus').textContent = `🟢 ${m}:${s}`;
+          }, 1000);
+          activeCallIds = [];
+        } else if (data.status === 'ended') {
+          clearInterval(callStatusPollInterval);
+          clearInterval(callTimerInterval);
+          stopRingTone();
+          hideModal('callModal');
+          saveCallLog('ended');
+          activeCallIds = [];
+        }
+      })
+      .catch(() => {});
+  }, 2000);
 }
 
 let callTimerInterval = null;
@@ -561,14 +849,61 @@ function startCallTimer() {
     if (sec === 5) {
       document.getElementById('callStatus').textContent = 'Đang kết nối...';
     }
+    // Tự động hủy sau 30 giây nếu không ai trả lời
+    if (sec >= 30) {
+      clearInterval(callTimerInterval);
+      clearInterval(callStatusPollInterval);
+      stopRingTone();
+      hideModal('callModal');
+      showToast('📵', 'Không có người trả lời');
+      activeCallIds = [];
+    }
   }, 1000);
 }
 
+function saveCallLog(status) {
+  if (!callConvId) return;
+  const duration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : 0;
+  fetch(`/api/conversations/${callConvId}/call-log/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+    body: JSON.stringify({ status, duration }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.id && activeConvId === callConvId) {
+        const conv = getConv(callConvId);
+        if (conv) {
+          conv.messages.push(data);
+          renderMessages(conv);
+        }
+      }
+    })
+    .catch(() => {});
+  callConvId = null;
+  callStartTime = null;
+}
+
 document.getElementById('callEndBtn').addEventListener('click', () => {
+  const duration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : 0;
   clearInterval(callTimerInterval);
+  clearInterval(callStatusPollInterval);
   stopRingTone();
   playEndTone();
   hideModal('callModal');
+  saveCallLog(duration > 3 ? 'ended' : 'missed');
+
+  // End tất cả call IDs (đang gọi chưa bắt máy)
+  const idsToEnd = activeCallIds.length > 0 ? activeCallIds : (activeCallIdForEnd ? [activeCallIdForEnd] : []);
+  idsToEnd.forEach(id => {
+    fetch(`/api/calls/${id}/respond/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+      body: JSON.stringify({ action: 'end' }),
+    }).catch(() => {});
+  });
+  activeCallIds = [];
+  activeCallIdForEnd = null;
 });
 document.getElementById('callMuteBtn').addEventListener('click', function () {
   this.classList.toggle('active');
@@ -586,5 +921,376 @@ document.getElementById('callSpeakerBtn').addEventListener('click', function () 
 });
 
 // ===== INIT =====
-renderConvList();
-selectConv(1);
+fetch('/api/conversations/')
+  .then(r => r.json())
+  .then(data => {
+    conversations = (data.conversations || []).map(c => ({ ...c, messages: [], online: false }));
+    renderConvList();
+    if (conversations.length > 0) {
+      selectConv(conversations[0].id);
+    } else {
+      document.getElementById('messagesArea').innerHTML =
+        '<div style="text-align:center;color:#aaa;margin-top:40px;">Chua co cuoc tro chuyen nao</div>';
+    }
+  })
+  .catch(() => {
+    renderConvList();
+  });
+
+// ===== POLLING: Tự động nhận tin nhắn mới mỗi 3 giây =====
+let lastMsgId = 0; // ID tin nhắn cuối cùng đã biết trong conversation đang mở
+
+function pollNewMessages() {
+  if (!activeConvId) return;
+
+  const conv = getConv(activeConvId);
+  if (!conv) return;
+
+  // Lấy ID tin nhắn cuối cùng hiện có
+  const lastKnownId = conv.messages.length > 0
+    ? Math.max(...conv.messages.map(m => m.id))
+    : 0;
+
+  fetch(`/api/conversations/${activeConvId}/messages/`)
+    .then(r => r.json())
+    .then(data => {
+      const newMsgs = (data.messages || []).filter(m => m.id > lastKnownId);
+      if (newMsgs.length > 0) {
+        // Có tin nhắn mới — thêm vào và render
+        conv.messages.push(...newMsgs);
+
+        // Cập nhật preview và time trong danh sách
+        const lastMsg = newMsgs[newMsgs.length - 1];
+        conv.preview = lastMsg.text;
+        conv.time = lastMsg.time;
+
+        // Nếu tin nhắn mới từ người khác → đưa conversation lên đầu
+        if (lastMsg.from === 'them') {
+          const idx = conversations.findIndex(c => c.id === activeConvId);
+          if (idx > 0) {
+            const [movedConv] = conversations.splice(idx, 1);
+            conversations.unshift(movedConv);
+          }
+        }
+
+        renderMessages(conv);
+        renderConvList(document.getElementById('convSearchInput').value);
+      }
+
+      // Kiểm tra tin nhắn bị thu hồi hoặc chỉnh sửa
+      (data.messages || []).forEach(serverMsg => {
+        const localMsg = conv.messages.find(m => m.id === serverMsg.id);
+        if (localMsg) {
+          // Tin nhắn bị thu hồi
+          if (serverMsg.deleted && !localMsg.deleted) {
+            localMsg.deleted = true;
+            localMsg.text = '';
+            renderMessages(conv);
+          }
+          // Tin nhắn bị chỉnh sửa
+          if (serverMsg.edited && localMsg.text !== serverMsg.text && !serverMsg.deleted) {
+            localMsg.text = serverMsg.text;
+            localMsg.edited = true;
+            renderMessages(conv);
+          }
+        }
+      });
+    })
+    .catch(() => {}); // Bỏ qua lỗi mạng khi poll
+}
+
+// Poll conversation list để phát hiện tin nhắn mới ở các conversation khác
+function pollConversationList() {
+  fetch('/api/conversations/')
+    .then(r => r.json())
+    .then(data => {
+      const updated = data.conversations || [];
+      updated.forEach(serverConv => {
+        const localConv = getConv(serverConv.id);
+        if (!localConv) {
+          // Conversation mới (chưa có local) — thêm vào
+          conversations.push({ ...serverConv, messages: [], online: false });
+          renderConvList(document.getElementById('convSearchInput').value);
+          return;
+        }
+
+        // Kiểm tra có tin nhắn mới không (so sánh preview)
+        if (serverConv.preview !== localConv.preview && serverConv.id !== activeConvId) {
+          localConv.preview = serverConv.preview;
+          localConv.time = serverConv.time;
+          localConv.unread = (localConv.unread || 0) + 1;
+
+          // Đưa lên đầu danh sách
+          const idx = conversations.findIndex(c => c.id === serverConv.id);
+          if (idx > 0) {
+            const [movedConv] = conversations.splice(idx, 1);
+            conversations.unshift(movedConv);
+          }
+
+          renderConvList(document.getElementById('convSearchInput').value);
+        }
+      });
+    })
+    .catch(() => {});
+}
+
+// Chạy polling
+setInterval(pollNewMessages, 3000);       // Check tin nhắn mới trong conv đang mở
+setInterval(pollConversationList, 5000);  // Check tin nhắn mới ở tất cả conv
+
+// ===== INCOMING CALL POLLING =====
+let currentIncomingCallId = null;
+
+function pollIncomingCall() {
+  fetch('/api/calls/incoming/')
+    .then(r => r.json())
+    .then(data => {
+      if (data.has_call && data.call_id !== currentIncomingCallId) {
+        console.log('Incoming call detected:', data);
+        currentIncomingCallId = data.call_id;
+        showIncomingCall(data);
+      }
+    })
+    .catch(err => console.error('Poll call error:', err));
+}
+
+function showIncomingCall(data) {
+  document.getElementById('incomingCallAvatar').style.background = data.avatar;
+  document.getElementById('incomingCallAvatarText').textContent = data.initials;
+  document.getElementById('incomingCallName').textContent = data.caller_name;
+  document.body.appendChild(document.getElementById('incomingCallModal'));
+  showModal('incomingCallModal');
+  playRingTone();
+  // Lưu conversation_id để dùng khi kết thúc
+  document.getElementById('incomingCallModal').dataset.convId = data.conversation_id;
+}
+
+document.getElementById('incomingAcceptBtn').addEventListener('click', () => {
+  if (!currentIncomingCallId) return;
+  const callId = currentIncomingCallId;
+  const callerName = document.getElementById('incomingCallName').textContent;
+  const callerAvatar = document.getElementById('incomingCallAvatar').style.background;
+  const callerInitials = document.getElementById('incomingCallAvatarText').textContent;
+
+  fetch(`/api/calls/${callId}/respond/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+    body: JSON.stringify({ action: 'accept' }),
+  }).catch(() => {});
+
+  stopRingTone();
+  hideModal('incomingCallModal');
+  currentIncomingCallId = null;
+
+  // Chuyển sang màn hình đang gọi
+  const modal = document.getElementById('callModal');
+  document.getElementById('callAvatar').style.background = callerAvatar;
+  document.getElementById('callAvatarText').textContent = callerInitials;
+  document.getElementById('callName').textContent = callerName;
+  document.getElementById('callStatus').textContent = '🟢 Đang trong cuộc gọi...';
+  document.body.appendChild(modal);
+  showModal('callModal');
+  callStartTime = Date.now();
+  // Lưu convId để log sau khi kết thúc
+  callConvId = document.getElementById('incomingCallModal').dataset.convId
+    ? parseInt(document.getElementById('incomingCallModal').dataset.convId) : null;
+  activeCallIdForEnd = callId;  // Lưu để end khi bấm HỦY
+  // Bắt đầu đếm giây
+  let sec = 0;
+  clearInterval(callTimerInterval);
+  callTimerInterval = setInterval(() => {
+    sec++;
+    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    document.getElementById('callStatus').textContent = `🟢 ${m}:${s}`;
+  }, 1000);
+  // Poll xem bên gọi có tắt không
+  const acceptedCallId = callId;
+  let receiverPollInterval = setInterval(() => {
+    fetch(`/api/calls/${acceptedCallId}/status/`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'ended') {
+          clearInterval(receiverPollInterval);
+          clearInterval(callTimerInterval);
+          stopRingTone();
+          playEndTone();
+          hideModal('callModal');
+          saveCallLog('ended');
+          showToast('📞', 'Cuộc gọi đã kết thúc');
+        }
+      })
+      .catch(() => {});
+  }, 2000);
+});
+
+document.getElementById('incomingRejectBtn').addEventListener('click', () => {
+  if (!currentIncomingCallId) return;
+  fetch(`/api/calls/${currentIncomingCallId}/respond/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+    body: JSON.stringify({ action: 'reject' }),
+  }).catch(() => {});
+  stopRingTone();
+  hideModal('incomingCallModal');
+  showToast('📵', 'Đã từ chối cuộc gọi');
+  currentIncomingCallId = null;
+});
+
+setInterval(pollIncomingCall, 2000);  // Check cuộc gọi đến mỗi 2 giây
+
+// ===== TẠO NHÓM TRÒ CHUYỆN =====
+let selectedGroupMembers = {}; // { userId: { name, initials, avatar } }
+
+document.getElementById('openCreateGroupBtn').addEventListener('click', () => {
+  selectedGroupMembers = {};
+  hideModal('newConvModal');
+  loadGroupMembers('');
+  showModal('createGroupModal');
+});
+
+document.getElementById('createGroupClose').addEventListener('click', () => {
+  hideModal('createGroupModal');
+});
+
+document.getElementById('groupMemberSearch').addEventListener('input', function () {
+  loadGroupMembers(this.value);
+});
+
+document.getElementById('createGroupSubmitBtn').addEventListener('click', () => {
+  const userIds = Object.keys(selectedGroupMembers).map(Number);
+  if (userIds.length < 2) {
+    showToast('⚠️', 'Chọn ít nhất 2 người để tạo nhóm');
+    return;
+  }
+
+  fetch('/api/conversations/create/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+    body: JSON.stringify({ user_ids: userIds }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.conversation_id) {
+        hideModal('createGroupModal');
+        fetch('/api/conversations/')
+          .then(r => r.json())
+          .then(result => {
+            conversations = (result.conversations || []).map(c => ({ ...c, messages: [], online: false }));
+            renderConvList();
+            selectConv(data.conversation_id);
+          });
+        showToast('✅', 'Đã tạo nhóm trò chuyện');
+      } else {
+        showToast('❌', data.error || 'Tạo nhóm thất bại');
+      }
+    })
+    .catch(() => showToast('❌', 'Lỗi kết nối'));
+});
+
+function loadGroupMembers(search) {
+  const url = search ? `/api/users/?q=${encodeURIComponent(search)}` : '/api/users/';
+  fetch(url)
+    .then(r => r.json())
+    .then(data => renderGroupMemberList(data.users || []))
+    .catch(() => {});
+}
+
+function renderGroupMemberList(users) {
+  const list = document.getElementById('groupMemberList');
+  list.innerHTML = '';
+
+  if (users.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Không tìm thấy nhân viên</div>';
+    return;
+  }
+
+  users.forEach(user => {
+    const isSelected = !!selectedGroupMembers[user.id];
+    const item = document.createElement('div');
+    item.className = 'contact-item';
+    item.style.background = isSelected ? '#f0f4ff' : '';
+    item.innerHTML = `
+      <div class="contact-avatar" style="background:${user.avatar}">${user.initials}</div>
+      <div class="contact-info">
+        <div class="contact-name">${user.name}</div>
+        <div class="contact-role">${user.role}</div>
+      </div>
+      <input type="checkbox" class="contact-check" ${isSelected ? 'checked' : ''}>
+    `;
+
+    item.addEventListener('click', () => {
+      if (selectedGroupMembers[user.id]) {
+        delete selectedGroupMembers[user.id];
+      } else {
+        selectedGroupMembers[user.id] = user;
+      }
+      updateSelectedMembersBar();
+      renderGroupMemberList(users);
+    });
+
+    list.appendChild(item);
+  });
+}
+
+function updateSelectedMembersBar() {
+  const bar = document.getElementById('selectedMembersBar');
+  const btn = document.getElementById('createGroupSubmitBtn');
+  const count = Object.keys(selectedGroupMembers).length;
+
+  if (count === 0) {
+    bar.style.display = 'none';
+    btn.style.display = 'none';
+  } else {
+    const names = Object.values(selectedGroupMembers).map(u => u.name).join(', ');
+    bar.style.display = 'block';
+    bar.textContent = `Đã chọn (${count}): ${names}`;
+    btn.style.display = 'block';
+    btn.textContent = count < 2 ? 'Chọn thêm ít nhất 1 người' : `Tạo nhóm (${count + 1} người)`;
+    btn.style.background = count < 2 ? '#aaa' : '#5b7ce6';
+  }
+}
+function showRenameModal(conv) {
+  const newName = prompt('Nhap ten moi cho nhom:', conv.name);
+  if (newName && newName.trim() && newName.trim() !== conv.name) {
+    renameGroup(conv.id, newName.trim());
+  }
+}
+
+function renameGroup(convId, newName) {
+  fetch(`/api/conversations/${convId}/rename/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(),
+    },
+    body: JSON.stringify({ name: newName }),
+  })
+    .then(r => {
+      if (!r.ok) {
+        return r.json().then(data => {
+          throw new Error(data.error || `HTTP ${r.status}`);
+        });
+      }
+      return r.json();
+    })
+    .then(data => {
+      if (data.success) {
+        const conv = getConv(convId);
+        if (conv) {
+          conv.name = newName;
+          renderConvList(document.getElementById('convSearchInput').value);
+          if (activeConvId === convId) {
+            document.getElementById('chatHeaderName').textContent = newName + ' ✏️';
+          }
+        }
+        showToast('✅', 'Đã đổi tên nhóm thành công');
+      } else {
+        showToast('❌', data.error || 'Đổi tên thất bại');
+      }
+    })
+    .catch(err => {
+      console.error('Rename group error:', err);
+      showToast('❌', 'Lỗi: ' + err.message);
+    });
+}
