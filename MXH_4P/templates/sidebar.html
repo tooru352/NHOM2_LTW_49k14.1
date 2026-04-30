@@ -35,10 +35,11 @@
   <div class="nav-item {% if 'work-management' in request.path %}active{% endif %}" onclick="window.location.href='/work-management/'">
     <span class="nav-icon">📋</span> Quản lý công việc
   </div>
-  {% endif %}
+  {% else %}
   <div class="nav-item {% if 'employee-dashboard' in request.path %}active{% endif %}" onclick="window.location.href='/employee-dashboard/'">
     <span class="nav-icon">📝</span> Công việc cá nhân
   </div>
+  {% endif %}
   {% if request.user.is_manager %}
   <div class="nav-item {% if 'work_schedules_management' in request.path %}active{% endif %}" onclick="window.location.href='/work_schedules_management/'">
     <span class="nav-icon">📅</span> Lịch làm
