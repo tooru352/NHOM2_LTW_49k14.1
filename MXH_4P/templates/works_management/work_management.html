@@ -125,8 +125,8 @@
                 {% for task in tasks %}
                 <tr class="task-row {% if task.status == 'Done' %}highlight-green{% elif task.status == 'InProgress' %}highlight-yellow{% endif %}" 
                     data-status="{{ task.status }}"
-                    onclick="showTaskDetail({{ task.id }}, '{{ task.title|escapejs }}', '{{ task.description|escapejs }}', '{{ task.created_by.get_full_name|default:task.created_by.username|escapejs }}', '{{ task.created_at|date:"d/m/Y H:i" }}', '{{ task.status }}')">
-                    <td class="task-name">{{ task.title }}</td>
+                    data-task-id="{{ task.id }}">
+                    <td class="task-name" onclick="showTaskDetailById({{ task.id }})">{{ task.title }}</td>
                     <td class="employee-cell">
                         <div class="employee-tags" data-task-id="{{ task.id }}">
                             {% for assignment in task.assignments.all %}
@@ -142,16 +142,16 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td class="quantity-cell"><span class="quantity-display" data-task-id="{{ task.id }}">{{ task.assignments.count|default:1 }}</span></td>
-                    <td><span class="shift-badge morning">{{ task.shift|default:"Sáng" }}</span></td>
-                    <td class="time-cell">
+                    <td class="quantity-cell" onclick="showTaskDetailById({{ task.id }})"><span class="quantity-display" data-task-id="{{ task.id }}">{{ task.assignments.count|default:1 }}</span></td>
+                    <td onclick="showTaskDetailById({{ task.id }})"><span class="shift-badge morning">{{ task.shift|default:"Sáng" }}</span></td>
+                    <td class="time-cell" onclick="showTaskDetailById({{ task.id }})">
                         {% if task.start_time and task.end_time %}
                             {{ task.start_time|time:"H:i" }} - {{ task.end_time|time:"H:i" }}
                         {% else %}
                             {{ task.created_at|date:"H:i" }}
                         {% endif %}
                     </td>
-                    <td>
+                    <td onclick="showTaskDetailById({{ task.id }})">
                         {% if task.status == 'Done' %}
                         <span class="status-badge completed">✅ Hoàn thành</span>
                         {% elif task.status == 'InProgress' %}
@@ -160,7 +160,7 @@
                         <span class="status-badge overdue">❌ Chưa xử lý</span>
                         {% endif %}
                     </td>
-                    <td class="note-cell">{{ task.description|truncatewords:10 }}</td>
+                    <td class="note-cell" onclick="showTaskDetailById({{ task.id }})">{{ task.description|truncatewords:10 }}</td>
                     <!-- Hidden data for modal -->
                     <td style="display:none;" class="task-department">{{ task.get_department_display_name }}</td>
                     <td style="display:none;" class="task-shift">{{ task.shift|default:"Sáng" }}</td>
@@ -561,6 +561,9 @@ const csrftoken = getCookie('csrftoken');
 function showTaskDetail(taskId, title, description, createdBy, createdAt, status) {
     currentTaskId = taskId;
     
+    // Close any open dropdowns
+    document.querySelectorAll('.custom-employee-dropdown').forEach(dropdown => dropdown.remove());
+    
     // Find the row to get employee data
     const row = event.currentTarget;
     const employeesData = row.querySelector('.task-employees').dataset.employees;
@@ -601,8 +604,89 @@ function showTaskDetail(taskId, title, description, createdBy, createdAt, status
     document.getElementById('taskDetailModal').style.display = 'block';
 }
 
+// Show task detail by ID (new simplified function)
+function showTaskDetailById(taskId) {
+    currentTaskId = taskId;
+    
+    // Close any open dropdowns
+    document.querySelectorAll('.custom-employee-dropdown').forEach(dropdown => dropdown.remove());
+    document.querySelectorAll('.employee-select-temp').forEach(select => select.remove());
+    
+    // Find the row by task ID
+    const row = document.querySelector(`.task-row[data-task-id="${taskId}"]`);
+    if (!row) {
+        console.error('Task row not found for ID:', taskId);
+        return;
+    }
+    
+    // Get data from row
+    const title = row.querySelector('.task-name').textContent.trim();
+    const description = row.querySelector('.task-description') ? row.querySelector('.task-description').textContent.trim() : row.querySelector('.note-cell').textContent.trim();
+    const department = row.querySelector('.task-department') ? row.querySelector('.task-department').textContent.trim() : 'Quản lý & Vận hành';
+    const shift = row.querySelector('.task-shift') ? row.querySelector('.task-shift').textContent.trim() : row.querySelector('.shift-badge').textContent.trim();
+    const startTime = row.querySelector('.task-start-time') ? row.querySelector('.task-start-time').textContent.trim() : '';
+    const endTime = row.querySelector('.task-end-time') ? row.querySelector('.task-end-time').textContent.trim() : '';
+    const timeCell = row.querySelector('.time-cell').textContent.trim();
+    
+    // Get status
+    const statusBadge = row.querySelector('.status-badge');
+    let status = 'Todo';
+    let statusText = 'Chưa bắt đầu';
+    if (statusBadge.classList.contains('completed')) {
+        status = 'Done';
+        statusText = 'Đã hoàn thành công việc';
+    } else if (statusBadge.classList.contains('pending')) {
+        status = 'InProgress';
+        statusText = 'Đang thực hiện công việc';
+    }
+    
+    // Get employees
+    const employeeTags = row.querySelectorAll('.employee-tag');
+    const employees = [];
+    employeeTags.forEach(tag => {
+        const userId = tag.dataset.userId;
+        const name = tag.textContent.replace('×', '').trim();
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        employees.push({ id: userId, name: name, initials: initials });
+    });
+    
+    // Update modal content
+    document.getElementById('taskIdNumber').textContent = taskId;
+    document.getElementById('detailTaskTitle').textContent = title;
+    document.getElementById('detailDescription').textContent = description;
+    document.getElementById('detailDepartment').textContent = department;
+    document.getElementById('detailNote').textContent = `"${description}"`;
+    
+    // Format and display shift and time
+    let shiftTimeDisplay = `Ca ${shift}`;
+    if (startTime && endTime) {
+        shiftTimeDisplay += `<br>${startTime} — ${endTime}`;
+    } else if (timeCell) {
+        shiftTimeDisplay += `<br>${timeCell}`;
+    }
+    document.getElementById('detailShiftTime').innerHTML = shiftTimeDisplay;
+    
+    // Update employees list
+    const employeesHtml = employees.map(emp => `
+        <div class="employee-item-detail" data-user-id="${emp.id || ''}">
+            <div class="employee-avatar">${emp.initials}</div>
+            <div class="employee-info-detail">
+                <strong>${emp.name}</strong>
+                <span>${statusText}</span>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById('detailEmployees').innerHTML = employeesHtml;
+    
+    // Show modal
+    document.getElementById('taskDetailModal').style.display = 'block';
+}
+
 // Close task detail modal
 function closeTaskDetailModal() {
+    // Close any open dropdowns
+    document.querySelectorAll('.custom-employee-dropdown').forEach(dropdown => dropdown.remove());
+    
     document.getElementById('taskDetailModal').style.display = 'none';
     currentTaskId = null;
     isEditMode = false;
@@ -739,6 +823,9 @@ function editTaskFromModal() {
 
 // Add employee to detail modal
 function addEmployeeToDetail() {
+    // Close any existing dropdown first
+    document.querySelectorAll('.custom-employee-dropdown').forEach(dropdown => dropdown.remove());
+    
     const employeeList = document.getElementById('detailEmployees');
     
     // Get already assigned employee IDs
@@ -758,41 +845,73 @@ function addEmployeeToDetail() {
         return;
     }
     
-    // Create select dropdown
-    const select = document.createElement('select');
-    select.style.cssText = 'width: 100%; padding: 10px; border: 1px solid #5b6cf5; border-radius: 8px; margin-bottom: 10px;';
+    // Find the add button
+    const addBtn = employeeList.querySelector('.add-employee-detail-btn');
     
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = '-- Chọn nhân viên --';
-    select.appendChild(option);
+    // Create custom dropdown with proper styling
+    const dropdownContainer = document.createElement('div');
+    dropdownContainer.className = 'custom-employee-dropdown';
+    dropdownContainer.style.cssText = `
+        position: absolute;
+        background: white;
+        border: 2px solid #5b6cf5;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 9999;
+        width: 280px;
+        margin-top: 5px;
+    `;
+    
+    // Add header
+    const header = document.createElement('div');
+    header.style.cssText = 'padding: 12px; background: #5b6cf5; color: white; font-weight: 600; font-size: 14px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center;';
+    header.innerHTML = `
+        <span>Chọn nhân viên</span>
+        <span style="cursor: pointer; font-size: 20px;" onclick="this.closest('.custom-employee-dropdown').remove()">×</span>
+    `;
+    dropdownContainer.appendChild(header);
+    
+    // Add employee list
+    const listContainer = document.createElement('div');
+    listContainer.style.cssText = 'padding: 8px;';
     
     unassignedEmployees.forEach(emp => {
-        const opt = document.createElement('option');
-        opt.value = emp.id;
-        opt.textContent = emp.name;
-        select.appendChild(opt);
-    });
-    
-    // Insert before add button
-    const addBtn = employeeList.querySelector('.add-employee-detail-btn');
-    employeeList.insertBefore(select, addBtn);
-    select.focus();
-    
-    select.addEventListener('change', function() {
-        if (this.value) {
-            const empId = this.value;
-            const empName = this.options[this.selectedIndex].text;
-            const initials = empName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-            
+        const empItem = document.createElement('div');
+        empItem.style.cssText = `
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        `;
+        empItem.onmouseover = function() { this.style.background = '#f0f2ff'; };
+        empItem.onmouseout = function() { this.style.background = 'transparent'; };
+        
+        const initials = emp.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        empItem.innerHTML = `
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">
+                ${initials}
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 13px; color: #1a1a2e;">${emp.name}</div>
+            </div>
+        `;
+        
+        empItem.onclick = function() {
             // Create employee item
             const item = document.createElement('div');
             item.className = 'employee-item-detail';
-            item.dataset.userId = empId;
+            item.dataset.userId = emp.id;
             item.innerHTML = `
                 <div class="employee-avatar">${initials}</div>
                 <div class="employee-info-detail">
-                    <strong>${empName}</strong>
+                    <strong>${emp.name}</strong>
                     <span>Được phân công</span>
                 </div>
                 <span class="remove-employee-detail" style="margin-left: auto; cursor: pointer; color: #e74c3c; font-size: 20px; font-weight: bold;">×</span>
@@ -802,14 +921,64 @@ function addEmployeeToDetail() {
                 item.remove();
             };
             
-            employeeList.insertBefore(item, addBtn);
-        }
-        this.remove();
+            // Insert before add button if it exists, otherwise append
+            if (addBtn) {
+                employeeList.insertBefore(item, addBtn);
+            } else {
+                employeeList.appendChild(item);
+            }
+            dropdownContainer.remove();
+            
+            showNotification('✅ Đã thêm nhân viên (nhớ nhấn Lưu thay đổi)', 'success');
+        };
+        
+        listContainer.appendChild(empItem);
     });
     
-    select.addEventListener('blur', function() {
-        setTimeout(() => this.remove(), 200);
-    });
+    dropdownContainer.appendChild(listContainer);
+    
+    // Position dropdown relative to the add button or employee list
+    let targetRect;
+    if (addBtn) {
+        targetRect = addBtn.getBoundingClientRect();
+    } else {
+        targetRect = employeeList.getBoundingClientRect();
+    }
+    
+    dropdownContainer.style.position = 'fixed';
+    dropdownContainer.style.left = targetRect.left + 'px';
+    dropdownContainer.style.top = (targetRect.bottom + 5) + 'px';
+    
+    // Insert into body to avoid overflow issues
+    document.body.appendChild(dropdownContainer);
+    
+    // Close dropdown when click outside or press Escape
+    setTimeout(() => {
+        const closeDropdown = () => {
+            if (dropdownContainer.parentNode) {
+                dropdownContainer.remove();
+            }
+        };
+        
+        const closeOnClickOutside = (e) => {
+            if (!dropdownContainer.contains(e.target) && e.target !== addBtn) {
+                closeDropdown();
+                document.removeEventListener('click', closeOnClickOutside);
+                document.removeEventListener('keydown', closeOnEscape);
+            }
+        };
+        
+        const closeOnEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeDropdown();
+                document.removeEventListener('click', closeOnClickOutside);
+                document.removeEventListener('keydown', closeOnEscape);
+            }
+        };
+        
+        document.addEventListener('click', closeOnClickOutside);
+        document.addEventListener('keydown', closeOnEscape);
+    }, 100);
 }
 
 // Delete task from modal
@@ -1030,6 +1199,11 @@ function addEmployee(taskId, button) {
     select.className = 'employee-select-temp';
     select.style.cssText = 'margin-right: 5px; padding: 4px 8px; border-radius: 4px; border: 1px solid #5b6cf5;';
     
+    // Stop propagation when clicking on select
+    select.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
     const option = document.createElement('option');
     option.value = '';
     option.textContent = '-- Chọn nhân viên --';
@@ -1045,7 +1219,8 @@ function addEmployee(taskId, button) {
     container.insertBefore(select, button);
     select.focus();
     
-    select.addEventListener('change', function() {
+    select.addEventListener('change', function(e) {
+        e.stopPropagation(); // Stop propagation on change too
         if (this.value) {
             const userId = parseInt(this.value);
             const userName = this.options[this.selectedIndex].text;

@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/posts_management/posts.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'css/works_management/meeting_schedule.css' %}?v=1">
 {% endblock %}
 
 {% block content %}
@@ -180,14 +181,14 @@
         
         <div class="post-reactions">
           {% if post.reaction_count > 0 %}
-          <div class="reaction-item" style="background:#e74c3c">❤️</div>
+          <div class="reaction-item" style="background:#3b5998">👍</div>
           <span class="reaction-count">{{ post.reaction_count }} người</span>
           {% endif %}
         </div>
         
         <div class="post-actions">
           <button class="post-action-btn {% if post.user_reacted %}liked{% endif %}" onclick="toggleLike({{ post.id }}, this)" title="{% if post.user_reacted %}Bỏ thích{% else %}Thích{% endif %}">
-            <span class="like-icon">{% if post.user_reacted %}❤️{% else %}🤍{% endif %}</span>
+            <span class="like-icon">{% if post.user_reacted %}👍{% else %}👍{% endif %}</span> Thích
           </button>
           <button class="post-action-btn" onclick="toggleComments({{ post.id }})">
             <span>💬</span> Bình luận ({{ post.comment_count }})
@@ -233,8 +234,10 @@
                 </div>
                 <div style="font-size:11px;color:#999;margin-top:4px;margin-left:12px;display:flex;gap:12px;align-items:center">
                   <span>{{ comment.created_at|timesince }} trước</span>
+                  {% if comment.is_edited %}<span style="color:#999">• Đã chỉnh sửa</span>{% endif %}
                   <button onclick="showReplyForm({{ post.id }}, {{ comment.id }}, '{{ comment.user.first_name }}')" style="background:none;border:none;color:#667eea;cursor:pointer;font-weight:600;padding:0">Trả lời</button>
                   {% if comment.user == user %}
+                  <button onclick="editComment({{ comment.id }})" style="background:none;border:none;color:#667eea;cursor:pointer;font-weight:600;padding:0">Chỉnh sửa</button>
                   <button onclick="deleteComment({{ post.id }}, {{ comment.id }})" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-weight:600;padding:0">Xóa</button>
                   {% endif %}
                 </div>
@@ -243,7 +246,7 @@
                 {% if comment.replies.all %}
                 <div style="margin-top:12px;margin-left:20px">
                   {% for reply in comment.replies.all %}
-                  <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <div class="comment-item" data-comment-id="{{ reply.id }}" style="display:flex;gap:8px;margin-bottom:8px">
                     {% if reply.user.avatar %}
                     <div class="post-avatar" style="width:28px;height:28px;font-size:10px;background-image: url('{{ reply.user.avatar.url }}'); background-size: cover; background-position: center;">
                     </div>
@@ -261,7 +264,9 @@
                       </div>
                       <div style="font-size:10px;color:#999;margin-top:2px;margin-left:10px;display:flex;gap:8px;align-items:center">
                         <span>{{ reply.created_at|timesince }} trước</span>
+                        {% if reply.is_edited %}<span style="color:#999">• Đã chỉnh sửa</span>{% endif %}
                         {% if reply.user == user %}
+                        <button onclick="editComment({{ reply.id }})" style="background:none;border:none;color:#667eea;cursor:pointer;font-weight:600;padding:0;font-size:10px">Chỉnh sửa</button>
                         <button onclick="deleteComment({{ post.id }}, {{ reply.id }})" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-weight:600;padding:0;font-size:10px">Xóa</button>
                         {% endif %}
                       </div>
@@ -315,9 +320,22 @@
       </div>
       {% if my_meetings %}
         {% for meeting in my_meetings|slice:":3" %}
-        <div class="schedule-item">
-          <div class="schedule-time">{{ meeting.start_time|date:"H:i" }} - {{ meeting.title }}</div>
+        <div class="schedule-item" style="cursor: pointer;" onclick="showMeetingDetail({{ meeting.id }})">
+          <div class="schedule-time">{{ meeting.start_time|date:"H:i" }} - {{ meeting.end_time|date:"H:i" }}</div>
           <div class="schedule-title">{{ meeting.title }}</div>
+          <!-- Hidden data for modal -->
+          <div style="display:none;" class="meeting-data"
+               data-id="{{ meeting.id }}"
+               data-title="{{ meeting.title }}"
+               data-description="{{ meeting.description }}"
+               data-department="{{ meeting.department|default:'Chưa xác định' }}"
+               data-location="{{ meeting.location|default:'Chưa xác định' }}"
+               data-start="{{ meeting.start_time|date:'d/m/Y H:i' }}"
+               data-end="{{ meeting.end_time|date:'H:i' }}"
+               data-status="{{ meeting.status }}"
+               data-organizer="{{ meeting.created_by.get_full_name|default:meeting.created_by.username }}"
+               data-created-by="{{ meeting.created_by.id }}">
+          </div>
         </div>
         {% endfor %}
       {% else %}
@@ -346,7 +364,7 @@
     </div>
 
     <!-- Thông báo -->
-    <div class="sidebar-card">
+    <div class="sidebar-card" style="display:none;">
       <div class="sidebar-card-header">
         <span class="sidebar-card-icon">🔔</span>
         <h3>Thông báo</h3>
@@ -365,6 +383,68 @@
     </div>
   </aside>
 </div>
+
+<!-- Modal Chi tiết cuộc họp -->
+<div id="meetingDetailModal" class="modal" style="display: none;">
+    <div class="modal-content-detail">
+        <div class="modal-header-detail">
+            <div class="header-tabs">
+                <button class="tab-btn active">Chi tiết cuộc họp</button>
+            </div>
+            <span class="close" onclick="closeMeetingDetailModal()">&times;</span>
+        </div>
+        <div class="modal-body-detail">
+            <h2>📋 Tiêu đề cuộc họp</h2>
+            <h3 id="meetingDetailTitle" class="meeting-subtitle">Họp ban giám đốc</h3>
+            
+            <div class="detail-section">
+                <h4>MÔ TẢ</h4>
+                <p id="meetingDetailDescription">Cuộc họp nhằm đánh giá kết quả làm việc của nhân sự trong tháng 2...</p>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-col">
+                    <h4>PHÒNG BAN</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">👥</span>
+                        <span id="meetingDetailDepartment">Ban giám đốc</span>
+                    </div>
+                </div>
+                <div class="detail-col">
+                    <h4>ĐỊA ĐIỂM</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">📍</span>
+                        <span id="meetingDetailLocation">Phòng họp tầng 3</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>CHỦ TRÌ</h4>
+                <div class="organizer-info">
+                    <div class="employee-avatar">CT</div>
+                    <div class="employee-info-detail">
+                        <strong id="meetingDetailHost">Công Minh Tuấn</strong>
+                        <span>Người chủ trì</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>NGÀY & THỜI GIAN</h4>
+                <div class="info-badge">
+                    <span class="badge-icon">📅</span>
+                    <span id="meetingDetailDateTime">26/02/2026<br>08:00 - 10:00</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer-detail" id="meetingActionButtons" style="display: none;">
+            <button class="btn-edit" onclick="editMeetingRedirect()">Chỉnh sửa nội dung</button>
+            <button class="btn-delete" onclick="deleteMeetingFromModal()">Xóa cuộc họp</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -483,11 +563,11 @@ function toggleLike(postId, button) {
     if (data.success) {
       if (data.liked) {
         button.classList.add('liked');
-        button.innerHTML = '<span class="like-icon">❤️</span>';
+        button.innerHTML = '<span class="like-icon">👍</span> Thích';
         button.title = 'Bỏ thích';
       } else {
         button.classList.remove('liked');
-        button.innerHTML = '<span class="like-icon">🤍</span>';
+        button.innerHTML = '<span class="like-icon">👍</span> Thích';
         button.title = 'Thích';
       }
       // Update reaction count
@@ -495,7 +575,7 @@ function toggleLike(postId, button) {
       const reactionsDiv = card.querySelector('.post-reactions');
       if (data.count > 0) {
         reactionsDiv.innerHTML = `
-          <div class="reaction-item" style="background:#e74c3c">❤️</div>
+          <div class="reaction-item" style="background:#3b5998">👍</div>
           <span class="reaction-count">${data.count} người</span>
         `;
       } else {
@@ -740,6 +820,93 @@ function deleteComment(postId, commentId) {
     console.error('Error:', error);
     alert('Có lỗi xảy ra. Vui lòng thử lại!');
   });
+}
+
+// Edit comment
+function editComment(commentId) {
+  const commentItem = document.querySelector(`[data-comment-id="${commentId}"]`);
+  if (!commentItem) return;
+  
+  // Find the content div - it's the second div inside the background div
+  const bgDiv = commentItem.querySelector('div[style*="background:#f0f2f5"]');
+  if (!bgDiv) return;
+  
+  const contentDiv = bgDiv.querySelector('div:last-child');
+  if (!contentDiv) return;
+  
+  const currentContent = contentDiv.textContent.trim();
+  
+  // Replace content with input
+  const editForm = document.createElement('form');
+  editForm.style.cssText = 'display:flex;gap:8px;margin-top:4px';
+  editForm.innerHTML = `
+    <input type="text" value="${currentContent.replace(/"/g, '&quot;')}" required style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:16px;font-size:13px">
+    <button type="submit" style="padding:6px 12px;background:#667eea;color:#fff;border:none;border-radius:16px;font-size:12px;cursor:pointer">Lưu</button>
+    <button type="button" onclick="cancelEditComment(${commentId})" style="padding:6px 12px;background:#e4e6eb;color:#333;border:none;border-radius:16px;font-size:12px;cursor:pointer">Hủy</button>
+  `;
+  
+  // Store original content in data attribute
+  contentDiv.dataset.originalContent = currentContent;
+  
+  editForm.onsubmit = function(e) {
+    e.preventDefault();
+    const newContent = editForm.querySelector('input').value.trim();
+    if (!newContent) {
+      alert('Nội dung không được để trống!');
+      return;
+    }
+    
+    fetch(`/comment/${commentId}/edit/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ content: newContent })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        contentDiv.textContent = data.content;
+        editForm.remove();
+        contentDiv.style.display = 'block';
+        
+        // Add "Đã chỉnh sửa" label if not exists
+        const actionsDiv = commentItem.querySelector('div[style*="font-size:11px"], div[style*="font-size:10px"]');
+        if (actionsDiv && !actionsDiv.textContent.includes('Đã chỉnh sửa')) {
+          const timeSpan = actionsDiv.querySelector('span:first-child');
+          if (timeSpan) {
+            timeSpan.innerHTML += ' <span style="color:#999">• Đã chỉnh sửa</span>';
+          }
+        }
+      } else {
+        alert(data.error || 'Không thể chỉnh sửa bình luận!');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Có lỗi xảy ra. Vui lòng thử lại!');
+    });
+  };
+  
+  contentDiv.style.display = 'none';
+  bgDiv.parentElement.insertBefore(editForm, bgDiv.nextSibling);
+}
+
+function cancelEditComment(commentId) {
+  const commentItem = document.querySelector(`[data-comment-id="${commentId}"]`);
+  if (!commentItem) return;
+  
+  const bgDiv = commentItem.querySelector('div[style*="background:#f0f2f5"]');
+  if (!bgDiv) return;
+  
+  const contentDiv = bgDiv.querySelector('div:last-child');
+  const editForm = commentItem.querySelector('form');
+  
+  if (contentDiv && editForm) {
+    contentDiv.style.display = 'block';
+    editForm.remove();
+  }
 }
 
 function deletePost(postId) {
@@ -1026,6 +1193,90 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
     const content = card.textContent.toLowerCase();
     card.style.display = content.includes(query) ? 'block' : 'none';
   });
+});
+
+// Meeting detail modal functions
+let currentMeetingId = null;
+let currentMeetingCreatorId = null;
+const currentUserId = {{ request.user.id }};
+
+function showMeetingDetail(meetingId) {
+    const card = event.currentTarget;
+    const data = card.querySelector('.meeting-data');
+    
+    if (!data) {
+        console.error('Meeting data not found');
+        return;
+    }
+    
+    currentMeetingId = meetingId;
+    currentMeetingCreatorId = parseInt(data.dataset.createdBy);
+    
+    // Update modal content
+    document.getElementById('meetingDetailTitle').textContent = data.dataset.title;
+    document.getElementById('meetingDetailDescription').textContent = data.dataset.description || 'Không có mô tả';
+    document.getElementById('meetingDetailDepartment').textContent = data.dataset.department || 'Chưa xác định';
+    document.getElementById('meetingDetailLocation').textContent = data.dataset.location || 'Chưa xác định';
+    document.getElementById('meetingDetailHost').textContent = data.dataset.organizer;
+    
+    const dateTime = `${data.dataset.start}<br>${data.dataset.start.split(' ')[1]} - ${data.dataset.end}`;
+    document.getElementById('meetingDetailDateTime').innerHTML = dateTime;
+    
+    // Show/hide action buttons based on creator
+    const actionButtons = document.getElementById('meetingActionButtons');
+    if (currentUserId === currentMeetingCreatorId) {
+        actionButtons.style.display = 'flex';
+    } else {
+        actionButtons.style.display = 'none';
+    }
+    
+    // Show modal
+    document.getElementById('meetingDetailModal').style.display = 'block';
+}
+
+function closeMeetingDetailModal() {
+    document.getElementById('meetingDetailModal').style.display = 'none';
+}
+
+function editMeetingRedirect() {
+    // Redirect to meeting schedule page
+    window.location.href = '/meeting-schedule/';
+}
+
+function deleteMeetingFromModal() {
+    if (!confirm('Bạn có chắc chắn muốn xóa cuộc họp này?')) {
+        return;
+    }
+    
+    fetch(`/meetings/${currentMeetingId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Đã xóa cuộc họp thành công!');
+            closeMeetingDetailModal();
+            location.reload();
+        } else {
+            alert('❌ Lỗi: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Có lỗi xảy ra khi xóa cuộc họp');
+    });
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('meetingDetailModal');
+    if (event.target == modal) {
+        closeMeetingDetailModal();
+    }
 });
 </script>
 <script src="{% static 'js/main.js' %}?v=3"></script>

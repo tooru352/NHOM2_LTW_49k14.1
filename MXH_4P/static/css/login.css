@@ -66,6 +66,17 @@ body {
   margin-bottom: 16px;
 }
 
+/* Success */
+.login-success {
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  color: #22543d;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
 /* Form */
 .form-group {
   margin-bottom: 18px;

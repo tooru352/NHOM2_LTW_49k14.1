@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Quản lý lịch làm việc - FourPoint Hotel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/work_schedules_management/lich_lam.css' %}?v=5">
+{% endblock %}
+
+{% block content %}
+<div class="schedule-page">
+
+  <!-- Schedule View -->
+  <div id="scheduleView">
+    <div class="page-header">
+      <h1>Lịch Làm Việc Tuần</h1>
+      <div class="actions">
+        <button class="btn-create" id="btnCreate" onclick="openCreateView()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tạo lịch làm việc
+        </button>
+        <button class="btn-edit" id="btnEdit" onclick="openEditView()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="18" height="17" rx="2" fill="none" stroke="white" stroke-width="2"/>
+            <line x1="3" y1="9" x2="21" y2="9" stroke="white" stroke-width="2"/>
+            <line x1="8" y1="2" x2="8" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16" y1="2" x2="16" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M9 17.5l1-3 5.5-5.5 2 2-5.5 5.5-3 1z" fill="white"/>
+            <path d="M15.5 9l2 2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Sửa lịch
+        </button>
+        <button class="btn-del" id="btnDel" onclick="confirmDelete()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+            <rect x="5" y="6" width="14" height="14" rx="1"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+          Xóa lịch
+        </button>
+      </div>
+    </div>
+
+    <div class="week-selector">
+      <label>Chọn tuần:</label>
+      <div class="week-nav">
+        <button class="week-btn" onclick="changeWeek(-1)">‹ Tuần trước</button>
+        <span class="week-range" id="weekRange"></span>
+        <span class="badge-current" id="badgeCurrent">TUẦN HIỆN TẠI</span>
+        <button class="week-btn" onclick="changeWeek(1)" id="btnNext">Tuần sau ›</button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-emp">NHÂN VIÊN</th>
+            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
+            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody"></tbody>
+      </table>
+    </div>
+
+    <div class="schedule-footer">
+      <div class="footer-top">
+        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
+        <div class="shift-totals" id="shiftTotals"></div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
+        <div class="shift-legend">
+          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create View -->
+  <div class="create-view" id="createView">
+    <div class="page-header">
+      <div>
+        <h1>Lịch Làm Việc Tuần</h1>
+        <p style="font-size:12px;color:#888;margin-top:3px;">Quản lý lịch làm việc của nhân viên theo tuần</p>
+      </div>
+      <div class="create-week-pick">
+        <button class="week-display-btn" onclick="toggleCalPopup(event)">
+          <span id="weekDisplayText">Week 01, 2026</span>
+          <span class="cal-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e2235" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+        </button>
+        <div class="cal-popup" id="calPopup">
+          <div class="cal-nav">
+            <span class="cal-nav-title" id="calMonthTitle"></span>
+            <div class="cal-nav-arrows">
+              <button>‹</button>
+              <button>›</button>
+            </div>
+          </div>
+          <table class="cal-grid">
+            <thead>
+              <tr>
+                <th class="week-col">Tuần</th>
+                <th>T2</th><th>T3</th><th>T4</th><th>T5</th><th>T6</th><th>T7</th><th>CN</th>
+              </tr>
+            </thead>
+            <tbody id="calBody"></tbody>
+          </table>
+          <div class="cal-footer" id="calFooter"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="create-table">
+        <thead>
+          <tr>
+            <th class="col-emp">Nhân viên</th>
+            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
+            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
+          </tr>
+        </thead>
+        <tbody id="createBody"></tbody>
+      </table>
+    </div>
+
+    <div class="schedule-footer">
+      <div class="footer-top">
+        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
+        <div class="shift-totals" id="createTotals"></div>
+      </div>
+    </div>
+
+    <div class="create-actions-row">
+      <button class="btn-cancel-create" onclick="closeCreateView()">Hủy tạo</button>
+      <button class="btn-save-create" onclick="saveCreateView()">Lưu lịch làm việc</button>
+    </div>
+
+    <div class="schedule-footer" style="margin-top:0;">
+      <div class="footer-bottom">
+        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
+        <div class="shift-legend">
+          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit View -->
+  <div class="edit-view" id="editView">
+    <div class="page-header">
+      <h1>Lịch Làm Việc Tuần</h1>
+      <div class="actions">
+        <button class="btn-cancel-edit" onclick="closeEditView()">Hủy</button>
+        <button class="btn-save-edit" onclick="saveEditView()">Lưu thay đổi</button>
+      </div>
+    </div>
+
+    <div class="week-selector">
+      <label>Chọn tuần:</label>
+      <div class="week-nav">
+        <button class="week-btn" onclick="changeWeek(-1)">‹ Tuần trước</button>
+        <span class="week-range" id="editWeekRange"></span>
+        <span class="badge-current" id="editBadgeCurrent">TUẦN HIỆN TẠI</span>
+        <button class="week-btn" onclick="changeWeek(1)">Tuần sau ›</button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="edit-table">
+        <thead>
+          <tr>
+            <th class="col-emp">NHÂN VIÊN</th>
+            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
+            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
+          </tr>
+        </thead>
+        <tbody id="editBody"></tbody>
+      </table>
+    </div>
+
+    <div class="schedule-footer">
+      <div class="footer-top">
+        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
+        <div class="shift-totals" id="editTotals"></div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
+        <div class="shift-legend">
+          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Popup (quản lý xem lý do từ chối) -->
+  <div class="overlay" id="rejectOverlay" onclick="closeRejectPopup()"></div>
+  <div class="reject-modal" id="rejectModal">
+    <div class="rj-header">
+      <div class="rj-header-left">
+        <div class="rj-warn-icon-box">⚠️</div>
+        <div>
+          <h3>Ca làm việc bị từ chối</h3>
+          <p>Nhân viên đã từ chối ca làm việc này</p>
+        </div>
+      </div>
+      <button class="rj-close" onclick="closeRejectPopup()">✕</button>
+    </div>
+    <div class="rj-body">
+      <div class="rj-field">
+        <div class="rj-label">TÊN NHÂN VIÊN</div>
+        <div class="rj-value" id="rjEmpName"></div>
+      </div>
+      <div class="rj-field">
+        <div class="rj-label">NGÀY LÀM VIỆC</div>
+        <div class="rj-value" id="rjDate"></div>
+      </div>
+      <div class="rj-field">
+        <div class="rj-label">CA LÀM VIỆC BỊ TỪ CHỐI</div>
+        <div class="rj-shift-box">
+          <div class="rj-shift-icon" id="rjShiftIcon"></div>
+          <div>
+            <div class="rj-shift-name" id="rjShiftName"></div>
+            <div class="rj-shift-time" id="rjShiftTime"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rj-field">
+        <div class="rj-label">LÝ DO TỪ CHỐI</div>
+        <div class="rj-reason-box">
+          <div class="rj-reason-title">
+            <div class="rj-reason-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            </div>
+            Lý do nhân viên đưa ra:
+          </div>
+          <div class="rj-reason-text" id="rjReasonText"></div>
+        </div>
+      </div>
+      <div class="rj-reply-box">
+        <div class="rj-reply-label">Phản hồi của bạn <span>*</span></div>
+        <textarea id="rjReply" rows="4"
+          placeholder="Nhập phản hồi giải thích cho nhân viên (Ví dụ: Do thiếu nhân sự,...)."
+          oninput="document.getElementById('rjCharCount').textContent = this.value.length + ' / 500 ký tự'"></textarea>
+        <div class="rj-reply-footer">
+          <span class="rj-reply-hint">💡 Lý do cần có ít nhất 10 ký tự để gửi từ chối</span>
+          <span id="rjCharCount">0 / 500 ký tự</span>
+        </div>
+      </div>
+    </div>
+    <div class="rj-footer">
+      <button class="btn-rj-reassign" onclick="handleReassign()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        Sắp xếp lại
+      </button>
+      <button class="btn-rj-cancel" onclick="handleManagerCancel()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Từ chối
+      </button>
+    </div>
+  </div>
+
+  <!-- Delete Confirm -->
+  <div class="overlay" id="deleteOverlay" onclick="closeDelete()"></div>
+  <div class="delete-modal" id="deleteModal">
+    <div class="delete-modal-icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+    <div class="delete-modal-text">Bạn có chắc muốn xóa lịch làm tuần này không?</div>
+    <div class="delete-modal-footer">
+      <button class="delete-btn-cancel" onclick="closeDelete()">Hủy</button>
+      <button class="delete-btn-confirm" onclick="deleteSchedule()">Đồng ý</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-icon-wrap" id="toastIconWrap">
+      <svg id="toastIconSvg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="4 12 9 17 20 6"/>
+      </svg>
+    </div>
+    <div class="toast-body">
+      <div class="toast-title" id="toastTitle"></div>
+      <div class="toast-desc"  id="toastDesc"></div>
+    </div>
+    <button class="toast-close" onclick="document.getElementById('toast').classList.remove('show')">×</button>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ===== Inject dữ liệu thật từ Django =====
+const DB_EMPLOYEES = [
+  {% for user in users %}
+  {
+    id: {{ user.id }},
+    name: "{{ user.get_full_name|default:user.username }}",
+    role: "Nhân viên"
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+
+const DB_SCHEDULES = {};
+{% for user_data in user_schedules %}
+  DB_SCHEDULES[{{ user_data.user.id }}] = {};
+  {% for day_data in user_data.schedules %}
+    {% if day_data.schedule %}
+    DB_SCHEDULES[{{ user_data.user.id }}]["{{ day_data.date|date:'Y-m-d' }}"] = {
+      id: {{ day_data.schedule.id }},
+      shift: "{{ day_data.schedule.shift_code.shift_code }}",
+      status: {{ day_data.schedule.status }},
+      employee_note: "{{ day_data.schedule.employee_note|default:''|escapejs }}",
+      manager_note: "{{ day_data.schedule.manager_note|default:''|escapejs }}"
+    };
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+const DB_WEEK_START = "{{ week_start|date:'Y-m-d' }}";
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+console.log('DB_EMPLOYEES:', DB_EMPLOYEES.length, 'users');
+console.log('DB_WEEK_START:', DB_WEEK_START);
+console.log('DB_SCHEDULES keys:', Object.keys(DB_SCHEDULES).length);
+</script>
+<script src="{% static 'js/work_schedules_management.js' %}?v=7"></script>
+{% endblock %}
+

@@ -3,28 +3,9 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, Http404
-from django.db.models import Q, Max, Count
+from django.db.models import Q, Max
 from django.views.decorators.http import require_http_methods
 import json
-
-# Helper function to determine user department
-def get_user_department(user):
-    """Determine user's department from username or tasks"""
-    username = user.username
-    if username.startswith('fo'):
-        return 'FO'
-    elif username.startswith('fb'):
-        return 'F&B'
-    elif username.startswith('hk'):
-        return 'HK'
-    # Try to get from tasks
-    dept_task = user.assigned_tasks.values('department').annotate(
-        count=Count('id')
-    ).order_by('-count').first()
-    if dept_task and dept_task.get('department'):
-        return dept_task['department']
-    # Return placeholder
-    return 'Chưa phân bộ phận'
 
 from .forms import (
     LoginForm, UserRegistrationForm, UserProfileForm,
@@ -38,7 +19,7 @@ from .forms import (
 from .models import (
     User, Post, Interaction, InteractionType,
     Group, GroupMember, Task, TaskResponse,
-    Meeting, MeetingParticipant, Message, Conversation,
+    Meeting, MeetingParticipant, Message, Conversation, ConversationMember,
     WorkShift, WorkSchedule
 )
 
@@ -85,40 +66,18 @@ def register(request):
     return render(request, 'account_management/register.html', {'form': form})
 
 @login_required
-@login_required
 def account(request):
     """User profile management"""
-    
-    # Get user statistics
-    total_posts = request.user.posts.count()
-    total_tasks = request.user.assigned_tasks.count()
-    completed_tasks = request.user.assigned_tasks.filter(status='Done').count()
-    
-    # Get department using helper function
-    department = get_user_department(request.user)
-    
-    # Get role
-    role = 'Quản lý' if request.user.is_manager() else 'Nhân viên'
-    
     if request.method == 'POST':
-        # Handle profile update
-        action = request.POST.get('action')
-        if action == 'update_profile':
-            request.user.first_name = request.POST.get('first_name', '')
-            request.user.last_name = request.POST.get('last_name', '')
-            request.user.email = request.POST.get('email', '')
-            request.user.save()
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
             messages.success(request, 'Đã cập nhật thông tin cá nhân!')
             return redirect('account')
+    else:
+        form = UserProfileForm(instance=request.user)
     
-    return render(request, 'account_management/account.html', {
-        'user': request.user,
-        'department': department,
-        'role': role,
-        'total_posts': total_posts,
-        'total_tasks': total_tasks,
-        'completed_tasks': completed_tasks,
-    })
+    return render(request, 'account_management/account.html', {'form': form})
 
 @login_required
 def home(request):
@@ -142,13 +101,11 @@ def home(request):
             post.reaction_count = post.interactions.filter(interaction_type=reaction_type).count()
             post.user_reacted = post.interactions.filter(user=request.user, interaction_type=reaction_type).exists()
             post.comment_count = post.interactions.filter(interaction_type=comment_type).count()
-            # Only get parent comments (no parent), and prefetch their replies
+            # Only get root comments (parent=None), replies will be accessed via comment.replies.all()
             post.comments = post.interactions.filter(
                 interaction_type=comment_type,
                 parent__isnull=True
-            ).select_related('user').prefetch_related(
-                'replies__user'
-            ).order_by('created_at')
+            ).select_related('user').prefetch_related('replies__user').order_by('created_at')
     except InteractionType.DoesNotExist:
         # If no interaction type exists, set defaults
         for post in posts:
@@ -390,12 +347,9 @@ def create_comment(request, post_id):
             # Get parent comment if this is a reply
             parent_comment = None
             if parent_id:
-                try:
-                    parent_comment = Interaction.objects.get(id=parent_id, interaction_type=comment_type)
-                except Interaction.DoesNotExist:
-                    return JsonResponse({'success': False, 'error': 'Comment cha không tồn tại'})
+                parent_comment = get_object_or_404(Interaction, id=parent_id)
             
-            # Create comment or reply
+            # Create comment
             comment = Interaction.objects.create(
                 user=request.user,
                 post=post,
@@ -415,29 +369,23 @@ def create_comment(request, post_id):
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
 
 @login_required
 @require_http_methods(["POST"])
 def delete_comment(request, comment_id):
-    """Delete comment or reply"""
+    """Delete comment"""
     try:
-        # Get comment
         comment = get_object_or_404(Interaction, id=comment_id)
         
-        # Only comment owner can delete
+        # Check if user owns the comment
         if comment.user != request.user:
-            return JsonResponse({
-                'success': False,
-                'error': 'Bạn không có quyền xóa bình luận này!'
-            }, status=403)
+            return JsonResponse({'success': False, 'error': 'Không có quyền xóa'}, status=403)
         
-        # Get post and comment type for count update
         post = comment.post
-        comment_type = comment.interaction_type
+        comment_type = InteractionType.objects.get(name='comment')
         
-        # Delete comment (this will also delete all replies due to CASCADE)
+        # Delete comment (and its replies due to CASCADE)
         comment.delete()
         
         # Get updated comment count
@@ -445,52 +393,566 @@ def delete_comment(request, comment_id):
         
         return JsonResponse({
             'success': True,
-            'comment_count': comment_count,
-            'message': 'Đã xóa bình luận'
+            'comment_count': comment_count
         })
-        
     except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def edit_comment(request, comment_id):
+    """Edit comment"""
+    try:
+        import json
+        comment = get_object_or_404(Interaction, id=comment_id)
+        
+        # Check if user owns the comment
+        if comment.user != request.user:
+            return JsonResponse({'success': False, 'error': 'Không có quyền chỉnh sửa'}, status=403)
+        
+        data = json.loads(request.body)
+        content = data.get('content', '').strip()
+        
+        if not content:
+            return JsonResponse({'success': False, 'error': 'Nội dung không được để trống'})
+        
+        # Update comment
+        comment.content = content
+        comment.is_edited = True
+        comment.save()
+        
         return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+            'success': True,
+            'content': content
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 @login_required
 def messaging(request):
     """Messaging page"""
-    # Get conversations where user is a member
-    conversations = Conversation.objects.filter(
+    return render(request, 'messanging_management/messaging.html')
+
+
+@login_required
+def api_get_conversations(request):
+    """API: Lấy danh sách cuộc trò chuyện của user hiện tại"""
+    from django.utils import timezone as tz
+
+    convs = Conversation.objects.filter(
         members__user=request.user
-    ).prefetch_related('members__user', 'messages').distinct().order_by('-created_at')
+    ).prefetch_related('members__user').distinct().order_by('-created_at')
+
+    data = []
+    for conv in convs:
+        last_msg = conv.messages.order_by('-created_at').first()
+        other_members = [m.user for m in conv.members.all() if m.user != request.user]
+
+        if conv.status == 'group':
+            if conv.name:
+                name = conv.name
+            elif other_members:
+                name = ', '.join([u.get_full_name() or u.username for u in other_members])
+            else:
+                name = f'Nhóm {conv.id}'
+            initials = '👥'
+            avatar = 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)'
+        else:
+            if other_members:
+                other = other_members[0]
+                name = other.get_full_name() or other.username
+                initials = (other.avatar_initials or other.get_initials()).upper()
+                avatar = other.avatar_gradient or 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)'
+            else:
+                name = f'Conversation {conv.id}'
+                initials = 'CO'
+                avatar = 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)'
+
+        time_str = ''
+        if last_msg:
+            local_time = tz.localtime(last_msg.created_at)
+            time_str = local_time.strftime('%H:%M')
+
+        preview = ''
+        if last_msg:
+            if last_msg.is_deleted:
+                preview = 'Tin nhắn đã bị thu hồi'
+            else:
+                preview = last_msg.content[:50]
+
+        # Tính số tin nhắn chưa đọc
+        member = conv.members.filter(user=request.user).first()
+        unread_count = 0
+        if member:
+            if member.last_read_at:
+                # Đếm tin nhắn sau last_read_at và không phải của chính user
+                unread_count = conv.messages.filter(
+                    created_at__gt=member.last_read_at
+                ).exclude(sender=request.user).count()
+            else:
+                # Chưa từng đọc - đếm tất cả tin nhắn không phải của user
+                unread_count = conv.messages.exclude(sender=request.user).count()
+
+        data.append({
+            'id': conv.id,
+            'name': name,
+            'initials': initials,
+            'avatar': avatar,
+            'preview': preview,
+            'time': time_str,
+            'unread': unread_count,
+            'status': conv.status,
+        })
+
+    return JsonResponse({'conversations': data})
+
+
+@login_required
+def api_get_users(request):
+    """API: Lấy danh sách users để tạo conversation mới"""
+    search = request.GET.get('q', '').strip()
+    users = User.objects.exclude(id=request.user.id)
+
+    if search:
+        users = users.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(username__icontains=search)
+        )
+
+    users = users.order_by('first_name', 'last_name')[:5]
+
+    data = []
+    for u in users:
+        name = u.get_full_name() or u.username
+        initials = (u.avatar_initials or u.get_initials()).upper()
+        avatar = u.avatar_gradient or 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)'
+        role = 'Quản lý' if u.is_manager() else 'Nhân viên'
+        data.append({
+            'id': u.id,
+            'name': name,
+            'initials': initials,
+            'avatar': avatar,
+            'role': role,
+            'username': u.username,
+        })
+
+    return JsonResponse({'users': data})
+
+
+@login_required
+def api_create_conversation(request):
+    """API: Tạo conversation mới (private hoặc group)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        body = json.loads(request.body)
+        user_ids = body.get('user_ids', [])
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    if not user_ids:
+        return JsonResponse({'error': 'Cần chọn ít nhất 1 người'}, status=400)
+
+    users = User.objects.filter(id__in=user_ids)
+    if users.count() != len(user_ids):
+        return JsonResponse({'error': 'Một số user không tồn tại'}, status=400)
+
+    status = 'private' if len(user_ids) == 1 else 'group'
+
+    # Kiểm tra conversation 1-1 đã tồn tại chưa
+    if status == 'private':
+        existing = Conversation.objects.filter(
+            status='private',
+            members__user=request.user
+        ).filter(
+            members__user=users.first()
+        ).first()
+        if existing:
+            return JsonResponse({'conversation_id': existing.id})
+
+    try:
+        conv = Conversation.objects.create(status=status)
+        ConversationMember.objects.create(conversation=conv, user=request.user)
+        for u in users:
+            ConversationMember.objects.create(conversation=conv, user=u)
+        return JsonResponse({'conversation_id': conv.id})
+    except Exception as e:
+        return JsonResponse({'error': f'Lỗi tạo conversation: {str(e)}'}, status=500)
+
+
+@login_required
+def api_get_messages(request, conversation_id):
+    """API: Lấy tin nhắn của một cuộc trò chuyện"""
+    from django.utils import timezone as tz
+
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+
+    if not conversation.members.filter(user=request.user).exists():
+        return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+
+    msgs = conversation.messages.select_related('sender').order_by('created_at')
+
+    data = []
+    for m in msgs:
+        local_time = tz.localtime(m.created_at)
+        msg_data = {
+            'id': m.id,
+            'from': 'me' if m.sender == request.user else 'them',
+            'text': m.content if not m.is_deleted else '',
+            'time': local_time.strftime('%H:%M'),
+            'ts': int(m.created_at.timestamp() * 1000),
+            'sender_name': m.sender.get_full_name() or m.sender.username,
+            'deleted': m.is_deleted,
+            'edited': m.is_edited,
+            'message_type': m.message_type,
+        }
+        if m.image:
+            msg_data['image_url'] = m.image.url
+        if m.file:
+            msg_data['file_url'] = m.file.url
+            msg_data['file_name'] = m.file_name
+        data.append(msg_data)
+
+    return JsonResponse({'messages': data})
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_mark_conversation_read(request, conversation_id):
+    """API: Đánh dấu conversation đã đọc"""
+    from django.utils import timezone
     
-    return render(request, 'messanging_management/messaging.html', {
-        'conversations': conversations
-    })
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    
+    if not conversation.members.filter(user=request.user).exists():
+        return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+    
+    # Cập nhật last_read_at cho member
+    member = conversation.members.filter(user=request.user).first()
+    if member:
+        member.last_read_at = timezone.now()
+        member.save()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'error': 'Member not found'}, status=404)
+
 
 @login_required
 def send_message(request, conversation_id):
-    """Send message in conversation"""
+    """API: Gửi tin nhắn và lưu vào DB"""
+    try:
+        from django.utils import timezone as tz
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+
+        if not conversation.members.filter(user=request.user).exists():
+            return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+
+        if request.method != 'POST':
+            return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+        # Xử lý multipart (có file/ảnh) hoặc JSON (chỉ text)
+        if request.content_type and 'multipart' in request.content_type:
+            content = request.POST.get('content', '').strip()
+            image = request.FILES.get('image')
+            file = request.FILES.get('file')
+        else:
+            try:
+                body = json.loads(request.body)
+                content = body.get('content', '').strip()
+            except (json.JSONDecodeError, AttributeError):
+                content = request.POST.get('content', '').strip()
+            image = None
+            file = None
+
+        if not content and not image and not file:
+            return JsonResponse({'error': 'Nội dung không được trống'}, status=400)
+
+        msg = Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content=content,
+            image=image,
+            file=file,
+            file_name=file.name if file else '',
+        )
+
+        # Đưa conversation lên đầu danh sách
+        conversation.created_at = tz.now()
+        conversation.save()
+
+        local_time = tz.localtime(msg.created_at)
+
+        data = {
+            'id': msg.id,
+            'from': 'me',
+            'text': msg.content,
+            'time': local_time.strftime('%H:%M'),
+            'ts': int(msg.created_at.timestamp() * 1000),
+            'sender_name': request.user.get_full_name() or request.user.username,
+        }
+        if msg.image:
+            data['image_url'] = msg.image.url
+        if msg.file:
+            data['file_url'] = msg.file.url
+            data['file_name'] = msg.file_name
+
+        return JsonResponse(data)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Lỗi server: {str(e)}'}, status=500)
+
+
+@login_required
+def api_rename_conversation(request, conversation_id):
+    """API: Đổi tên nhóm chat"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+
+        if not conversation.members.filter(user=request.user).exists():
+            return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+
+        if conversation.status != 'group':
+            return JsonResponse({'error': 'Chỉ có thể đổi tên nhóm chat'}, status=400)
+
+        body = json.loads(request.body)
+        new_name = body.get('name', '').strip()
+
+        if not new_name:
+            return JsonResponse({'error': 'Tên không được để trống'}, status=400)
+
+        if len(new_name) > 200:
+            return JsonResponse({'error': 'Tên quá dài (tối đa 200 ký tự)'}, status=400)
+
+        conversation.name = new_name
+        conversation.save()
+
+        return JsonResponse({'success': True, 'name': new_name})
+    except Exception as e:
+        return JsonResponse({'error': f'Lỗi server: {str(e)}'}, status=500)
+
+
+@login_required
+def api_start_call(request, conversation_id):
+    """API: Bắt đầu cuộc gọi"""
+    from .models import CallRequest
+    from django.utils import timezone as tz
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
     conversation = get_object_or_404(Conversation, id=conversation_id)
-    
-    # Check if user is part of conversation
-    if conversation.user1 != request.user and conversation.user2 != request.user:
-        messages.error(request, 'Bạn không có quyền truy cập cuộc trò chuyện này!')
-        return redirect('messaging')
-    
-    if request.method == 'POST':
-        form = MessageForm(request.POST)
-        if form.is_valid():
-            message = form.save(commit=False)
-            message.sender = request.user
-            message.conversation = conversation
-            message.save()
-            
-            # Update conversation timestamp
-            conversation.save()  # This will update updated_at
-            
-            return redirect('messaging')
-    
-    return redirect('messaging')
+    if not conversation.members.filter(user=request.user).exists():
+        return JsonResponse({'error': 'Không có quyền'}, status=403)
+
+    # Lấy danh sách người nhận (tất cả members trừ caller)
+    receivers = [m.user for m in conversation.members.all() if m.user != request.user]
+    if not receivers:
+        return JsonResponse({'error': 'Không có người nhận'}, status=400)
+
+    # Hủy các cuộc gọi cũ chưa kết thúc từ user này
+    CallRequest.objects.filter(
+        caller=request.user, status='calling'
+    ).update(status='ended')
+
+    # Tạo call request cho từng receiver
+    calls = []
+    for receiver in receivers:
+        call = CallRequest.objects.create(
+            caller=request.user,
+            receiver=receiver,
+            conversation=conversation,
+            status='calling',
+        )
+        calls.append(call.id)
+
+    caller_name = request.user.get_full_name() or request.user.username
+    initials = (request.user.avatar_initials or request.user.get_initials()).upper()
+    avatar = request.user.avatar_gradient or 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)'
+
+    return JsonResponse({
+        'call_ids': calls,
+        'caller_name': caller_name,
+        'initials': initials,
+        'avatar': avatar,
+    })
+
+
+@login_required
+def api_check_incoming_call(request):
+    """API: Kiểm tra có cuộc gọi đến không"""
+    from .models import CallRequest
+    from django.utils import timezone as tz
+
+    # Lấy cuộc gọi đến trong 60 giây gần nhất còn trạng thái 'calling'
+    cutoff = tz.now() - __import__('datetime').timedelta(seconds=60)
+    call = CallRequest.objects.filter(
+        receiver=request.user,
+        status='calling',
+        created_at__gte=cutoff,
+    ).select_related('caller', 'conversation').first()
+
+    if not call:
+        return JsonResponse({'has_call': False})
+
+    caller_name = call.caller.get_full_name() or call.caller.username
+    initials = (call.caller.avatar_initials or call.caller.get_initials()).upper()
+    avatar = call.caller.avatar_gradient or 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)'
+
+    return JsonResponse({
+        'has_call': True,
+        'call_id': call.id,
+        'caller_name': caller_name,
+        'initials': initials,
+        'avatar': avatar,
+        'conversation_id': call.conversation.id,
+    })
+
+
+@login_required
+def api_respond_call(request, call_id):
+    """API: Trả lời hoặc kết thúc cuộc gọi"""
+    from .models import CallRequest
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    call = get_object_or_404(CallRequest, id=call_id)
+
+    # Cả caller và receiver đều có thể end call
+    if call.caller != request.user and call.receiver != request.user:
+        return JsonResponse({'error': 'Không có quyền'}, status=403)
+
+    try:
+        body = json.loads(request.body)
+        action = body.get('action')
+    except Exception:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    if action == 'accept' and call.receiver == request.user:
+        call.status = 'accepted'
+    elif action == 'reject' and call.receiver == request.user:
+        call.status = 'rejected'
+    elif action == 'end':
+        call.status = 'ended'
+    else:
+        return JsonResponse({'error': 'Action không hợp lệ'}, status=400)
+
+    call.save()
+    return JsonResponse({'success': True, 'status': call.status})
+
+
+@login_required
+def api_call_status(request, call_id):
+    """API: Lấy trạng thái cuộc gọi (cho cả caller và receiver poll)"""
+    from .models import CallRequest
+    # Cho phép cả caller và receiver xem status
+    call = get_object_or_404(CallRequest, id=call_id)
+    if call.caller != request.user and call.receiver != request.user:
+        return JsonResponse({'error': 'Không có quyền'}, status=403)
+    return JsonResponse({'status': call.status})
+
+
+@login_required
+def api_save_call_log(request, conversation_id):
+    """API: Lưu lịch sử cuộc gọi vào chat"""
+    from django.utils import timezone as tz
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    if not conversation.members.filter(user=request.user).exists():
+        return JsonResponse({'error': 'Không có quyền'}, status=403)
+
+    try:
+        body = json.loads(request.body)
+        status = body.get('status', 'ended')   # ended, rejected, missed
+        duration = body.get('duration', 0)     # giây
+    except Exception:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    if status == 'rejected':
+        content = '📵 Cuộc gọi bị từ chối'
+    elif status == 'missed':
+        content = '📵 Cuộc gọi nhỡ'
+    elif duration > 0:
+        mins = duration // 60
+        secs = duration % 60
+        content = f'📞 Cuộc gọi - {mins:02d}:{secs:02d}'
+    else:
+        content = '📞 Cuộc gọi kết thúc'
+
+    msg = Message.objects.create(
+        conversation=conversation,
+        sender=request.user,
+        content=content,
+        message_type='call',
+    )
+    conversation.created_at = tz.now()
+    conversation.save()
+
+    local_time = tz.localtime(msg.created_at)
+    return JsonResponse({
+        'id': msg.id,
+        'from': 'me',
+        'text': content,
+        'time': local_time.strftime('%H:%M'),
+        'ts': int(msg.created_at.timestamp() * 1000),
+        'message_type': 'call',
+        'sender_name': request.user.get_full_name() or request.user.username,
+    })
+
+
+@login_required
+def api_delete_message(request, message_id):
+    """API: Thu hồi tin nhắn cho mọi người"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    msg = get_object_or_404(Message, id=message_id)
+
+    # Chỉ người gửi mới được thu hồi
+    if msg.sender != request.user:
+        return JsonResponse({'error': 'Không có quyền thu hồi'}, status=403)
+
+    msg.is_deleted = True
+    msg.save()
+    return JsonResponse({'success': True})
+
+
+@login_required
+def api_edit_message(request, message_id):
+    """API: Chỉnh sửa tin nhắn"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    msg = get_object_or_404(Message, id=message_id)
+
+    if msg.sender != request.user:
+        return JsonResponse({'error': 'Không có quyền chỉnh sửa'}, status=403)
+
+    try:
+        body = json.loads(request.body)
+        new_content = body.get('content', '').strip()
+    except Exception:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    if not new_content:
+        return JsonResponse({'error': 'Nội dung không được trống'}, status=400)
+
+    msg.content = new_content
+    msg.is_edited = True
+    msg.save()
+    return JsonResponse({'success': True, 'text': new_content})
+
 
 @login_required
 def work_management(request):
@@ -1626,7 +2088,10 @@ def all_responses(request):
 
 @login_required
 def work_schedules_management(request):
-    """Work schedules management page"""
+    """Work schedules management page - only for managers"""
+    from django.shortcuts import redirect
+    if not request.user.is_manager():
+        return redirect('employee_work_schedules')
     from django.utils import timezone
     from datetime import timedelta, datetime
     
@@ -1661,18 +2126,22 @@ def work_schedules_management(request):
                    'luuvanphong', 'hoangvanquan', 'lyvanhai']
     
     # Determine which department this manager belongs to
+    # Managers: doanxuantoan (F&B), phamxuanthuong (HK), nguyennhatha (FO)
+    managers = ['doanxuantoan', 'phamxuanthuong', 'nguyennhatha']
+
     if username == 'doanxuantoan':  # F&B Manager
         manager_department = 'F&B'
-        department_usernames = fb_usernames
+        department_usernames = [u for u in fb_usernames if u not in managers]
     elif username == 'phamxuanthuong':  # HK Manager
         manager_department = 'HK'
-        department_usernames = hk_usernames
+        department_usernames = [u for u in hk_usernames if u not in managers]
     elif username == 'nguyennhatha':  # FO Manager
         manager_department = 'FO'
-        department_usernames = fo_usernames
+        department_usernames = [u for u in fo_usernames if u not in managers]
     else:
-        # Default: show all employees if manager not recognized
-        department_usernames = fb_usernames + hk_usernames + fo_usernames
+        # Default: show all employees (exclude managers)
+        all_emp = fb_usernames + hk_usernames + fo_usernames
+        department_usernames = [u for u in all_emp if u not in managers]
     
     # Get employees from manager's department
     users = User.objects.filter(username__in=department_usernames).order_by('username')
@@ -1818,26 +2287,27 @@ def employee_work_schedules(request):
     user_department = None
     
     # Department-specific usernames
+    managers = ['doanxuantoan', 'phamxuanthuong', 'nguyennhatha']
     fb_usernames = ['doanxuantoan', 'vothikimhoa', 'doanthianhth', 'tranvanminh', 'lethilan',
                    'tranvantu', 'dangthiyen', 'vothixuan']
     hk_usernames = ['phamxuanthuong', 'nguyendinhkhoa', 'nguyentruonggiang', 'ngovantung', 'phanthiha',
                    'phanvanthang', 'tathivan', 'buithinga']
     fo_usernames = ['nguyennhatha', 'lamvandat', 'trinhthingoc', 'duongvanhung', 'lethiphuong',
                    'luuvanphong', 'hoangvanquan', 'lyvanhai']
-    
+
     # Determine which department this user belongs to
     if username in fb_usernames:
         user_department = 'F&B'
-        department_usernames = fb_usernames
+        department_usernames = [u for u in fb_usernames if u not in managers]
     elif username in hk_usernames:
         user_department = 'HK'
-        department_usernames = hk_usernames
+        department_usernames = [u for u in hk_usernames if u not in managers]
     elif username in fo_usernames:
         user_department = 'FO'
-        department_usernames = fo_usernames
+        department_usernames = [u for u in fo_usernames if u not in managers]
     else:
-        # If user not in any department list, show all employees (fallback)
-        department_usernames = fb_usernames + hk_usernames + fo_usernames
+        all_emp = fb_usernames + hk_usernames + fo_usernames
+        department_usernames = [u for u in all_emp if u not in managers]
     
     # Get employees from user's department only
     employees = User.objects.filter(username__in=department_usernames).order_by('username')
@@ -1887,7 +2357,48 @@ def employee_work_schedules(request):
     e9_count = schedules.filter(shift_code__shift_code='E9').count()
     m6ss_count = schedules.filter(shift_code__shift_code='M6SS').count()
     do_count = schedules.filter(shift_code__shift_code='DO').count()
-    
+
+    # Build schedule_json for JavaScript
+    import json
+    schedule_data = {}
+    for user in employees:
+        user_schedules_dict = {}
+        for day in week_days:
+            date_str = day['date'].isoformat()
+            schedule = schedule_by_user_date[user.id].get(date_str)
+            if schedule:
+                user_schedules_dict[date_str] = {
+                    'id': schedule.id,
+                    'shift_code': schedule.shift_code.shift_code,
+                    'shift_name': schedule.shift_code.shift_name,
+                    'start_time': schedule.shift_code.start_time.strftime('%H:%M') if schedule.shift_code.start_time else '00:00',
+                    'end_time': schedule.shift_code.end_time.strftime('%H:%M') if schedule.shift_code.end_time else '00:00',
+                    'status': schedule.status,
+                    'employee_note': schedule.employee_note or '',
+                    'manager_note': schedule.manager_note or '',
+                }
+        schedule_data[user.id] = {
+            'full_name': user.get_full_name() or user.username,
+            'username': user.username,
+            'schedules': user_schedules_dict,
+        }
+
+    # Build MY_STATUS_MAP: tất cả status của user hiện tại (mọi tuần)
+    my_all_schedules = WorkSchedule.objects.filter(
+        user=request.user
+    ).select_related('shift_code').order_by('work_date')
+    my_status_map = {}
+    for s in my_all_schedules:
+        my_status_map[s.work_date.isoformat()] = {
+            'id': s.id,
+            'shift_code': s.shift_code.shift_code,
+            'status': s.status,
+            'employee_note': s.employee_note or '',
+        }
+
+    schedule_json = json.dumps(schedule_data, ensure_ascii=False)
+    my_status_json = json.dumps(my_status_map, ensure_ascii=False)
+
     return render(request, 'work_schedules_management/employee_work_schedules.html', {
         'week_start': week_start,
         'week_end': week_end,
@@ -1898,80 +2409,16 @@ def employee_work_schedules(request):
         'e9_count': e9_count,
         'm6ss_count': m6ss_count,
         'do_count': do_count,
+        'schedule_json': schedule_json,
+        'my_status_json': my_status_json,
     })
 
 @login_required
 def profile(request):
     """User profile page"""
-    from django.db.models import Count
-    
-    # Get user's posts
-    user_posts = request.user.posts.select_related('user').prefetch_related(
-        'interactions__interaction_type'
-    ).order_by('-created_at')[:10]
-    
-    # Calculate interaction counts for each post
-    for post in user_posts:
-        post.reaction_count = post.interactions.filter(interaction_type__name='reaction').count()
-        post.comment_count = post.interactions.filter(interaction_type__name='comment').count()
-    
-    # Get user statistics
-    total_posts = request.user.posts.count()
-    total_tasks = request.user.assigned_tasks.count()
-    completed_tasks = request.user.assigned_tasks.filter(status='Done').count()
-    
-    # Get department using helper function
-    department = get_user_department(request.user)
-    role = 'Quản lý' if request.user.is_manager() else 'Nhân viên'
-    
     return render(request, 'profile_management/profile.html', {
-        'user': request.user,
-        'user_posts': user_posts,
-        'department': department,
-        'role': role,
-        'total_posts': total_posts,
-        'total_tasks': total_tasks,
-        'completed_tasks': completed_tasks,
+        'user': request.user
     })
-
-@login_required
-def update_profile_api(request):
-    """API endpoint to update user profile"""
-    import json
-    from django.http import JsonResponse
-    
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            request.user.first_name = data.get('first_name', '')
-            request.user.last_name = data.get('last_name', '')
-            request.user.email = data.get('email', '')
-            request.user.save()
-            
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-@login_required
-def upload_avatar_api(request):
-    """API endpoint to upload user avatar"""
-    from django.http import JsonResponse
-    
-    if request.method == 'POST' and request.FILES.get('avatar'):
-        try:
-            request.user.avatar = request.FILES['avatar']
-            request.user.save()
-            
-            return JsonResponse({
-                'success': True,
-                'avatar_url': request.user.avatar.url
-            })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'No file uploaded'})
 
 @login_required
 def edit_profile(request):
@@ -2031,7 +2478,11 @@ def nhom_detail(request, nhom_id):
             post.reaction_count = post.interactions.filter(interaction_type=reaction_type).count()
             post.user_reacted = post.interactions.filter(user=request.user, interaction_type=reaction_type).exists()
             post.comment_count = post.interactions.filter(interaction_type=comment_type).count()
-            post.comments = post.interactions.filter(interaction_type=comment_type).select_related('user').order_by('created_at')
+            # Only get root comments (parent=None), replies will be accessed via comment.replies.all()
+            post.comments = post.interactions.filter(
+                interaction_type=comment_type,
+                parent__isnull=True
+            ).select_related('user').prefetch_related('replies__user').order_by('created_at')
     except InteractionType.DoesNotExist:
         for post in posts:
             post.reaction_count = 0
@@ -2039,25 +2490,25 @@ def nhom_detail(request, nhom_id):
             post.comment_count = 0
             post.comments = []
     
-    # Handle post creation — mọi user đã login đều có thể đăng bài trong nhóm
-    if request.method == 'POST':
+    # Handle post creation
+    if request.method == 'POST' and is_member:
         content = request.POST.get('content', '').strip()
         images = request.FILES.getlist('images')
         
         if content:
-            from .models import PostImage
-            # Tạo bài viết gắn với nhóm này
-            new_post = Post.objects.create(
+            # Create post with group scope
+            post = Post.objects.create(
                 user=request.user,
                 content=content,
                 scope='groups'
             )
-            new_post.groups.add(group)
+            post.groups.add(group)
             
-            # Lưu ảnh đính kèm
+            # Save images
+            from .models import PostImage
             for index, image in enumerate(images):
                 PostImage.objects.create(
-                    post=new_post,
+                    post=post,
                     image=image,
                     order=index
                 )
@@ -2098,7 +2549,6 @@ def nhom_new(request):
     return render(request, 'group_management/nhom_new.html', {'form': form})
 
 @login_required
-@login_required
 def nhom_edit(request, nhom_id):
     """Edit group"""
     group = get_object_or_404(Group, id=nhom_id)
@@ -2113,7 +2563,7 @@ def nhom_edit(request, nhom_id):
         form = GroupForm(request.POST, instance=group)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Đã cập nhật nhóm thành công!')
+            messages.success(request, 'Đã cập nhật nhóm!')
             return redirect('nhom_detail', nhom_id=nhom_id)
     else:
         form = GroupForm(instance=group)
@@ -2123,19 +2573,6 @@ def nhom_edit(request, nhom_id):
         'nhom': group,
         'user': request.user
     })
-
-
-@login_required
-@require_http_methods(["POST"])
-def nhom_delete(request, nhom_id):
-    """Delete group — chỉ admin nhóm mới được xóa"""
-    group = get_object_or_404(Group, id=nhom_id)
-    if group.created_by != request.user:
-        messages.error(request, 'Bạn không có quyền xóa nhóm này!')
-        return redirect('nhom_detail', nhom_id=nhom_id)
-    group.delete()
-    messages.success(request, f'Đã xóa nhóm "{group.name}" thành công!')
-    return redirect('nhom')
 
 @login_required
 def nhom_new_edit(request):
@@ -2159,50 +2596,21 @@ def baocao_tuongtac(request):
     """Interaction report - Báo cáo tương tác"""
     from django.db.models import Count, Q
     from django.utils import timezone
-    from datetime import timedelta, datetime
+    from datetime import timedelta
     
-    # Get filter parameters
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
-    department = request.GET.get('department', '')
-    
-    # Get date range (default last 30 days)
+    # Get date range (last 30 days)
     end_date = timezone.now()
     start_date = end_date - timedelta(days=30)
     
-    # Parse custom dates if provided
-    if start_date_str:
-        try:
-            start_date = timezone.make_aware(datetime.strptime(start_date_str, '%Y-%m-%d'))
-        except:
-            pass
-    if end_date_str:
-        try:
-            end_date = timezone.make_aware(datetime.strptime(end_date_str, '%Y-%m-%d'))
-            end_date = end_date.replace(hour=23, minute=59, second=59)
-        except:
-            pass
-    
-    # Base querysets
-    posts_qs = Post.objects.all()
-    interactions_qs = Interaction.objects.all()
-    
-    # Filter by department if specified
-    if department:
-        # Get users in department
-        dept_users = User.objects.filter(username__startswith=department.lower())
-        posts_qs = posts_qs.filter(author__in=dept_users)
-        interactions_qs = interactions_qs.filter(user__in=dept_users)
-    
     # Total posts
-    total_posts = posts_qs.count()
-    posts_this_month = posts_qs.filter(created_at__gte=start_date).count()
+    total_posts = Post.objects.count()
+    posts_this_month = Post.objects.filter(created_at__gte=start_date).count()
     
     # Total interactions
-    total_reactions = interactions_qs.filter(
+    total_reactions = Interaction.objects.filter(
         interaction_type__name='reaction'
     ).count()
-    total_comments = interactions_qs.filter(
+    total_comments = Interaction.objects.filter(
         interaction_type__name='comment'
     ).count()
     
@@ -2212,13 +2620,13 @@ def baocao_tuongtac(request):
     ).filter(post_count__gt=0).order_by('-post_count')[:10]
     
     # Top engaged posts (by reactions + comments)
-    top_posts = posts_qs.annotate(
+    top_posts = Post.objects.annotate(
         reaction_count=Count('interactions', filter=Q(interactions__interaction_type__name='reaction')),
         comment_count=Count('interactions', filter=Q(interactions__interaction_type__name='comment'))
     ).order_by('-reaction_count', '-comment_count')[:10]
     
     # Posts by scope
-    posts_by_scope = posts_qs.values('scope').annotate(
+    posts_by_scope = Post.objects.values('scope').annotate(
         count=Count('id')
     ).order_by('-count')
     
@@ -2234,7 +2642,7 @@ def baocao_tuongtac(request):
         day = end_date - timedelta(days=i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
-        count = posts_qs.filter(
+        count = Post.objects.filter(
             created_at__gte=day_start,
             created_at__lt=day_end
         ).count()
@@ -2262,44 +2670,18 @@ def baocao_congviec(request):
     """Work report - Báo cáo công việc"""
     from django.db.models import Count, Q
     from django.utils import timezone
-    from datetime import timedelta, datetime
-    
-    # Get filter parameters
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
-    department = request.GET.get('department', '')
+    from datetime import timedelta
     
     # Get date range
     today = timezone.now().date()
     week_start = today - timedelta(days=today.weekday())
     month_start = today.replace(day=1)
     
-    # Base querysets
-    tasks_qs = Task.objects.all()
-    
-    # Filter by department if specified
-    if department:
-        tasks_qs = tasks_qs.filter(department=department)
-    
-    # Filter by date range if specified
-    if start_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            tasks_qs = tasks_qs.filter(work_date__gte=start_date)
-        except:
-            pass
-    if end_date_str:
-        try:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            tasks_qs = tasks_qs.filter(work_date__lte=end_date)
-        except:
-            pass
-    
     # Task statistics
-    total_tasks = tasks_qs.count()
-    tasks_todo = tasks_qs.filter(status='Todo').count()
-    tasks_in_progress = tasks_qs.filter(status='InProgress').count()
-    tasks_done = tasks_qs.filter(status='Done').count()
+    total_tasks = Task.objects.count()
+    tasks_todo = Task.objects.filter(status='Todo').count()
+    tasks_in_progress = Task.objects.filter(status='InProgress').count()
+    tasks_done = Task.objects.filter(status='Done').count()
     
     # Tasks this week
     tasks_this_week = Task.objects.filter(work_date__gte=week_start).count()
@@ -2346,7 +2728,7 @@ def baocao_congviec(request):
     daily_completions = []
     for i in range(7):
         day = today - timedelta(days=i)
-        count = tasks_qs.filter(
+        count = Task.objects.filter(
             work_date=day,
             status='Done'
         ).count()
@@ -2383,59 +2765,16 @@ def baocao_congviec(request):
 @login_required
 def baocao_xephang(request):
     """Ranking report"""
-    from django.db.models import Count, Q
+    from django.db.models import Count
     
-    # Determine manager's department from username
-    def get_user_department(username):
-        if username.startswith('fo'):
-            return 'FO'
-        elif username.startswith('fb'):
-            return 'F&B'
-        elif username.startswith('hk'):
-            return 'HK'
-        return None
-    
-    # Get current user's department
-    current_user_dept = get_user_department(request.user.username)
-    
-    # Get all users (not just those with tasks)
-    users_qs = User.objects.annotate(
-        completed_tasks=Count('assigned_tasks', filter=Q(assigned_tasks__status='Done')),
-        total_tasks=Count('assigned_tasks'),
-        post_count=Count('posts')
-    ).exclude(is_superuser=True)
-    
-    # Filter by department if user is a manager
-    if current_user_dept:
-        # Filter users by username prefix OR by their task department
-        users_qs = users_qs.filter(
-            Q(username__startswith=current_user_dept.lower()) |
-            Q(assigned_tasks__department=current_user_dept)
-        ).distinct()
-    
-    user_rankings = users_qs.order_by('-completed_tasks', '-total_tasks', '-post_count')[:50]
-    
-    # Add department info to each user
-    for user in user_rankings:
-        # First try to get from tasks
-        dept_query = user.assigned_tasks.values('department').annotate(
-            count=Count('id')
-        ).order_by('-count')
-        
-        if dept_query.exists():
-            user.department = dept_query.first()['department']
-        else:
-            # Fallback to username-based detection
-            user.department = get_user_department(user.username) or 'Chưa xác định'
-    
-    # Get top user
-    top_user = user_rankings.first() if user_rankings else None
+    # Get user rankings by post count
+    user_rankings = User.objects.annotate(
+        post_count=Count('post')
+    ).order_by('-post_count')[:10]
     
     return render(request, 'report_management/baocao_xephang.html', {
         'user': request.user,
-        'user_rankings': user_rankings,
-        'top_user': top_user,
-        'current_department': current_user_dept,
+        'user_rankings': user_rankings
     })
 
 # Additional Helper Views
@@ -2542,7 +2881,15 @@ def account(request):
                 user.first_name = request.POST.get('first_name', '')
                 user.last_name = request.POST.get('last_name', '')
                 user.email = request.POST.get('email', '')
+                
+                # Handle avatar upload
+                if 'avatar' in request.FILES:
+                    avatar_file = request.FILES['avatar']
+                    print(f"Avatar upload: {avatar_file.name}, size: {avatar_file.size}")
+                    user.avatar = avatar_file
+                
                 user.save()
+                print(f"User saved. Avatar URL: {user.avatar.url if user.avatar else 'None'}")
                 return JsonResponse({'status': 'ok', 'message': 'Đã lưu thông tin cá nhân.'})
             return JsonResponse({'status': 'error', 'message': 'Chưa đăng nhập.'}, status=403)
 

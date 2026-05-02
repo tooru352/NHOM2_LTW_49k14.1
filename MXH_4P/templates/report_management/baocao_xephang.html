@@ -3,9 +3,6 @@
 {% block baocao_menu %}
 {% if user.role == "quanly" %}
 <h3 style="margin-top:16px;font-size:11px;color:#95a5a6;letter-spacing:.5px">BÁO CÁO</h3>
-<a href="/baocao/tuongtac/" class="menu-item {% block menu_bc_tt %}{% endblock %}">
-    <span class="icon">&#128202;</span> Báo cáo tương tác
-</a>
 <a href="/baocao/congviec/" class="menu-item {% block menu_bc_cv %}{% endblock %}">
     <span class="icon">&#128203;</span> Báo cáo công việc
 </a>
@@ -27,64 +24,108 @@
     </div>
   </div>
   
+  <!-- Filter section -->
+  <div class="bc-filter" style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:20px">
+    <div style="font-size:14px;font-weight:600;color:#2c3e50;margin-bottom:14px">&#128202; Tiêu chí xếp hạng</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:200px">
+        <label style="font-size:12px;font-weight:600;color:#7f8c8d">Từ ngày</label>
+        <input type="date" id="start_date" value="{{ start_date }}" style="padding:10px 12px;border:1px solid #e0e6ed;border-radius:8px;font-size:14px;outline:none">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:200px">
+        <label style="font-size:12px;font-weight:600;color:#7f8c8d">Đến ngày</label>
+        <input type="date" id="end_date" value="{{ end_date }}" style="padding:10px 12px;border:1px solid #e0e6ed;border-radius:8px;font-size:14px;outline:none">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:200px">
+        <label style="font-size:12px;font-weight:600;color:#7f8c8d">Bộ phận / Phòng ban</label>
+        <select id="department" style="padding:10px 12px;border:1px solid #e0e6ed;border-radius:8px;font-size:14px;outline:none">
+          <option value="" {% if not department_filter %}selected{% endif %}>Toàn khách sạn</option>
+          <option value="FO" {% if department_filter == 'FO' %}selected{% endif %}>Front Office</option>
+          <option value="F&B" {% if department_filter == 'F&B' %}selected{% endif %}>Food & Beverage</option>
+          <option value="HK" {% if department_filter == 'HK' %}selected{% endif %}>Housekeeping</option>
+        </select>
+      </div>
+      <button onclick="filterRanking()" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+        Xem xếp hạng
+      </button>
+    </div>
+  </div>
+  
   {% if top_user %}
   <div class="xh-top">
     <div class="xh-star-card">
       <div class="xh-star-badge">&#11088; NGÔI SAO CỦA THÁNG</div>
       <div class="xh-star-name">{{ top_user.username }}</div>
-      <div class="xh-star-dept">{{ top_user.get_full_name|default:"Nhân viên" }} • Hoàn thành {{ top_user.completed_tasks }} nhiệm vụ</div>
+      <div class="xh-star-dept">{{ top_user.full_name }} • Điểm: {{ top_user.performance_score }}</div>
       <div class="xh-star-rank">#1 <span>Xếp hạng toàn hệ thống</span></div>
     </div>
-    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#2ecc71">Top 1</div><div class="xh-stat-label">Nhiệm vụ hoàn thành</div><div class="xh-stat-val">{{ top_user.completed_tasks }}</div></div>
-    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#2ecc71">{{ top_user.post_count }}</div><div class="xh-stat-label">Bài viết đã đăng</div><div class="xh-stat-val">{{ user_rankings|length }}</div></div>
+    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#2ecc71">Top 1</div><div class="xh-stat-label">Điểm thành tích</div><div class="xh-stat-val">{{ top_user.performance_score }}</div></div>
+    <div class="xh-stat-card"><div class="xh-stat-pct" style="color:#2ecc71">{{ top_user.tasks_done }}/{{ top_user.total_tasks }}</div><div class="xh-stat-label">Hoàn thành</div><div class="xh-stat-val">{{ top_user.total_tasks }}</div></div>
   </div>
   {% endif %}
-  
-  <div class="xh-filter">
-    <input type="text" placeholder="&#128100; Tìm tên nhân viên..." oninput="filterXH(this.value)">
-    <select id="filterBP" onchange="filterByDept()">
-      <option value="">Tất cả bộ phận</option>
-      <option value="FO">Front Office</option>
-      <option value="F&B">Food & Beverage</option>
-      <option value="HK">Housekeeping</option>
-    </select>
-  </div>
   
   <div class="xh-table-wrap">
     <div class="xh-table-head">Báo cáo chi tiết theo nhân viên</div>
     <table class="xh-table" id="xhTable">
-      <thead><tr><th>Hạng</th><th>Nhân viên</th><th>Bộ phận</th><th>Nhiệm vụ hoàn thành</th><th>Bài viết</th><th>Đánh giá</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Hạng</th>
+          <th>Nhân viên</th>
+          <th>Bộ phận</th>
+          <th>Điểm</th>
+          <th>Hoàn thành</th>
+          <th>Đang xử lý</th>
+          <th>Chưa làm</th>
+          <th>Tổng CV</th>
+          <th>Đánh giá</th>
+        </tr>
+      </thead>
       <tbody>
-      {% for user in user_rankings %}
-      <tr data-ten="{{ user.username }}" data-bp="{% if user.department == 'FO' %}Front Office{% elif user.department == 'F&B' %}Food & Beverage{% elif user.department == 'HK' %}Housekeeping{% else %}{{ user.department }}{% endif %}">
-        <td><span class="xh-rank">{{ forloop.counter|stringformat:"02d" }}</span></td>
+      {% for ranking in user_rankings %}
+      <tr data-ten="{{ ranking.username }}" data-bp="{{ ranking.department }}">
+        <td>
+          <span class="xh-rank {% if forloop.counter <= 3 %}xh-rank-top{% endif %}">
+            {% if forloop.counter == 1 %}🥇
+            {% elif forloop.counter == 2 %}🥈
+            {% elif forloop.counter == 3 %}🥉
+            {% else %}{{ forloop.counter|stringformat:"02d" }}
+            {% endif %}
+          </span>
+        </td>
         <td>
           <div class="xh-nv">
-            <div class="xh-av">{{ user.username.0|upper }}</div>
+            <div class="xh-av">{{ ranking.username.0|upper }}</div>
             <div>
-              <strong>{{ user.username }}</strong><br>
-              <small style="color:#65676b">{{ user.get_full_name|default:"Nhân viên" }}</small>
+              <strong>{{ ranking.username }}</strong><br>
+              <small style="color:#65676b">{{ ranking.full_name }}</small>
             </div>
           </div>
         </td>
         <td>
-          {% if user.department == "FO" %}
+          {% if ranking.department == "FO" %}
             Front Office
-          {% elif user.department == "F&B" %}
+          {% elif ranking.department == "F&B" %}
             Food & Beverage
-          {% elif user.department == "HK" %}
+          {% elif ranking.department == "HK" %}
             Housekeeping
           {% else %}
-            {{ user.department }}
+            {{ ranking.department|default:"N/A" }}
           {% endif %}
         </td>
-        <td>{{ user.completed_tasks }}</td>
-        <td>{{ user.post_count }}</td>
         <td>
-          {% if user.completed_tasks >= 50 %}
+          <strong style="color:#667eea;font-size:16px">{{ ranking.performance_score }}</strong>
+        </td>
+        <td><span style="color:#2ecc71;font-weight:600">{{ ranking.tasks_done }}</span></td>
+        <td><span style="color:#f39c12;font-weight:600">{{ ranking.tasks_in_progress }}</span></td>
+        <td><span style="color:#3498db;font-weight:600">{{ ranking.tasks_todo }}</span></td>
+        <td>{{ ranking.total_tasks }}</td>
+        <td>
+          {% if ranking.performance_score >= 0.7 %}
             <span class="xh-badge" style="background:#d5f5e3;color:#27ae60">XUẤT SẮC</span>
-          {% elif user.completed_tasks >= 20 %}
+          {% elif ranking.performance_score >= 0.4 %}
             <span class="xh-badge" style="background:#fef9e7;color:#f39c12">ĐẠT YÊU CẦU</span>
+          {% elif ranking.performance_score >= 0 %}
+            <span class="xh-badge" style="background:#fff3cd;color:#856404">TRUNG BÌNH</span>
           {% else %}
             <span class="xh-badge" style="background:#fde8e8;color:#e74c3c">CẦN CẢI THIỆN</span>
           {% endif %}
@@ -92,8 +133,8 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="6" style="text-align:center;padding:40px;color:#95a5a6">
-          Chưa có dữ liệu xếp hạng
+        <td colspan="9" style="text-align:center;padding:40px;color:#95a5a6">
+          Chưa có dữ liệu xếp hạng trong khoảng thời gian này
         </td>
       </tr>
       {% endfor %}
@@ -101,6 +142,9 @@
     </table>
     <div class="xh-pagination">
       <span style="font-size:13px;color:#65676b">Hiển thị {{ user_rankings|length }} nhân viên</span>
+      <div style="font-size:12px;color:#95a5a6;margin-top:8px">
+        <strong>Công thức tính điểm:</strong> (Hoàn thành + Đang xử lý/2 - Chưa làm) / Tổng công việc
+      </div>
     </div>
   </div>
 </div>
@@ -108,27 +152,57 @@
 
 {% block extra_js %}
 <script>
+function filterRanking() {
+  const startDate = document.getElementById('start_date').value;
+  const endDate = document.getElementById('end_date').value;
+  const department = document.getElementById('department').value;
+  
+  // Validate dates
+  if (startDate && endDate && startDate > endDate) {
+    alert('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc!');
+    return;
+  }
+  
+  let url = '/baocao/xephang/?';
+  if (startDate) url += 'start_date=' + startDate + '&';
+  if (endDate) url += 'end_date=' + endDate + '&';
+  if (department) url += 'department=' + department;
+  
+  window.location.href = url;
+}
+
 function filterXH(q){
   q=(q||"").toLowerCase();
-  var dept = document.getElementById('filterBP').value;
+  var dept = document.getElementById('filterBP') ? document.getElementById('filterBP').value : '';
   
   document.querySelectorAll("#xhTable tbody tr").forEach(function(r){
+    if (!r.dataset.ten) return; // Skip empty row
+    
     var ten=r.dataset.ten.toLowerCase();
     var bp=r.dataset.bp;
     
     var matchName = !q || ten.includes(q);
-    var matchDept = !dept || bp === dept;
+    var matchDept = !dept || bp.includes(dept);
     
     r.style.display = (matchName && matchDept) ? "" : "none";
   });
 }
 
 function filterByDept(){
-  filterXH(document.querySelector('input[placeholder*="Tìm tên"]').value);
+  var searchInput = document.querySelector('input[placeholder*="Tìm tên"]');
+  filterXH(searchInput ? searchInput.value : '');
 }
 
 function exportReport() {
   alert('Chức năng xuất báo cáo đang được phát triển');
 }
+
+// Allow Enter key to trigger filter
+document.getElementById('start_date').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') filterRanking();
+});
+document.getElementById('end_date').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') filterRanking();
+});
 </script>
 {% endblock %}

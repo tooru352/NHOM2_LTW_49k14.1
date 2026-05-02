@@ -69,7 +69,7 @@
     <!-- Meetings Timeline -->
     <div class="meetings-timeline">
         {% for meeting in meetings %}
-        <div class="meeting-card" data-status="{{ meeting.status }}" onclick="showMeetingDetail({{ meeting.id }})">
+        <div class="meeting-card" data-status="{{ meeting.status }}" data-meeting-id="{{ meeting.id }}" onclick="showMeetingDetail({{ meeting.id }})">
             <div class="meeting-time-badge">
                 {{ meeting.start_time|date:"H:i" }} - {{ meeting.end_time|date:"H:i" }}
             </div>
@@ -93,13 +93,16 @@
             <!-- Hidden data for modal -->
             <div style="display:none;" class="meeting-data"
                  data-id="{{ meeting.id }}"
-                 data-title="{{ meeting.title|escapejs }}"
-                 data-description="{{ meeting.description|escapejs }}"
-                 data-location="{{ meeting.location|escapejs }}"
+                 data-title="{{ meeting.title }}"
+                 data-description="{{ meeting.description }}"
+                 data-department="{{ meeting.department|default:'Chưa xác định' }}"
+                 data-location="{{ meeting.location|default:'Chưa xác định' }}"
                  data-start="{{ meeting.start_time|date:'d/m/Y H:i' }}"
                  data-end="{{ meeting.end_time|date:'H:i' }}"
-                 data-organizer="{{ meeting.created_by.get_full_name|default:meeting.created_by.username|escapejs }}"
-                 data-participants='[{% for p in meeting.participants.all %}{"id":{{ p.user.id }},"name":"{{ p.user.get_full_name|default:p.user.username|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                 data-status="{{ meeting.status }}"
+                 data-organizer="{{ meeting.created_by.get_full_name|default:meeting.created_by.username }}"
+                 data-created-by="{{ meeting.created_by.id }}"
+                 data-participants='[{% for p in meeting.participants.all %}{"id":{{ p.user.id }},"name":"{{ p.user.get_full_name|default:p.user.username }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
             </div>
         </div>
         {% empty %}
@@ -121,11 +124,11 @@
         </div>
         <div class="modal-body-detail">
             <h2>📋 Tiêu đề cuộc họp</h2>
-            <h3 id="detailMeetingTitle" class="meeting-subtitle">Họp ban giám đốc</h3>
+            <h3 id="meetingDetailTitle" class="meeting-subtitle">Họp ban giám đốc</h3>
             
             <div class="detail-section">
                 <h4>MÔ TẢ</h4>
-                <p id="detailMeetingDescription">Cuộc họp nhằm đánh giá kết quả làm việc của nhân sự trong tháng 2...</p>
+                <p id="meetingDetailDescription">Cuộc họp nhằm đánh giá kết quả làm việc của nhân sự trong tháng 2...</p>
             </div>
             
             <div class="detail-row">
@@ -133,14 +136,14 @@
                     <h4>PHÒNG BAN</h4>
                     <div class="info-badge">
                         <span class="badge-icon">👥</span>
-                        <span id="detailMeetingLocation">Ban giám đốc</span>
+                        <span id="meetingDetailDepartment">Ban giám đốc</span>
                     </div>
                 </div>
                 <div class="detail-col">
                     <h4>ĐỊA ĐIỂM</h4>
                     <div class="info-badge">
                         <span class="badge-icon">📍</span>
-                        <span id="detailMeetingRoom">Phòng họp tầng 3</span>
+                        <span id="meetingDetailLocation">Phòng họp tầng 3</span>
                     </div>
                 </div>
             </div>
@@ -150,7 +153,7 @@
                 <div class="organizer-info">
                     <div class="employee-avatar">CT</div>
                     <div class="employee-info-detail">
-                        <strong id="detailMeetingOrganizer">Công Minh Tuấn</strong>
+                        <strong id="meetingDetailHost">Công Minh Tuấn</strong>
                         <span>Người chủ trì</span>
                     </div>
                 </div>
@@ -160,7 +163,7 @@
                 <h4>NGÀY & THỜI GIAN</h4>
                 <div class="info-badge">
                     <span class="badge-icon">📅</span>
-                    <span id="detailMeetingDateTime">26/02/2026<br>08:00 - 10:00</span>
+                    <span id="meetingDetailDateTime">26/02/2026<br>08:00 - 10:00</span>
                 </div>
             </div>
         </div>
@@ -335,6 +338,8 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 let currentMeetingId = null;
+let currentMeetingCreatorId = null;
+const currentUserId = {{ request.user.id }};
 
 // Current filter status
 let currentFilterStatus = 'all';
@@ -411,16 +416,25 @@ function showMeetingDetail(meetingId) {
     if (!data) return;
     
     currentMeetingId = meetingId;
+    currentMeetingCreatorId = parseInt(data.dataset.createdBy);
     
     // Update modal content
-    document.getElementById('detailMeetingTitle').textContent = data.dataset.title;
-    document.getElementById('detailMeetingDescription').textContent = data.dataset.description || 'Không có mô tả';
-    document.getElementById('detailMeetingLocation').textContent = data.dataset.location || 'Chưa xác định';
-    document.getElementById('detailMeetingRoom').textContent = data.dataset.location || 'Phòng họp tầng 3';
-    document.getElementById('detailMeetingOrganizer').textContent = data.dataset.organizer;
+    document.getElementById('meetingDetailTitle').textContent = data.dataset.title;
+    document.getElementById('meetingDetailDescription').textContent = data.dataset.description || 'Không có mô tả';
+    document.getElementById('meetingDetailDepartment').textContent = data.dataset.department || 'Chưa xác định';
+    document.getElementById('meetingDetailLocation').textContent = data.dataset.location || 'Chưa xác định';
+    document.getElementById('meetingDetailHost').textContent = data.dataset.organizer;
     
     const dateTime = `${data.dataset.start}<br>${data.dataset.start.split(' ')[1]} - ${data.dataset.end}`;
-    document.getElementById('detailMeetingDateTime').innerHTML = dateTime;
+    document.getElementById('meetingDetailDateTime').innerHTML = dateTime;
+    
+    // Show/hide action buttons based on creator
+    const actionButtons = document.querySelector('.modal-footer-detail');
+    if (currentUserId === currentMeetingCreatorId) {
+        actionButtons.style.display = 'flex';
+    } else {
+        actionButtons.style.display = 'none';
+    }
     
     // Show modal
     document.getElementById('meetingDetailModal').style.display = 'block';
@@ -480,24 +494,12 @@ function createMeeting() {
         return;
     }
     
-    // Combine department and location
-    // If both are provided: "F&B - Phòng họp tầng 1"
-    // If only department: "F&B"
-    // If only location: "Phòng họp tầng 1"
-    let finalLocation = '';
-    if (department && location) {
-        finalLocation = `${department} - ${location}`;
-    } else if (department) {
-        finalLocation = department;
-    } else if (location) {
-        finalLocation = location;
-    }
-    
     // Prepare request data
     const requestData = {
         title: title,
         description: description,
-        location: finalLocation,
+        department: department,  // Send department separately
+        location: location,      // Send location separately
         date: date,
         start_time: startTime,
         end_time: endTime

@@ -140,3 +140,14 @@
 .sidebar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* Logout button special style */
+.nav-item-logout {
+  margin-top: 8px;
+  color: #e74c3c !important;
+}
+
+.nav-item-logout:hover {
+  background: rgba(231, 76, 60, 0.1) !important;
+  border-left-color: #e74c3c !important;
+}

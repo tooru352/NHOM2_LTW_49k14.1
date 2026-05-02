@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/works_management/employee_dashboard.css' %}?v=11">
+<link rel="stylesheet" href="{% static 'css/works_management/meeting_schedule.css' %}?v=1">
 {% endblock %}
 
 {% block content %}
@@ -140,7 +141,7 @@
             <!-- Upcoming Meetings -->
             <div class="upcoming-meetings">
                 {% for meeting in upcoming_meetings %}
-                <div class="meeting-card">
+                <div class="meeting-card" style="cursor: pointer;" onclick="showMeetingDetail({{ meeting.id }})">
                     <div class="meeting-card-header">
                         <span class="meeting-badge {% if meeting.start_time|date:'Y-m-d' == today %}upcoming{% elif meeting.start_time|date:'Y-m-d' == tomorrow %}tomorrow{% else %}future{% endif %}">
                             {% if meeting.start_time|date:"Y-m-d" == today %}Hôm nay
@@ -155,6 +156,19 @@
                     </div>
                     <div class="meeting-info-row">
                         <span>👤 {{ meeting.created_by.get_full_name|default:meeting.created_by.username }}</span>
+                    </div>
+                    <!-- Hidden data for modal -->
+                    <div style="display:none;" class="meeting-data"
+                         data-id="{{ meeting.id }}"
+                         data-title="{{ meeting.title }}"
+                         data-description="{{ meeting.description }}"
+                         data-department="{{ meeting.department|default:'Chưa xác định' }}"
+                         data-location="{{ meeting.location|default:'Chưa xác định' }}"
+                         data-start="{{ meeting.start_time|date:'d/m/Y H:i' }}"
+                         data-end="{{ meeting.end_time|date:'H:i' }}"
+                         data-status="{{ meeting.status }}"
+                         data-organizer="{{ meeting.created_by.get_full_name|default:meeting.created_by.username }}"
+                         data-created-by="{{ meeting.created_by.id }}">
                     </div>
                 </div>
                 {% empty %}
@@ -275,6 +289,68 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Chi tiết cuộc họp -->
+<div id="meetingDetailModal" class="modal" style="display: none;">
+    <div class="modal-content-detail">
+        <div class="modal-header-detail">
+            <div class="header-tabs">
+                <button class="tab-btn active">Chi tiết cuộc họp</button>
+            </div>
+            <span class="close" onclick="closeMeetingDetailModal()">&times;</span>
+        </div>
+        <div class="modal-body-detail">
+            <h2>📋 Tiêu đề cuộc họp</h2>
+            <h3 id="meetingDetailTitle" class="meeting-subtitle">Họp ban giám đốc</h3>
+            
+            <div class="detail-section">
+                <h4>MÔ TẢ</h4>
+                <p id="meetingDetailDescription">Cuộc họp nhằm đánh giá kết quả làm việc của nhân sự trong tháng 2...</p>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-col">
+                    <h4>PHÒNG BAN</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">👥</span>
+                        <span id="meetingDetailDepartment">Ban giám đốc</span>
+                    </div>
+                </div>
+                <div class="detail-col">
+                    <h4>ĐỊA ĐIỂM</h4>
+                    <div class="info-badge">
+                        <span class="badge-icon">📍</span>
+                        <span id="meetingDetailLocation">Phòng họp tầng 3</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>CHỦ TRÌ</h4>
+                <div class="organizer-info">
+                    <div class="employee-avatar">CT</div>
+                    <div class="employee-info-detail">
+                        <strong id="meetingDetailHost">Công Minh Tuấn</strong>
+                        <span>Người chủ trì</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>NGÀY & THỜI GIAN</h4>
+                <div class="info-badge">
+                    <span class="badge-icon">📅</span>
+                    <span id="meetingDetailDateTime">26/02/2026<br>08:00 - 10:00</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer-detail" id="meetingActionButtons" style="display: none;">
+            <button class="btn-edit" onclick="editMeetingRedirect()">Chỉnh sửa nội dung</button>
+            <button class="btn-delete" onclick="deleteMeetingFromModal()">Xóa cuộc họp</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -498,5 +574,86 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Meeting detail modal functions
+let currentMeetingId = null;
+let currentMeetingCreatorId = null;
+const currentUserId = {{ request.user.id }};
+
+function showMeetingDetail(meetingId) {
+    const card = event.currentTarget;
+    const data = card.querySelector('.meeting-data');
+    
+    if (!data) return;
+    
+    currentMeetingId = meetingId;
+    currentMeetingCreatorId = parseInt(data.dataset.createdBy);
+    
+    // Update modal content
+    document.getElementById('meetingDetailTitle').textContent = data.dataset.title;
+    document.getElementById('meetingDetailDescription').textContent = data.dataset.description || 'Không có mô tả';
+    document.getElementById('meetingDetailDepartment').textContent = data.dataset.department || 'Chưa xác định';
+    document.getElementById('meetingDetailLocation').textContent = data.dataset.location || 'Chưa xác định';
+    document.getElementById('meetingDetailHost').textContent = data.dataset.organizer;
+    
+    const dateTime = `${data.dataset.start}<br>${data.dataset.start.split(' ')[1]} - ${data.dataset.end}`;
+    document.getElementById('meetingDetailDateTime').innerHTML = dateTime;
+    
+    // Show/hide action buttons based on creator
+    const actionButtons = document.getElementById('meetingActionButtons');
+    if (currentUserId === currentMeetingCreatorId) {
+        actionButtons.style.display = 'flex';
+    } else {
+        actionButtons.style.display = 'none';
+    }
+    
+    // Show modal
+    document.getElementById('meetingDetailModal').style.display = 'block';
+}
+
+function closeMeetingDetailModal() {
+    document.getElementById('meetingDetailModal').style.display = 'none';
+}
+
+function editMeetingRedirect() {
+    // Redirect to meeting schedule page
+    window.location.href = '/meeting-schedule/';
+}
+
+function deleteMeetingFromModal() {
+    if (!confirm('Bạn có chắc chắn muốn xóa cuộc họp này?')) {
+        return;
+    }
+    
+    fetch(`/meetings/${currentMeetingId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Đã xóa cuộc họp thành công!');
+            closeMeetingDetailModal();
+            location.reload();
+        } else {
+            alert('❌ Lỗi: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Có lỗi xảy ra khi xóa cuộc họp');
+    });
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('meetingDetailModal');
+    if (event.target == modal) {
+        closeMeetingDetailModal();
+    }
+}
 </script>
 {% endblock %}

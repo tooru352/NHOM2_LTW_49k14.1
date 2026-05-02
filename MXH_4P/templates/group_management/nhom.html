@@ -3,9 +3,6 @@
 {% block baocao_menu %}
 {% if user.role == "quanly" %}
 <h3 style="margin-top:16px;font-size:11px;color:#95a5a6;letter-spacing:.5px">BÁO CÁO</h3>
-<a href="/baocao/tuongtac/" class="menu-item {% block menu_bc_tt %}{% endblock %}">
-    <span class="icon">&#128202;</span> Báo cáo tương tác
-</a>
 <a href="/baocao/congviec/" class="menu-item {% block menu_bc_cv %}{% endblock %}">
     <span class="icon">&#128203;</span> Báo cáo công việc
 </a>
@@ -198,6 +195,13 @@ function showToast(msg, type) {
   t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 3000);
 }
+
+// Hiển thị Django messages nếu có
+{% if messages %}
+  {% for message in messages %}
+    showToast('{{ message|escapejs }}', '{% if message.tags == "error" %}error{% endif %}');
+  {% endfor %}
+{% endif %}
 
 // Doc nhom moi tu sessionStorage
 (function() {

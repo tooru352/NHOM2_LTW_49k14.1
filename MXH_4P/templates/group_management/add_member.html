@@ -16,8 +16,6 @@
 .group-info-text p{font-size:13px;color:#888}
 .form-group{margin-bottom:20px}
 .form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
-.form-group select{width:100%;padding:12px 16px;border:1.5px solid #e4e6eb;border-radius:10px;font-size:14px;outline:none;background:#fff;cursor:pointer;transition:all 0.2s}
-.form-group select:focus{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
 .form-actions{display:flex;gap:12px;margin-top:28px}
 .btn-cancel{flex:1;padding:12px;background:#f0f2f5;color:#333;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;text-decoration:none;text-align:center;transition:all 0.2s}
 .btn-cancel:hover{background:#e4e6eb}
@@ -26,6 +24,69 @@
 .btn-submit:disabled{opacity:0.5;cursor:not-allowed;transform:none}
 .error-message{background:#fee;border:1px solid #fcc;color:#c33;padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px}
 .success-message{background:#efe;border:1px solid #cfc;color:#3c3;padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px}
+
+/* Search input styles */
+.search-input{
+  width:100%;padding:12px 16px;border:1.5px solid #e4e6eb;border-radius:10px;
+  font-size:14px;outline:none;background:#fff;transition:all 0.2s;
+}
+.search-input:focus{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+
+/* Dropdown results */
+.search-results{
+  display:none;position:absolute;top:100%;left:0;right:0;
+  background:#fff;border:1.5px solid #e4e6eb;border-top:none;
+  border-radius:0 0 10px 10px;max-height:280px;overflow-y:auto;
+  box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;margin-top:-1px;
+}
+.search-result-item{
+  padding:12px 16px;cursor:pointer;border-bottom:1px solid #f5f5f5;
+  display:flex;align-items:center;gap:12px;transition:background .2s;
+}
+.search-result-item:hover{background:#f8f9fa}
+.search-result-item:last-child{border-bottom:none}
+.result-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.result-info{flex:1;min-width:0}
+.result-name{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:2px}
+.result-username{font-size:12px;color:#888}
+.result-action{font-size:12px;color:#667eea;font-weight:600}
+
+/* Added members list */
+.added-members{margin-top:20px;padding-top:20px;border-top:1px solid #e4e6eb}
+.added-member-item{
+  display:flex;align-items:center;gap:12px;padding:10px;
+  background:#f8f9fa;border-radius:8px;margin-bottom:8px;
+}
+.added-member-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.added-member-info{flex:1;min-width:0}
+.added-member-name{font-size:13px;font-weight:600;color:#333}
+.added-member-username{font-size:11px;color:#888}
+.btn-remove{
+  background:#fff;border:1px solid #e74c3c;color:#e74c3c;
+  padding:4px 10px;border-radius:6px;font-size:11px;
+  cursor:pointer;font-weight:600;transition:all .2s;
+}
+.btn-remove:hover{background:#e74c3c;color:#fff}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:10px;
+  font-size:14px;font-weight:500;z-index:9999;transition:transform .3s;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{background:#e74c3c}
 </style>
 {% endblock %}
 {% block content %}
@@ -33,62 +94,56 @@
   <div class="add-member-card">
     <div class="add-member-header">
       <h2>➕ Thêm thành viên vào nhóm</h2>
-      <p>Chọn người dùng để thêm vào nhóm của bạn</p>
+      <p>Tìm kiếm và thêm người dùng vào nhóm của bạn</p>
     </div>
 
     <div class="group-info">
       <div class="group-icon">{{ group.name.0|upper }}</div>
       <div class="group-info-text">
         <h3>{{ group.name }}</h3>
-        <p>{{ group.members.count }} thành viên • {{ group.get_status_display }}</p>
+        <p><span id="memberCount">{{ group.members.count }}</span> thành viên • {{ group.get_status_display }}</p>
       </div>
     </div>
 
-    {% if messages %}
-      {% for message in messages %}
-        <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
-          {{ message }}
-        </div>
-      {% endfor %}
-    {% endif %}
-
-    <form method="post">
-      {% csrf_token %}
-      
-      <div class="form-group">
-        <label for="{{ form.user.id_for_label }}">
-          Chọn thành viên <span style="color:#e74c3c;">*</span>
-        </label>
-        {{ form.user }}
-        {% if form.user.errors %}
-          <div style="color:#e74c3c;font-size:12px;margin-top:4px;">
-            {{ form.user.errors }}
-          </div>
-        {% endif %}
-        <div style="font-size:12px;color:#888;margin-top:6px;">
-          💡 Chỉ hiển thị những người chưa là thành viên của nhóm
-        </div>
+    <!-- Thanh tìm kiếm -->
+    <div class="form-group">
+      <label>🔍 Tìm kiếm thành viên</label>
+      <div style="position:relative">
+        <input type="text" id="searchInput" class="search-input"
+               placeholder="Nhập tên hoặc username để tìm kiếm..."
+               oninput="searchUsers(this.value)"
+               autocomplete="off">
+        
+        <!-- Dropdown kết quả -->
+        <div id="searchResults" class="search-results"></div>
       </div>
-
-      <div class="form-actions">
-        <a href="/nhom/{{ group.id }}/" class="btn-cancel">Hủy</a>
-        <button type="submit" class="btn-submit">✓ Thêm thành viên</button>
+      <div style="font-size:12px;color:#888;margin-top:6px;">
+        💡 Nhập ít nhất 2 ký tự để bắt đầu tìm kiếm
       </div>
-    </form>
+    </div>
 
+    <!-- Danh sách thành viên đã thêm (trong session này) -->
+    <div id="addedMembersSection" style="display:none">
+      <div class="added-members">
+        <h4 style="font-size:14px;margin-bottom:12px;color:#555;">✓ Đã thêm trong phiên này</h4>
+        <div id="addedMembersList"></div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="/nhom/{{ group.id }}/" class="btn-cancel">↩ Quay lại nhóm</a>
+    </div>
+
+    <!-- Danh sách thành viên hiện tại -->
     <div style="margin-top:24px;padding-top:24px;border-top:1px solid #e4e6eb">
-      <h4 style="font-size:14px;margin-bottom:12px;color:#555;">📋 Thành viên hiện tại ({{ group.members.count }})</h4>
-      <div style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto">
+      <h4 style="font-size:14px;margin-bottom:12px;color:#555;">📋 Thành viên hiện tại</h4>
+      <div id="currentMembersList" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto">
         {% for member in group.members.all %}
-        <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#f8f9fa;border-radius:8px">
-          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">
-            {{ member.user.get_initials }}
-          </div>
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:600;color:#333">
-              {{ member.user.first_name }} {{ member.user.last_name }}
-            </div>
-            <div style="font-size:11px;color:#888">@{{ member.user.username }}</div>
+        <div class="added-member-item" id="current-member-{{ member.user.id }}">
+          <div class="added-member-avatar">{{ member.user.get_initials }}</div>
+          <div class="added-member-info">
+            <div class="added-member-name">{{ member.user.first_name }} {{ member.user.last_name }}</div>
+            <div class="added-member-username">@{{ member.user.username }}</div>
           </div>
           {% if member.user == group.created_by %}
           <span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">
@@ -101,16 +156,156 @@
     </div>
   </div>
 </div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Auto-focus on select
-document.addEventListener('DOMContentLoaded', function() {
-  const select = document.querySelector('select');
-  if (select) {
-    select.focus();
+const GROUP_ID = {{ group.id }};
+const CSRF_TOKEN = '{{ csrf_token }}';
+let searchTimeout;
+let addedMembers = [];
+
+// Tìm kiếm người dùng
+function searchUsers(query) {
+  clearTimeout(searchTimeout);
+  
+  const resultsDiv = document.getElementById('searchResults');
+  
+  if (!query || query.trim().length < 2) {
+    resultsDiv.style.display = 'none';
+    return;
   }
+  
+  searchTimeout = setTimeout(function() {
+    fetch('/api/search-users/?q=' + encodeURIComponent(query.trim()) + '&group_id=' + GROUP_ID, {
+      headers: { 'X-CSRFToken': CSRF_TOKEN }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.users && data.users.length > 0) {
+        resultsDiv.innerHTML = data.users.map(user => `
+          <div class="search-result-item" onclick="addMember(${user.id}, '${user.name}', '${user.username}', '${user.initials}')">
+            <div class="result-avatar">${user.initials}</div>
+            <div class="result-info">
+              <div class="result-name">${user.name}</div>
+              <div class="result-username">@${user.username}</div>
+            </div>
+            <div class="result-action">+ Thêm</div>
+          </div>
+        `).join('');
+        resultsDiv.style.display = 'block';
+      } else {
+        resultsDiv.innerHTML = '<div style="padding:16px;text-align:center;color:#aaa;font-size:13px">Không tìm thấy người dùng</div>';
+        resultsDiv.style.display = 'block';
+      }
+    })
+    .catch(err => {
+      console.error('Search error:', err);
+      resultsDiv.style.display = 'none';
+    });
+  }, 300);
+}
+
+// Thêm thành viên
+function addMember(userId, userName, username, initials) {
+  fetch('/api/add-member-to-group/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': CSRF_TOKEN
+    },
+    body: JSON.stringify({
+      group_id: GROUP_ID,
+      user_id: userId
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      // Thêm vào danh sách "đã thêm"
+      addedMembers.push({ id: userId, name: userName, username: username, initials: initials });
+      updateAddedMembersList();
+      
+      // Thêm vào danh sách thành viên hiện tại
+      const currentList = document.getElementById('currentMembersList');
+      const newMember = document.createElement('div');
+      newMember.className = 'added-member-item';
+      newMember.id = 'current-member-' + userId;
+      newMember.innerHTML = `
+        <div class="added-member-avatar">${initials}</div>
+        <div class="added-member-info">
+          <div class="added-member-name">${userName}</div>
+          <div class="added-member-username">@${username}</div>
+        </div>
+      `;
+      currentList.insertBefore(newMember, currentList.firstChild);
+      
+      // Cập nhật số lượng
+      const countEl = document.getElementById('memberCount');
+      countEl.textContent = parseInt(countEl.textContent) + 1;
+      
+      // Xóa input và ẩn kết quả
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchResults').style.display = 'none';
+      
+      showToast('✓ Đã thêm ' + userName + ' vào nhóm!');
+    } else {
+      showToast(data.error || 'Không thể thêm thành viên!', 'error');
+    }
+  })
+  .catch(err => {
+    console.error('Add member error:', err);
+    showToast('Có lỗi xảy ra!', 'error');
+  });
+}
+
+// Cập nhật danh sách đã thêm
+function updateAddedMembersList() {
+  const section = document.getElementById('addedMembersSection');
+  const list = document.getElementById('addedMembersList');
+  
+  if (addedMembers.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  list.innerHTML = addedMembers.map(member => `
+    <div class="added-member-item">
+      <div class="added-member-avatar">${member.initials}</div>
+      <div class="added-member-info">
+        <div class="added-member-name">${member.name}</div>
+        <div class="added-member-username">@${member.username}</div>
+      </div>
+      <span style="background:#d4edda;color:#155724;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600">
+        ✓ Đã thêm
+      </span>
+    </div>
+  `).join('');
+}
+
+// Toast notification
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type === 'error' ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// Ẩn dropdown khi click bên ngoài
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#searchInput') && !e.target.closest('#searchResults')) {
+    document.getElementById('searchResults').style.display = 'none';
+  }
+});
+
+// Auto-focus
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('searchInput').focus();
 });
 </script>
 {% endblock %}

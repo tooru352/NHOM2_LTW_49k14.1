@@ -44,9 +44,8 @@ class User(AbstractUser):
 # ============================================
 class Group(models.Model):
     STATUS_CHOICES = (
-        ('group', 'Công khai'),
-        ('private', 'Riêng tư'),
-        ('department', 'Phòng ban'),
+        ('group', 'Group'),
+        ('private', 'Private'),
     )
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=255, blank=True, null=True)
@@ -180,8 +179,9 @@ class Interaction(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interactions')
     interaction_type = models.ForeignKey(InteractionType, on_delete=models.CASCADE, related_name='interactions')
     content = models.TextField(blank=True, null=True)  # For comment content
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')  # For reply to comment
     created_at = models.DateTimeField(default=timezone.now)  # Timestamp for interaction
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')  # For nested comments
+    is_edited = models.BooleanField(default=False)  # Track if comment was edited
     
     class Meta:
         db_table = 'Interactions'
@@ -377,7 +377,7 @@ class Conversation(models.Model):
         ('private', 'Private'),
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='private')
-    name = models.CharField(max_length=200, blank=True, null=True)  # Custom name for group chats
+    name = models.CharField(max_length=200, blank=True, null=True)  # Tên tùy chỉnh cho nhóm chat
     created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:
@@ -394,6 +394,7 @@ class Conversation(models.Model):
 class ConversationMember(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='members')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversation_memberships')
+    last_read_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         db_table = 'ConversationMembers'
@@ -407,11 +408,22 @@ class ConversationMember(models.Model):
 # 13. MESSAGE MODEL
 # ============================================
 class Message(models.Model):
+    TYPE_CHOICES = (
+        ('text', 'Văn bản'),
+        ('image', 'Hình ảnh'),
+        ('file', 'Tệp đính kèm'),
+        ('call', 'Cuộc gọi'),
+    )
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    content = models.TextField()
+    content = models.TextField(blank=True)
+    message_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='text')
+    image = models.ImageField(upload_to='messages/images/%Y/%m/%d/', null=True, blank=True)
+    file = models.FileField(upload_to='messages/files/%Y/%m/%d/', null=True, blank=True)
+    file_name = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     is_edited = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
     
     class Meta:
         db_table = 'Messages'
@@ -464,3 +476,28 @@ class WorkSchedule(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.work_date} - {self.shift_code.shift_code} - {self.get_status_display()}"
+
+
+# ============================================
+# 16. CALL REQUEST MODEL
+# ============================================
+class CallRequest(models.Model):
+    STATUS_CHOICES = (
+        ('calling', 'Đang gọi'),
+        ('accepted', 'Đã chấp nhận'),
+        ('rejected', 'Đã từ chối'),
+        ('missed', 'Nhỡ máy'),
+        ('ended', 'Đã kết thúc'),
+    )
+    caller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='outgoing_calls')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='incoming_calls')
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='calls')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='calling')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'CallRequests'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.caller.username} → {self.receiver.username} ({self.status})"

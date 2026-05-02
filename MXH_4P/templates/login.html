@@ -21,7 +21,11 @@
       <div id="error-msg" class="login-error" style="display:none;"></div>
       {% if messages %}
         {% for message in messages %}
-        <div class="login-error" style="display:block;">{{ message }}</div>
+          {% if forloop.last %}
+            <div class="login-{% if message.tags == 'success' or message.tags == 'info' %}success{% else %}error{% endif %}" style="display:block;">
+              {{ message }}
+            </div>
+          {% endif %}
         {% endfor %}
       {% endif %}
 

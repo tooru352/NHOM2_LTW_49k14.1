@@ -47,13 +47,27 @@ urlpatterns = [
     path('post/<int:post_id>/like/', views.react_to_post, name='like_post'),  # Alias for AJAX
     path('post/<int:post_id>/comment/', views.create_comment, name='comment_post'),  # Alias for AJAX
     path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),  # Delete comment
+    path('comment/<int:comment_id>/edit/', views.edit_comment, name='edit_comment'),  # Edit comment
     path('post/<int:post_id>/delete/', views.delete_post, name='delete_post_ajax'),  # Alias for AJAX
     path('post/<int:post_id>/edit/', views.edit_post, name='edit_post_ajax'),  # Alias for AJAX
     path('post/<int:post_id>/data/', views.get_post_data, name='get_post_data'),  # Get post data for editing
     
     # Messaging
     path('messaging/', views.messaging, name='messaging'),
-    path('messaging/<int:conversation_id>/send/', views.send_message, name='send_message'),
+    path('api/conversations/', views.api_get_conversations, name='api_get_conversations'),
+    path('api/conversations/create/', views.api_create_conversation, name='api_create_conversation'),
+    path('api/conversations/<int:conversation_id>/messages/', views.api_get_messages, name='api_get_messages'),
+    path('api/conversations/<int:conversation_id>/mark-read/', views.api_mark_conversation_read, name='api_mark_conversation_read'),
+    path('api/conversations/<int:conversation_id>/send/', views.send_message, name='send_message'),
+    path('api/conversations/<int:conversation_id>/rename/', views.api_rename_conversation, name='api_rename_conversation'),
+    path('api/conversations/<int:conversation_id>/call/', views.api_start_call, name='api_start_call'),
+    path('api/calls/incoming/', views.api_check_incoming_call, name='api_check_incoming_call'),
+    path('api/calls/<int:call_id>/respond/', views.api_respond_call, name='api_respond_call'),
+    path('api/calls/<int:call_id>/status/', views.api_call_status, name='api_call_status'),
+    path('api/conversations/<int:conversation_id>/call-log/', views.api_save_call_log, name='api_save_call_log'),
+    path('api/messages/<int:message_id>/delete/', views.api_delete_message, name='api_delete_message'),
+    path('api/messages/<int:message_id>/edit/', views.api_edit_message, name='api_edit_message'),
+    path('api/users/', views.api_get_users, name='api_get_users'),
     
     # Work Management
     path('work-management/', views.work_management, name='work_management'),
@@ -90,19 +104,11 @@ urlpatterns = [
     
     # API endpoints
     path('api/update_schedule_status/<int:schedule_id>/', api_views.update_schedule_status, name='update_schedule_status'),
+    path('api/update_schedule_status_manager/<int:schedule_id>/', api_views.update_schedule_status_manager, name='update_schedule_status_manager'),
     path('api/update_schedule/<int:schedule_id>/', api_views.update_schedule, name='update_schedule'),
+    path('api/week_schedule_status/', api_views.get_week_schedule_status, name='get_week_schedule_status'),
     path('api/delete_schedule/<int:schedule_id>/', api_views.delete_schedule, name='delete_schedule'),
     path('api/batch_update_schedules/', api_views.batch_update_schedules, name='batch_update_schedules'),
-    path('api/update_profile/', views.update_profile_api, name='update_profile_api'),
-    path('api/upload_avatar/', views.upload_avatar_api, name='upload_avatar_api'),
-    
-    # Messaging API endpoints
-    path('api/conversations/', api_views.get_conversations, name='get_conversations'),
-    path('api/conversations/<int:conversation_id>/messages/', api_views.get_conversation_messages, name='get_conversation_messages'),
-    path('api/conversations/<int:conversation_id>/send/', api_views.send_message_api, name='send_message_api'),
-    path('api/conversations/create/', api_views.create_conversation_api, name='create_conversation_api'),
-    path('api/conversations/<int:conversation_id>/rename/', api_views.rename_conversation_api, name='rename_conversation_api'),
-    path('api/users/', api_views.get_users_api, name='get_users_api'),
     
     # Group Management
     path('nhom/', views.nhom, name='nhom'),
@@ -112,7 +118,6 @@ urlpatterns = [
     path('nhom/new/sua/', views.nhom_new_edit, name='nhom_new_edit'),
     path('nhom/<int:nhom_id>/', views.nhom_detail, name='nhom_detail'),
     path('nhom/<int:nhom_id>/sua/', views.nhom_edit, name='nhom_edit'),
-    path('nhom/<int:nhom_id>/xoa/', views.nhom_delete, name='nhom_delete'),
     path('nhom/<int:group_id>/add-member/', views.add_group_member, name='add_group_member'),
     
     # Reports

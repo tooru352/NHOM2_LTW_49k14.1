@@ -1,1063 +1,357 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Lịch Làm Việc Tuần - Quản Lý{% endblock %}
+{% block title %}Quản lý lịch làm việc - FourPoint Hotel{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/work_schedules_management/employee_lich_lam.css' %}?v=10">
-<style>
-/* Popup Modal */
-.schedule-modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    backdrop-filter: blur(4px);
-}
-
-.schedule-modal-overlay.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.schedule-modal {
-    background: white;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px 24px;
-    position: relative;
-}
-
-.modal-header h3 {
-    font-size: 18px;
-    font-weight: 700;
-    margin: 0 0 4px 0;
-}
-
-.modal-header p {
-    font-size: 13px;
-    opacity: 0.9;
-    margin: 0;
-}
-
-.modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.modal-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: rotate(90deg);
-}
-
-.modal-body {
-    padding: 24px;
-}
-
-.modal-field {
-    margin-bottom: 16px;
-}
-
-.modal-field-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.modal-field-value {
-    padding: 12px 16px;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #2c3e50;
-}
-
-.shift-info-box {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-}
-
-.shift-icon-large {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 800;
-    color: white;
-    flex-shrink: 0;
-}
-
-.shift-details {
-    flex: 1;
-}
-
-.shift-details-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 2px;
-}
-
-.shift-details-time {
-    font-size: 13px;
-    color: #6c757d;
-}
-
-.reason-note-box {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 1.5px solid #dee2e6;
-    border-radius: 10px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-}
-
-.reason-icon {
-    font-size: 24px;
-    flex-shrink: 0;
-}
-
-.reason-text {
-    flex: 1;
-}
-
-.reason-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 4px;
-}
-
-.reason-subtitle {
-    font-size: 12px;
-    color: #6c757d;
-    line-height: 1.5;
-}
-
-.note-textarea {
-    width: 100%;
-    border: 1.5px solid #dee2e6;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 13px;
-    resize: vertical;
-    min-height: 90px;
-    font-family: inherit;
-    outline: none;
-    transition: all 0.2s;
-}
-
-.note-textarea:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.note-textarea::placeholder {
-    color: #adb5bd;
-}
-
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    gap: 12px;
-}
-
-.btn-modal {
-    flex: 1;
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.btn-reject {
-    background: white;
-    border: 2px solid #dc3545;
-    color: #dc3545;
-}
-
-.btn-reject:hover {
-    background: #fee;
-}
-
-.btn-accept {
-    background: #28a745;
-    border: none;
-    color: white;
-}
-
-.btn-accept:hover {
-    background: #218838;
-}
-
-/* Clickable shift badge */
-.shift-badge.clickable {
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.shift-badge.clickable:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Highlight current user row */
-.schedule-table tbody tr.my-schedule {
-    background: #f0f7ff;
-}
-
-.schedule-table tbody tr.my-schedule:hover {
-    background: #e3f2fd;
-}
-
-.schedule-table tbody tr.my-schedule .employee-name {
-    color: #667eea;
-    font-weight: 700;
-}
-
-/* Manager action buttons */
-.header-actions {
-    display: flex;
-    gap: 12px;
-}
-
-.btn-create-schedule,
-.btn-edit-schedule,
-.btn-save-schedule,
-.btn-cancel-schedule {
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
-}
-
-.btn-create-schedule {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
-}
-
-.btn-create-schedule:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-}
-
-.btn-edit-schedule {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
-}
-
-.btn-edit-schedule:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-save-schedule {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
-}
-
-.btn-save-schedule:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-}
-
-.btn-cancel-schedule {
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
-}
-
-.btn-cancel-schedule:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-}
-
-.schedule-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-}
-
-/* Schedule cell with dropdown */
-.schedule-cell {
-    position: relative;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Shift dropdown */
-.shift-dropdown {
-    width: 100%;
-    max-width: 120px;
-    padding: 8px 12px;
-    border: 2px solid #667eea;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #2c3e50;
-    background: white;
-    cursor: pointer;
-    outline: none;
-    transition: all 0.2s;
-    text-align: center;
-}
-
-.shift-dropdown:focus {
-    border-color: #764ba2;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
-.shift-dropdown option {
-    padding: 8px;
-    font-weight: 700;
-}
-
-/* Edit mode styles */
-.edit-mode .schedule-cell .shift-badge,
-.edit-mode .schedule-cell .empty-shift {
-    display: none !important;
-}
-
-.edit-mode .schedule-cell .shift-dropdown {
-    display: block !important;
-}
-
-/* Highlight changed cells */
-.schedule-cell.changed {
-    background: #fff3cd;
-    border-radius: 8px;
-}
-
-/* Shift select dropdown */
-.shift-select {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1.5px solid #dee2e6;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #2c3e50;
-    background: white;
-    cursor: pointer;
-    outline: none;
-    transition: all 0.2s;
-}
-
-.shift-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Empty shift clickable */
-.empty-shift.clickable {
-    cursor: pointer;
-    color: #28a745;
-    font-size: 20px;
-    font-weight: 700;
-    transition: all 0.2s;
-}
-
-.empty-shift.clickable:hover {
-    transform: scale(1.3);
-    color: #20c997;
-}
-
-/* Info box */
-.info-box {
-    background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
-    border: 1.5px solid #90caf9;
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 13px;
-    line-height: 1.6;
-    color: #1565c0;
-}
-
-.info-box p {
-    margin: 0;
-}
-
-.info-box strong {
-    color: #0d47a1;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/work_schedules_management/lich_lam.css' %}?v=62">
 {% endblock %}
 
 {% block content %}
-<div class="employee-schedule-page">
-    <!-- Header -->
-    <div class="schedule-header">
-        <h1>Lịch Làm Việc Tuần</h1>
-        <div class="header-actions">
-            {% if not has_schedules %}
-                <!-- Show "Create" button only for weeks without schedules -->
-                <button class="btn-create-schedule" id="btnCreateMode" onclick="toggleCreateMode()">
-                    + Tạo lịch mới
-                </button>
-            {% else %}
-                <!-- Show "Edit" button only for weeks with schedules -->
-                <button class="btn-edit-schedule" id="btnEditMode" onclick="toggleEditMode()">
-                    ✏️ Chỉnh sửa lịch làm việc
-                </button>
-            {% endif %}
-            <button class="btn-save-schedule" id="btnSaveSchedule" onclick="saveAllSchedules()" style="display: none;">
-                ✓ Lưu thay đổi
-            </button>
-            <button class="btn-cancel-schedule" id="btnCancelEdit" onclick="cancelEditMode()" style="display: none;">
-                ✕ Hủy
-            </button>
-        </div>
+<div class="schedule-page">
+
+  <!-- Schedule View -->
+  <div id="scheduleView">
+    <div class="page-header">
+      <h1>Lịch Làm Việc Tuần</h1>
+      <div class="actions">
+        <button class="btn-create" id="btnCreate" onclick="openCreateView()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tạo lịch làm việc
+        </button>
+        <button class="btn-edit" id="btnEdit" onclick="openEditView()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="18" height="17" rx="2" fill="none" stroke="white" stroke-width="2"/>
+            <line x1="3" y1="9" x2="21" y2="9" stroke="white" stroke-width="2"/>
+            <line x1="8" y1="2" x2="8" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16" y1="2" x2="16" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M9 17.5l1-3 5.5-5.5 2 2-5.5 5.5-3 1z" fill="white"/>
+            <path d="M15.5 9l2 2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Sửa lịch
+        </button>
+        <button class="btn-del" id="btnDel" onclick="confirmDelete()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+            <rect x="5" y="6" width="14" height="14" rx="1"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+          Xóa lịch
+        </button>
+      </div>
     </div>
 
-    <!-- Week Selector -->
     <div class="week-selector">
-        <span class="week-selector-label">Chọn tuần:</span>
-        <div class="week-navigation">
-            <button class="week-nav-btn" onclick="navigateWeek('prev')">‹ Tuần trước</button>
-            <span class="week-range">{{ week_start|date:"d/m/Y" }} - {{ week_end|date:"d/m/Y" }}</span>
-            <span class="week-current-badge">TUẦN HIỆN TẠI</span>
-            <button class="week-nav-btn" onclick="navigateWeek('next')">Tuần sau ›</button>
-        </div>
+      <label>Chọn tuần:</label>
+      <div class="week-nav">
+        <button class="week-btn" onclick="changeWeek(-1)">‹ Tuần trước</button>
+        <span class="week-range" id="weekRange"></span>
+        <span class="badge-current" id="badgeCurrent">TUẦN HIỆN TẠI</span>
+        <button class="week-btn" onclick="changeWeek(1)" id="btnNext">Tuần sau ›</button>
+      </div>
     </div>
 
-    <!-- Schedule Table -->
-    <div class="schedule-table-wrapper">
-        <table class="schedule-table">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-emp">NHÂN VIÊN</th>
+            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
+            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody"></tbody>
+      </table>
+    </div>
+
+    <div class="schedule-footer">
+      <div class="footer-top">
+        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
+        <div class="shift-totals" id="shiftTotals"></div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
+        <div class="shift-legend">
+          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create View -->
+  <div class="create-view" id="createView">
+    <div class="page-header">
+      <div>
+        <h1>Lịch Làm Việc Tuần</h1>
+        <p style="font-size:12px;color:#888;margin-top:3px;">Quản lý lịch làm việc của nhân viên theo tuần</p>
+      </div>
+      <div class="create-week-pick">
+        <button class="week-display-btn" onclick="toggleCalPopup(event)">
+          <span id="weekDisplayText">Week 01, 2026</span>
+          <span class="cal-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e2235" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+        </button>
+        <div class="cal-popup" id="calPopup">
+          <div class="cal-nav">
+            <span class="cal-nav-title" id="calMonthTitle"></span>
+            <div class="cal-nav-arrows">
+              <button>‹</button>
+              <button>›</button>
+            </div>
+          </div>
+          <table class="cal-grid">
             <thead>
-                <tr>
-                    <th>NHÂN VIÊN</th>
-                    <th>THỨ 2</th>
-                    <th>THỨ 3</th>
-                    <th>THỨ 4</th>
-                    <th>THỨ 5</th>
-                    <th>THỨ 6</th>
-                    <th>THỨ 7</th>
-                    <th>CHỦ NHẬT</th>
-                </tr>
+              <tr>
+                <th class="week-col">Tuần</th>
+                <th>T2</th><th>T3</th><th>T4</th><th>T5</th><th>T6</th><th>T7</th><th>CN</th>
+              </tr>
             </thead>
-            <tbody>
-                {% for user_data in user_schedules %}
-                <tr {% if user_data.user.id == request.user.id %}class="my-schedule"{% endif %}>
-                    <td>
-                        <div class="employee-info">
-                            <span class="employee-name">{{ user_data.user.get_full_name|default:user_data.user.username }}</span>
-                            <span class="employee-role">{{ user_data.user.username }}</span>
-                        </div>
-                    </td>
-                    {% for day_schedule in user_data.schedules %}
-                    <td data-user-id="{{ user_data.user.id }}" data-date="{{ day_schedule.date|date:'Y-m-d' }}" data-schedule-id="{% if day_schedule.schedule %}{{ day_schedule.schedule.id }}{% endif %}">
-                        <!-- Show schedule cell for all users -->
-                        <div class="schedule-cell">
-                            {% if day_schedule.schedule %}
-                                <div class="shift-badge shift-{{ day_schedule.schedule.shift_code.shift_code|lower }}" data-current-shift="{{ day_schedule.schedule.shift_code.shift_code }}">
-                                    <span class="status-dot {% if day_schedule.schedule.status == 0 %}pending{% elif day_schedule.schedule.status == 1 %}accepted{% else %}rejected{% endif %}"></span>
-                                    <span>{{ day_schedule.schedule.shift_code.shift_code }}</span>
-                                </div>
-                            {% else %}
-                                <span class="empty-shift" data-current-shift="">—</span>
-                            {% endif %}
-                            <!-- Dropdown for edit mode (hidden by default) -->
-                            <select class="shift-dropdown" style="display: none;">
-                                <option value="">---</option>
-                                <option value="MS">MS</option>
-                                <option value="A1">A1</option>
-                                <option value="E9">E9</option>
-                                <option value="M6SS">M6SS</option>
-                                <option value="DO">DO</option>
-                            </select>
-                        </div>
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: #999;">
-                        Không có dữ liệu lịch làm việc
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <!-- Footer Stats -->
-        <div class="schedule-footer">
-            <!-- Tổng số ca làm việc -->
-            <div class="footer-section">
-                <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
-                <div class="footer-stats">
-                    <div class="stat-item">
-                        <div class="stat-badge stat-ms">MS</div>
-                        <span class="stat-count">{{ ms_count|default:0 }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-badge stat-a1">A1</div>
-                        <span class="stat-count">{{ a1_count|default:0 }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-badge stat-e9">E9</div>
-                        <span class="stat-count">{{ e9_count|default:0 }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-badge stat-m6ss">M6SS</div>
-                        <span class="stat-count">{{ m6ss_count|default:0 }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-badge stat-do">DO</div>
-                        <span class="stat-count">{{ do_count|default:0 }}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Chú thích ca làm việc -->
-            <div class="footer-section">
-                <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
-                <div class="shift-legend-grid">
-                    <div class="legend-item">
-                        <div class="legend-badge legend-ms">MS</div>
-                        <div class="legend-text">
-                            <div class="legend-text-title">Ca Sáng: 5h - 13h</div>
-                            <div class="legend-text-subtitle">MORNING SHIFT</div>
-                        </div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-badge legend-a1">A1</div>
-                        <div class="legend-text">
-                            <div class="legend-text-title">Ca Chiều: 13h - 21h</div>
-                            <div class="legend-text-subtitle">AFTERNOON SHIFT</div>
-                        </div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-badge legend-e9">E9</div>
-                        <div class="legend-text">
-                            <div class="legend-text-title">Ca Tối: 21h - 5h</div>
-                            <div class="legend-text-subtitle">EVENING SHIFT</div>
-                        </div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-badge legend-m6ss">M6SS</div>
-                        <div class="legend-text">
-                            <div class="legend-text-title">Ca Đặc Biệt</div>
-                            <div class="legend-text-subtitle">MID SHIFT</div>
-                        </div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-badge legend-do">DO</div>
-                        <div class="legend-text">
-                            <div class="legend-text-title">Nghỉ</div>
-                            <div class="legend-text-subtitle">DAY OFF</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <tbody id="calBody"></tbody>
+          </table>
+          <div class="cal-footer" id="calFooter"></div>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Schedule Confirmation Modal -->
-<div class="schedule-modal-overlay" id="scheduleModal">
-    <div class="schedule-modal">
-        <div class="modal-header">
-            <h3>Phản Hồi Lịch Làm Việc</h3>
-            <p>Vui lòng xác nhận hoặc từ chối ca làm việc</p>
-            <button class="modal-close" onclick="closeScheduleModal()">×</button>
-        </div>
-        <div class="modal-body">
-            <div class="modal-field">
-                <span class="modal-field-label">Tên nhân viên</span>
-                <div class="modal-field-value">{{ request.user.get_full_name }}</div>
-            </div>
-            
-            <div class="modal-field">
-                <span class="modal-field-label">Ngày làm việc</span>
-                <div class="modal-field-value" id="modalWorkDate"></div>
-            </div>
-            
-            <div class="modal-field">
-                <span class="modal-field-label">Ca làm việc</span>
-                <div class="shift-info-box">
-                    <div class="shift-icon-large" id="modalShiftIcon"></div>
-                    <div class="shift-details">
-                        <div class="shift-details-name" id="modalShiftName"></div>
-                        <div class="shift-details-time" id="modalShiftTime"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-field">
-                <span class="modal-field-label">Lý do (nếu từ chối)</span>
-                <div class="reason-note-box">
-                    <div class="reason-icon">💡</div>
-                    <div class="reason-text">
-                        <div class="reason-title">Lý do cần có khi từ chối</div>
-                        <div class="reason-subtitle">Vui lòng nhập lý do để bộ phận quản lý có thể sắp xếp lại nhân sự.</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-field">
-                <span class="modal-field-label">Ghi chú</span>
-                <textarea id="rejectReason" class="note-textarea" placeholder="Ví dụ: Tôi có lịch khám vào buổi sáng ngày hôm đó..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-modal btn-reject" onclick="handleReject()">
-                ✕ Từ chối
-            </button>
-            <button class="btn-modal btn-accept" onclick="handleAccept()">
-                ✓ Đồng ý
-            </button>
-        </div>
+    <div class="table-wrapper">
+      <table class="create-table">
+        <thead>
+          <tr>
+            <th class="col-emp">Nhân viên</th>
+            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
+            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
+          </tr>
+        </thead>
+        <tbody id="createBody"></tbody>
+      </table>
     </div>
+
+    <div class="schedule-footer">
+      <div class="footer-top">
+        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
+        <div class="shift-totals" id="createTotals"></div>
+      </div>
+    </div>
+
+    <div class="create-actions-row">
+      <button class="btn-cancel-create" onclick="closeCreateView()">Hủy tạo</button>
+      <button class="btn-save-create" onclick="saveCreateView()">Lưu lịch làm việc</button>
+    </div>
+
+    <div class="schedule-footer" style="margin-top:0;">
+      <div class="footer-bottom">
+        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
+        <div class="shift-legend">
+          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit View -->
+  <div class="edit-view" id="editView">
+    <div class="page-header">
+      <h1>Lịch Làm Việc Tuần</h1>
+      <div class="actions">
+        <button class="btn-cancel-edit" onclick="closeEditView()">Hủy</button>
+        <button class="btn-save-edit" onclick="saveEditView()">Lưu thay đổi</button>
+      </div>
+    </div>
+
+    <div class="week-selector">
+      <label>Chọn tuần:</label>
+      <div class="week-nav">
+        <button class="week-btn" onclick="changeWeek(-1)">‹ Tuần trước</button>
+        <span class="week-range" id="editWeekRange"></span>
+        <span class="badge-current" id="editBadgeCurrent">TUẦN HIỆN TẠI</span>
+        <button class="week-btn" onclick="changeWeek(1)">Tuần sau ›</button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="edit-table">
+        <thead>
+          <tr>
+            <th class="col-emp">NHÂN VIÊN</th>
+            <th>THỨ 2</th><th>THỨ 3</th><th>THỨ 4</th>
+            <th>THỨ 5</th><th>THỨ 6</th><th>THỨ 7</th><th>CHỦ NHẬT</th>
+          </tr>
+        </thead>
+        <tbody id="editBody"></tbody>
+      </table>
+    </div>
+
+    <div class="schedule-footer">
+      <div class="footer-top">
+        <span class="footer-label">TỔNG SỐ CA LÀM VIỆC</span>
+        <div class="shift-totals" id="editTotals"></div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-label">CHÚ THÍCH CA LÀM VIỆC</span>
+        <div class="shift-legend">
+          <div class="legend-item"><span class="leg-badge leg-ms">M5</span><div class="legend-text"><strong>Ca Sáng: 5h - 13h</strong><small>MORNING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-a1">A1</span><div class="legend-text"><strong>Ca Chiều: 13h - 21h</strong><small>AFTERNOON SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-e9">E9</span><div class="legend-text"><strong>Ca Tối: 21h - 5h</strong><small>EVENING SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-mgss">M6SS</span><div class="legend-text"><strong>Ca Đặc Biệt</strong><small>MID SHIFT</small></div></div>
+          <div class="legend-item"><span class="leg-badge leg-do">DO</span><div class="legend-text"><strong>Nghỉ</strong><small>DAY OFF</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Popup (quản lý xem lý do từ chối) -->
+  <div class="overlay" id="rejectOverlay" onclick="closeRejectPopup()"></div>
+  <div class="reject-modal" id="rejectModal">
+    <div class="rj-header">
+      <div class="rj-header-left">
+        <div class="rj-warn-icon-box">⚠️</div>
+        <div>
+          <h3>Ca làm việc bị từ chối</h3>
+          <p>Nhân viên đã từ chối ca làm việc này</p>
+        </div>
+      </div>
+      <button class="rj-close" onclick="closeRejectPopup()">✕</button>
+    </div>
+    <div class="rj-body">
+      <div class="rj-field">
+        <div class="rj-label">TÊN NHÂN VIÊN</div>
+        <div class="rj-value" id="rjEmpName"></div>
+      </div>
+      <div class="rj-field">
+        <div class="rj-label">NGÀY LÀM VIỆC</div>
+        <div class="rj-value" id="rjDate"></div>
+      </div>
+      <div class="rj-field">
+        <div class="rj-label">CA LÀM VIỆC BỊ TỪ CHỐI</div>
+        <div class="rj-shift-box">
+          <div class="rj-shift-icon" id="rjShiftIcon"></div>
+          <div>
+            <div class="rj-shift-name" id="rjShiftName"></div>
+            <div class="rj-shift-time" id="rjShiftTime"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rj-field">
+        <div class="rj-label">LÝ DO TỪ CHỐI</div>
+        <div class="rj-reason-box">
+          <div class="rj-reason-title">
+            <div class="rj-reason-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            </div>
+            Lý do nhân viên đưa ra:
+          </div>
+          <div class="rj-reason-text" id="rjReasonText"></div>
+        </div>
+      </div>
+      <div class="rj-reply-box">
+        <div class="rj-reply-label">Phản hồi của bạn <span>*</span></div>
+        <textarea id="rjReply" rows="4"
+          placeholder="Nhập phản hồi giải thích cho nhân viên (Ví dụ: Do thiếu nhân sự,...)."
+          oninput="document.getElementById('rjCharCount').textContent = this.value.length + ' / 500 ký tự'"></textarea>
+        <div class="rj-reply-footer">
+          <span class="rj-reply-hint">💡 Lý do cần có ít nhất 10 ký tự để gửi từ chối</span>
+          <span id="rjCharCount">0 / 500 ký tự</span>
+        </div>
+      </div>
+    </div>
+    <div class="rj-footer">
+      <button class="btn-rj-reassign" onclick="handleReassign()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        Sắp xếp lại
+      </button>
+      <button class="btn-rj-cancel" onclick="handleManagerCancel()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Từ chối
+      </button>
+    </div>
+  </div>
+
+  <!-- Delete Confirm -->
+  <div class="overlay" id="deleteOverlay" onclick="closeDelete()"></div>
+  <div class="delete-modal" id="deleteModal">
+    <div class="delete-modal-icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+    <div class="delete-modal-text">Bạn có chắc muốn xóa lịch làm tuần này không?</div>
+    <div class="delete-modal-footer">
+      <button class="delete-btn-cancel" onclick="closeDelete()">Hủy</button>
+      <button class="delete-btn-confirm" onclick="deleteSchedule()">Đồng ý</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-icon-wrap" id="toastIconWrap">
+      <svg id="toastIconSvg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="toast-body">
+      <div class="toast-title" id="toastTitle"></div>
+      <div class="toast-desc"  id="toastDesc"></div>
+    </div>
+    <button class="toast-close" onclick="document.getElementById('toast').classList.remove('show')">×</button>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-const WEEK_START = "{{ week_start|date:'Y-m-d' }}";
-let currentScheduleId = null;
-let currentScheduleStatus = null;
+// ===== Inject dữ liệu thật từ Django =====
+const DB_EMPLOYEES = [
+  {% for user in users %}
+  {
+    id: {{ user.id }},
+    name: "{{ user.get_full_name|default:user.username }}",
+    role: "Nhân viên"
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
 
-function navigateWeek(direction) {
-    const currentWeekStart = new Date(WEEK_START);
-    let newWeekStart;
-    
-    if (direction === 'prev') {
-        newWeekStart = new Date(currentWeekStart);
-        newWeekStart.setDate(newWeekStart.getDate() - 7);
-    } else if (direction === 'next') {
-        newWeekStart = new Date(currentWeekStart);
-        newWeekStart.setDate(newWeekStart.getDate() + 7);
-    }
-    
-    if (newWeekStart) {
-        const year = newWeekStart.getFullYear();
-        const month = String(newWeekStart.getMonth() + 1).padStart(2, '0');
-        const day = String(newWeekStart.getDate()).padStart(2, '0');
-        window.location.href = `?week=${year}-${month}-${day}`;
-    }
-}
-
-function openScheduleModal(scheduleId, shiftCode, shiftName, workDate, startTime, endTime, status) {
-    currentScheduleId = scheduleId;
-    currentScheduleStatus = status;
-    
-    // Set modal content
-    document.getElementById('modalWorkDate').textContent = workDate;
-    document.getElementById('modalShiftName').textContent = shiftName;
-    
-    // Set shift time
-    let timeText = '';
-    if (startTime && endTime && startTime !== 'None' && endTime !== 'None') {
-        timeText = `${startTime.substring(0, 5)} - ${endTime.substring(0, 5)}`;
-    } else {
-        timeText = 'Nghỉ';
-    }
-    document.getElementById('modalShiftTime').textContent = timeText;
-    
-    // Set shift icon color
-    const iconEl = document.getElementById('modalShiftIcon');
-    iconEl.textContent = shiftCode;
-    iconEl.className = 'shift-icon-large';
-    
-    const colors = {
-        'MS': '#2196F3',
-        'A1': '#9C27B0',
-        'E9': '#FF9800',
-        'M6SS': '#E91E63',
-        'DO': '#F44336'
+// Convert Django schedules to JavaScript format (for initFromDB)
+const DB_SCHEDULES = {};
+{% for user_data in user_schedules %}
+  DB_SCHEDULES[{{ user_data.user.id }}] = {};
+  {% for day_data in user_data.schedules %}
+    {% if day_data.schedule %}
+    DB_SCHEDULES[{{ user_data.user.id }}]["{{ day_data.date|date:'Y-m-d' }}"] = {
+      id: {{ day_data.schedule.id }},
+      shift: "{{ day_data.schedule.shift_code.shift_code }}",
+      status: {{ day_data.schedule.status }},
+      employee_note: "{{ day_data.schedule.employee_note|default:''|escapejs }}",
+      manager_note: "{{ day_data.schedule.manager_note|default:''|escapejs }}"
     };
-    iconEl.style.background = colors[shiftCode] || '#6c757d';
-    
-    // Show modal
-    document.getElementById('scheduleModal').classList.add('active');
-}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
 
-function closeScheduleModal() {
-    document.getElementById('scheduleModal').classList.remove('active');
-    document.getElementById('rejectReason').value = '';
-    currentScheduleId = null;
-}
+const DB_WEEK_START = "{{ week_start|date:'Y-m-d' }}";
+const CSRF_TOKEN = "{{ csrf_token }}";
 
-function handleReject() {
-    const reason = document.getElementById('rejectReason').value.trim();
-    if (!reason) {
-        alert('Vui lòng nhập lý do từ chối!');
-        return;
-    }
-    
-    updateScheduleStatus(2, reason);
-}
-
-function handleAccept() {
-    updateScheduleStatus(1, '');
-}
-
-function updateScheduleStatus(status, reason) {
-    if (!currentScheduleId) return;
-    
-    fetch(`/api/update_schedule_status/${currentScheduleId}/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            status: status,
-            employee_note: reason
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(status === 1 ? 'Đã chấp nhận ca làm việc!' : 'Đã từ chối ca làm việc!');
-            closeScheduleModal();
-            location.reload();
-        } else {
-            alert('Có lỗi xảy ra: ' + (data.error || 'Vui lòng thử lại'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi cập nhật trạng thái');
-    });
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// Close modal when clicking outside
-document.getElementById('scheduleModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeScheduleModal();
-    }
-});
-
-// Manager functions
-let isEditMode = false;
-let isCreateMode = false;
-let scheduleChanges = {}; // Track changes: { "userId_date": { scheduleId, newShift, oldShift } }
-
-function toggleCreateMode() {
-    isCreateMode = true;
-    isEditMode = false;
-    scheduleChanges = {};
-    
-    // Show/hide buttons
-    document.getElementById('btnCreateMode').style.display = 'none';
-    document.getElementById('btnSaveSchedule').style.display = 'flex';
-    document.getElementById('btnCancelEdit').style.display = 'flex';
-    
-    // Add edit-mode class to table
-    document.querySelector('.schedule-table-wrapper').classList.add('edit-mode');
-    
-    // Initialize all dropdowns with empty values (for create mode)
-    const cells = document.querySelectorAll('.schedule-table tbody td[data-user-id]');
-    cells.forEach(cell => {
-        const dropdown = cell.querySelector('.shift-dropdown');
-        
-        if (dropdown) {
-            dropdown.value = ''; // Empty for create mode
-            
-            // Add change listener
-            dropdown.addEventListener('change', function() {
-                handleShiftChange(cell, this.value, '');
-            });
-        }
-    });
-}
-
-function toggleEditMode() {
-    isEditMode = true;
-    isCreateMode = false;
-    scheduleChanges = {};
-    
-    console.log('Toggle Edit Mode');
-    
-    // Show/hide buttons
-    const editBtn = document.getElementById('btnEditMode');
-    if (editBtn) editBtn.style.display = 'none';
-    document.getElementById('btnSaveSchedule').style.display = 'flex';
-    document.getElementById('btnCancelEdit').style.display = 'flex';
-    
-    // Add edit-mode class to table
-    const tableWrapper = document.querySelector('.schedule-table-wrapper');
-    tableWrapper.classList.add('edit-mode');
-    console.log('Added edit-mode class');
-    
-    // Initialize all dropdowns with current values
-    const cells = document.querySelectorAll('.schedule-table tbody td[data-user-id]');
-    console.log('Found cells:', cells.length);
-    
-    cells.forEach((cell, index) => {
-        const dropdown = cell.querySelector('.shift-dropdown');
-        const currentShiftEl = cell.querySelector('[data-current-shift]');
-        
-        console.log(`Cell ${index}:`, {
-            hasDropdown: !!dropdown,
-            hasCurrentShift: !!currentShiftEl,
-            dropdown: dropdown,
-            currentShiftEl: currentShiftEl
-        });
-        
-        if (dropdown && currentShiftEl) {
-            const currentShift = currentShiftEl.getAttribute('data-current-shift');
-            dropdown.value = currentShift || '';
-            console.log(`Set dropdown value to: "${currentShift}"`);
-            
-            // Add change listener
-            dropdown.addEventListener('change', function() {
-                handleShiftChange(cell, this.value, currentShift);
-            });
-        }
-    });
-}
-
-function cancelEditMode() {
-    if (Object.keys(scheduleChanges).length > 0) {
-        if (!confirm('Bạn có chắc muốn hủy? Các thay đổi sẽ không được lưu.')) {
-            return;
-        }
-    }
-    
-    isEditMode = false;
-    isCreateMode = false;
-    scheduleChanges = {};
-    
-    // Show/hide buttons
-    const editBtn = document.getElementById('btnEditMode');
-    const createBtn = document.getElementById('btnCreateMode');
-    if (editBtn) editBtn.style.display = 'flex';
-    if (createBtn) createBtn.style.display = 'flex';
-    document.getElementById('btnSaveSchedule').style.display = 'none';
-    document.getElementById('btnCancelEdit').style.display = 'none';
-    
-    // Remove edit-mode class
-    document.querySelector('.schedule-table-wrapper').classList.remove('edit-mode');
-    
-    // Remove changed highlights
-    document.querySelectorAll('.schedule-cell.changed').forEach(cell => {
-        cell.classList.remove('changed');
-    });
-}
-
-function handleShiftChange(cell, newShift, oldShift) {
-    const userId = cell.getAttribute('data-user-id');
-    const date = cell.getAttribute('data-date');
-    const scheduleId = cell.getAttribute('data-schedule-id');
-    const key = `${userId}_${date}`;
-    
-    const scheduleCell = cell.querySelector('.schedule-cell');
-    
-    if (newShift !== oldShift) {
-        // Mark as changed
-        scheduleCell.classList.add('changed');
-        scheduleChanges[key] = {
-            userId: userId,
-            date: date,
-            scheduleId: scheduleId || null,
-            newShift: newShift,
-            oldShift: oldShift
-        };
-    } else {
-        // Remove from changes
-        scheduleCell.classList.remove('changed');
-        delete scheduleChanges[key];
-    }
-    
-    // Update button text with count
-    const changeCount = Object.keys(scheduleChanges).length;
-    const saveBtn = document.getElementById('btnSaveSchedule');
-    if (changeCount > 0) {
-        saveBtn.textContent = `✓ Lưu thay đổi (${changeCount})`;
-    } else {
-        saveBtn.textContent = '✓ Lưu thay đổi';
-    }
-}
-
-function saveAllSchedules() {
-    const changeCount = Object.keys(scheduleChanges).length;
-    
-    if (changeCount === 0) {
-        alert('Không có thay đổi nào để lưu!');
-        return;
-    }
-    
-    if (!confirm(`Bạn có chắc muốn lưu ${changeCount} thay đổi?`)) {
-        return;
-    }
-    
-    // Prepare batch update data
-    const updates = Object.values(scheduleChanges).map(change => ({
-        user_id: change.userId,
-        work_date: change.date,
-        schedule_id: change.scheduleId,
-        shift_code: change.newShift,
-        week_start: WEEK_START
-    }));
-    
-    // Send to server
-    fetch('/api/batch_update_schedules/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({ updates: updates })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Đã lưu thành công!\n- Cập nhật: ${data.details.updated}\n- Tạo mới: ${data.details.created}\n- Xóa: ${data.details.deleted}`);
-            location.reload();
-        } else {
-            alert('Có lỗi xảy ra: ' + (data.error || 'Vui lòng thử lại'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi lưu thay đổi');
-    });
-}
-
-function openBulkCreateModal() {
-    document.getElementById('bulkCreateModal').classList.add('active');
-}
-
-function closeBulkCreateModal() {
-    document.getElementById('bulkCreateModal').classList.remove('active');
-}
-
-function copyFromWeek() {
-    const fromDate = document.getElementById('copyFromDate').value;
-    if (!fromDate) {
-        alert('Vui lòng chọn ngày!');
-        return;
-    }
-    
-    if (!confirm('Copy lịch từ tuần đã chọn sang tuần hiện tại?')) {
-        return;
-    }
-    
-    // Calculate Monday of selected week
-    const selectedDate = new Date(fromDate);
-    const dayOfWeek = selectedDate.getDay();
-    const diff = selectedDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const monday = new Date(selectedDate.setDate(diff));
-    const fromWeekStart = monday.toISOString().split('T')[0];
-    
-    fetch('/api/copy_week_schedules/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            from_week: fromWeekStart,
-            to_week: WEEK_START
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Đã copy ${data.count} lịch làm việc!`);
-            closeBulkCreateModal();
-            location.reload();
-        } else {
-            alert('Có lỗi xảy ra: ' + (data.error || 'Vui lòng thử lại'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi copy lịch');
-    });
-}
-
-// Close bulk create modal when clicking outside
-document.getElementById('bulkCreateModal')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeBulkCreateModal();
-    }
-});
+console.log('DB_EMPLOYEES:', DB_EMPLOYEES.length, 'users');
+console.log('DB_WEEK_START:', DB_WEEK_START);
+console.log('DB_SCHEDULES:', DB_SCHEDULES);
 </script>
+<script src="{% static 'js/work_schedules_management.js' %}?v=84"></script>
 {% endblock %}
+
